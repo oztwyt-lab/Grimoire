@@ -138,6 +138,21 @@ flavor_archmage: 'A legend of the culinary arts.',
     inventory_title: 'INVENTORY',
     inventory_empty: 'No items logged yet',
     inventory_add: 'LOG ITEM',
+    inventory_add_to: 'ADD TO INVENTORY',
+    inventory_how_many: 'HOW MANY?',
+    inventory_remove_confirm: 'Remove this item?',
+
+    // ─── Metrics ─────────────────────────────────────────────────────────
+    metric_piece: 'piece / adet',
+    metric_kg: 'kg',
+    metric_g: 'g',
+    metric_lt: 'lt',
+    metric_ml: 'ml',
+    metric_cup: 'cup / su bardağı',
+    metric_tbsp: 'tbsp / yemek kaşığı',
+    metric_tsp: 'tsp / çay kaşığı',
+    metric_bunch: 'bunch / demet',
+    metric_slice: 'slice / dilim',
 
     // ─── Character ───────────────────────────────────────────────────────
     character_title: 'CHARACTER',
@@ -276,6 +291,21 @@ flavor_archmage: 'Mutfak sanatlarının efsanesi.',
     inventory_title: 'ENVANTER',
     inventory_empty: 'Henüz malzeme eklemedin',
     inventory_add: 'MALZEME EKLE',
+    inventory_add_to: 'ENVANTERE EKLE',
+    inventory_how_many: 'KAÇ TANE?',
+    inventory_remove_confirm: 'Bu malzemeyi kaldır?',
+
+    // ─── Metrics ─────────────────────────────────────────────────────────
+    metric_piece: 'piece / adet',
+    metric_kg: 'kg',
+    metric_g: 'g',
+    metric_lt: 'lt',
+    metric_ml: 'ml',
+    metric_cup: 'cup / su bardağı',
+    metric_tbsp: 'tbsp / yemek kaşığı',
+    metric_tsp: 'tsp / çay kaşığı',
+    metric_bunch: 'bunch / demet',
+    metric_slice: 'slice / dilim',
 
     // ─── Character ───────────────────────────────────────────────────────
     character_title: 'KARAKTER',
