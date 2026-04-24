@@ -1,5 +1,6 @@
 import { AuthProvider } from '../src/context/AuthContext';
 import { LanguageProvider } from '../src/context/LanguageContext';
+import { InventoryProvider } from '../src/context/InventoryContext';
 import { StatusBar } from 'expo-status-bar';
 import { View } from 'react-native';
 import { useFonts, PressStart2P_400Regular } from '@expo-google-fonts/press-start-2p';
@@ -25,6 +26,7 @@ export default function Layout() {
   return (
     <LanguageProvider>
       <AuthProvider>
+        <InventoryProvider>
         <View style={{ flex: 1, backgroundColor: '#1a1a2e' }}>
           <Stack
             screenOptions={{
@@ -35,6 +37,7 @@ export default function Layout() {
           />
           <StatusBar style="light" />
         </View>
+        </InventoryProvider>
       </AuthProvider>
     </LanguageProvider>
   );

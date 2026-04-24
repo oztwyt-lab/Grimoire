@@ -6,6 +6,7 @@ import { db } from '../firebase';
 import { doc, getDoc, collection, query, where, getCountFromServer } from '@firebase/firestore';
 import { getCharacterRank, getLevelProgress } from '../src/data/character';
 import WizardSprite from '../src/components/WizardSprite';
+import PressableScale from '../src/components/PressableScale';
 import * as Haptics from 'expo-haptics';
 import { useLanguage } from '../src/context/LanguageContext';
 import { RANK_TITLE_KEY } from '../src/i18n/strings';
@@ -25,8 +26,8 @@ export default function Home() {
 
   // ─── Nav button scale animations (native driver only) ────────────────────
   const grimoireScale = useRef(new Animated.Value(1)).current;
-  const brewScale = useRef(new Animated.Value(1)).current;
-  const accountScale = useRef(new Animated.Value(1)).current;
+  const inventoryScale = useRef(new Animated.Value(1)).current;
+  const characterScale = useRef(new Animated.Value(1)).current;
 
   const pressIn = (scale: Animated.Value) => {
     Animated.spring(scale, {
@@ -105,6 +106,9 @@ export default function Home() {
           <Text style={styles.hudRank}>
             {rank.emoji}  {RANK_TITLE_KEY[rank.title] ? t(RANK_TITLE_KEY[rank.title] as any) : rank.title}  LV.{rank.level}
           </Text>
+          <PressableScale onPress={() => router.push('/settings')} style={styles.gearButton}>
+            <Text style={styles.gearIcon}>⚙</Text>
+          </PressableScale>
         </View>
         <View style={styles.xpTrack}>
           <View style={[styles.xpFill, { width: `${Math.round(progress * 100)}%` }]} />
@@ -120,7 +124,7 @@ export default function Home() {
       {/* ── Navigation bar — bottom ── */}
       <View style={styles.nav}>
 
-        {/* GRIMOIRE */}
+        {/* GRIMOR */}
         <Pressable
           style={styles.navItem}
           onPress={() => nav('/grimoire')}
@@ -130,33 +134,33 @@ export default function Home() {
           <Animated.Text style={[styles.navEmoji, { transform: [{ scale: grimoireScale }] }]}>
             📖
           </Animated.Text>
-          <Text style={styles.navLabel}>{t('home_grimoire')}</Text>
+          <Text style={styles.navLabel}>{t('nav_grimor')}</Text>
         </Pressable>
 
-        {/* BREW */}
+        {/* INVENTORY */}
         <Pressable
           style={[styles.navItem, styles.navItemCenter]}
-          onPress={() => nav('/create-recipe')}
-          onPressIn={() => pressIn(brewScale)}
-          onPressOut={() => pressOut(brewScale)}
+          onPress={() => nav('/inventory')}
+          onPressIn={() => pressIn(inventoryScale)}
+          onPressOut={() => pressOut(inventoryScale)}
         >
-          <Animated.Text style={[styles.navEmoji, { transform: [{ scale: brewScale }] }]}>
-            ⚗️
+          <Animated.Text style={[styles.navEmoji, { transform: [{ scale: inventoryScale }] }]}>
+            🎒
           </Animated.Text>
-          <Text style={styles.navLabel}>{t('home_brew')}</Text>
+          <Text style={styles.navLabel}>{t('nav_inventory')}</Text>
         </Pressable>
 
-        {/* ACCOUNT */}
+        {/* CHARACTER */}
         <Pressable
           style={styles.navItem}
-          onPress={() => nav('/account')}
-          onPressIn={() => pressIn(accountScale)}
-          onPressOut={() => pressOut(accountScale)}
+          onPress={() => nav('/character')}
+          onPressIn={() => pressIn(characterScale)}
+          onPressOut={() => pressOut(characterScale)}
         >
-          <Animated.Text style={[styles.navEmoji, { transform: [{ scale: accountScale }] }]}>
-            🔮
+          <Animated.Text style={[styles.navEmoji, { transform: [{ scale: characterScale }] }]}>
+            🧙
           </Animated.Text>
-          <Text style={styles.navLabel}>{t('home_account')}</Text>
+          <Text style={styles.navLabel}>{t('nav_character')}</Text>
         </Pressable>
 
       </View>
@@ -194,6 +198,18 @@ const styles = StyleSheet.create({
     fontFamily: 'PressStart2P_400Regular',
     color: '#c8c8e8',
     fontSize: 8,
+  },
+  gearButton: {
+    marginLeft: 12,
+    padding: 6,
+    borderWidth: 1,
+    borderColor: '#e2b96f',
+    backgroundColor: '#16213e',
+  },
+  gearIcon: {
+    fontFamily: 'PressStart2P_400Regular',
+    color: '#e2b96f',
+    fontSize: 16,
   },
   xpTrack: {
     height: 5,

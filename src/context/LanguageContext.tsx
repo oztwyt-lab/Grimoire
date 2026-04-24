@@ -3,7 +3,7 @@ import { createContext, useContext, useState, useEffect, ReactNode } from 'react
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { strings, Language, StringKey } from '../i18n/strings';
 
-const LANG_STORAGE_KEY = 'grimoire_language';
+const LANG_STORAGE_KEY = '@grimor_language';
 
 type LanguageContextType = {
   language: Language;
@@ -12,13 +12,13 @@ type LanguageContextType = {
 };
 
 const LanguageContext = createContext<LanguageContextType>({
-  language: 'en',
+  language: 'tr',
   setLanguage: () => {},
-  t: (key) => strings.en[key],
+  t: (key) => strings.tr[key],
 });
 
 export function LanguageProvider({ children }: { children: ReactNode }) {
-  const [language, setLanguageState] = useState<Language>('en');
+  const [language, setLanguageState] = useState<Language>('tr');
 
   // ─── Load persisted language on mount ───────────────────────────────────
   useEffect(() => {

@@ -118,6 +118,44 @@ flavor_archmage: 'A legend of the culinary arts.',
     home_recipes: 'RECIPES',
     home_to: 'TO',
     home_max_rank: 'MAX RANK',
+
+    // ─── Nav tabs ────────────────────────────────────────────────────────
+    nav_grimor: 'GRIMOR',
+    nav_inventory: 'INVENTORY',
+    nav_character: 'CHARACTER',
+
+    // ─── Settings ────────────────────────────────────────────────────────
+    settings_title: 'SETTINGS',
+    settings_back: '◄ BACK',
+    settings_account: 'SIGNED IN AS',
+    settings_language: 'LANGUAGE',
+    settings_danger: 'DANGER ZONE',
+    settings_delete: 'DELETE ACCOUNT',
+    lang_english: 'ENGLISH',
+    lang_turkish: 'TURKISH',
+
+    // ─── Inventory ───────────────────────────────────────────────────────
+    inventory_title: 'INVENTORY',
+    inventory_empty: 'No items logged yet',
+    inventory_add: 'LOG ITEM',
+    inventory_add_to: 'ADD TO INVENTORY',
+    inventory_how_many: 'HOW MANY?',
+    inventory_remove_confirm: 'Remove this item?',
+
+    // ─── Metrics ─────────────────────────────────────────────────────────
+    metric_piece: 'piece / adet',
+    metric_kg: 'kg',
+    metric_g: 'g',
+    metric_lt: 'lt',
+    metric_ml: 'ml',
+    metric_cup: 'cup / su bardağı',
+    metric_tbsp: 'tbsp / yemek kaşığı',
+    metric_tsp: 'tsp / çay kaşığı',
+    metric_bunch: 'bunch / demet',
+    metric_slice: 'slice / dilim',
+
+    // ─── Character ───────────────────────────────────────────────────────
+    character_title: 'CHARACTER',
   },
 
   tr: {
@@ -233,6 +271,44 @@ flavor_archmage: 'Mutfak sanatlarının efsanesi.',
     home_recipes: 'TARİF',
     home_to: 'KALDI',
     home_max_rank: 'MAKSİMUM RÜTBE',
+
+    // ─── Nav tabs ────────────────────────────────────────────────────────
+    nav_grimor: 'GRİMOR',
+    nav_inventory: 'ENVANTER',
+    nav_character: 'KARAKTER',
+
+    // ─── Settings ────────────────────────────────────────────────────────
+    settings_title: 'AYARLAR',
+    settings_back: '◄ GERİ',
+    settings_account: 'GİRİŞ YAPILAN HESAP',
+    settings_language: 'DİL',
+    settings_danger: 'TEHLİKELİ BÖLGE',
+    settings_delete: 'HESABI SİL',
+    lang_english: 'İNGİLİZCE',
+    lang_turkish: 'TÜRKÇE',
+
+    // ─── Inventory ───────────────────────────────────────────────────────
+    inventory_title: 'ENVANTER',
+    inventory_empty: 'Henüz malzeme eklemedin',
+    inventory_add: 'MALZEME EKLE',
+    inventory_add_to: 'ENVANTERE EKLE',
+    inventory_how_many: 'KAÇ TANE?',
+    inventory_remove_confirm: 'Bu malzemeyi kaldır?',
+
+    // ─── Metrics ─────────────────────────────────────────────────────────
+    metric_piece: 'piece / adet',
+    metric_kg: 'kg',
+    metric_g: 'g',
+    metric_lt: 'lt',
+    metric_ml: 'ml',
+    metric_cup: 'cup / su bardağı',
+    metric_tbsp: 'tbsp / yemek kaşığı',
+    metric_tsp: 'tsp / çay kaşığı',
+    metric_bunch: 'bunch / demet',
+    metric_slice: 'slice / dilim',
+
+    // ─── Character ───────────────────────────────────────────────────────
+    character_title: 'KARAKTER',
   },
 } as const;
 
