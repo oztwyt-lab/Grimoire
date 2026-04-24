@@ -32,7 +32,7 @@ export default function Home() {
   if (loading || !onboardingChecked) {
     return (
       <View style={styles.container}>
-        <Text style={styles.title}>GRIMOIRE</Text>
+        <Text style={styles.title}>GRIMOR</Text>
       </View>
     );
   }
@@ -41,7 +41,7 @@ export default function Home() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>GRIMOIRE</Text>
+      <Text style={styles.title}>GRIMOR</Text>
       <Text style={styles.subtitle}>Your recipe spellbook</Text>
       <Pressable
         style={({ pressed }) => [styles.button, pressed && { backgroundColor: '#2d2d4e' }]}

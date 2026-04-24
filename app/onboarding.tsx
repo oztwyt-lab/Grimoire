@@ -11,7 +11,7 @@ const SLIDES = [
   {
     key: 'welcome',
     icon: '📖',
-    title: 'GRIMOIRE',
+    title: 'GRIMOR',
     subtitle: 'YOUR RECIPE\nSPELLBOOK',
     body: 'A tome of culinary magic passed down through the ages. Now it belongs to you.',
   },
@@ -28,7 +28,7 @@ const SLIDES = [
     icon: '🏆',
     title: 'BUILD YOUR\nCOLLECTION',
     subtitle: null,
-    body: 'Every recipe you save is inscribed forever in your Grimoire. Browse, edit, and master your craft.',
+    body: 'Every recipe you save is inscribed forever in your Grimor. Browse, edit, and master your craft.',
   },
   {
     key: 'begin',

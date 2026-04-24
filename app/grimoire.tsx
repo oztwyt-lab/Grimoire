@@ -1,20 +1,21 @@
 // ─── app/grimoire.tsx ────────────────────────────────────────────────────────
-import { useEffect, useState, useCallback, useRef } from 'react';
-import { Text, View, Pressable, FlatList, ActivityIndicator, TextInput, RefreshControl, Animated } from 'react-native';
+import React, { useEffect, useState, useCallback, useRef, useMemo } from 'react';
+import { Text, View, Pressable, FlatList, ActivityIndicator, TextInput, RefreshControl, Animated as RNAnimated } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuth } from '../src/context/AuthContext';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { useLanguage } from '../src/context/LanguageContext';
+import { useInventory } from '../src/context/InventoryContext';
 import { db } from '../firebase';
 import { collection, query, where, getDocs, orderBy } from '@firebase/firestore';
 import { getCharacterRank, getLevelProgress, CharacterRank } from '../src/data/character';
 import LevelUpModal from '../src/components/LevelUpModal';
 import { StringKey } from '../src/i18n/strings';
+import { InventoryItem } from '../lib/firestore';
 
 const RANK_STORAGE_KEY = 'grimoire_rank_level';
 const MAX_PREVIEW = 5;
 
-// ─── Maps English rank title → i18n key ─────────────────────────────────────
 const RANK_TITLE_KEY: Record<string, StringKey> = {
   'APPRENTICE': 'rank_apprentice',
   'COOK': 'rank_cook',
@@ -34,10 +35,86 @@ const RANK_FLAVOR_KEY: Record<string, StringKey> = {
 type Ingredient = { id: string; name: string; emoji: string; quantity: string };
 type Recipe = { id: string; name: string; steps: string; ingredients: Ingredient[]; createdAt: any };
 
+// ─── RecipeCard ──────────────────────────────────────────────────────────────
+type RecipeCardProps = {
+  recipe: Recipe;
+  inventory: InventoryItem[];
+  onPress: () => void;
+};
+
+function RecipeCardComponent({ recipe, inventory, onPress }: RecipeCardProps) {
+  const { t } = useLanguage();
+
+  const matchState = useMemo((): 'full' | 'partial' | 'none' => {
+    if (inventory.length === 0 || recipe.ingredients.length === 0) return 'partial';
+    const ids = new Set(inventory.map(i => i.id));
+    const count = recipe.ingredients.filter(i => ids.has(i.id)).length;
+    if (count === recipe.ingredients.length) return 'full';
+    if (count === 0) return 'none';
+    return 'partial';
+  }, [inventory, recipe.ingredients]);
+
+  const opacity = useRef(new RNAnimated.Value(matchState === 'none' ? 0.5 : 1.0)).current;
+
+  useEffect(() => {
+    RNAnimated.timing(opacity, { toValue: matchState === 'none' ? 0.5 : 1.0, duration: 300, useNativeDriver: true }).start();
+  }, [matchState]);
+
+  const isFullMatch = matchState === 'full';
+  const preview = recipe.ingredients.slice(0, MAX_PREVIEW);
+  const overflow = recipe.ingredients.length - MAX_PREVIEW;
+
+  return (
+    <RNAnimated.View style={[gStyles.cardWrapper, { opacity }]}>
+      <Pressable
+        style={({ pressed }) => [
+          gStyles.card,
+          isFullMatch && gStyles.cardFull,
+          pressed && { backgroundColor: '#2d2d4e' },
+        ]}
+        onPress={onPress}
+      >
+        {isFullMatch && (
+          <View style={gStyles.readyBadge}>
+            <Text style={gStyles.readyText}>{t('recipe_ready')}</Text>
+          </View>
+        )}
+        <View style={gStyles.cardTop}>
+          <Text style={gStyles.cardTitle} numberOfLines={1}>{recipe.name.toUpperCase()}</Text>
+          <Text style={gStyles.cardArrow}>▶</Text>
+        </View>
+        {recipe.ingredients.length > 0 && (
+          <View style={gStyles.emojiRow}>
+            {preview.map((ing, i) => (
+              <View key={i} style={gStyles.emojiTile}>
+                <Text style={gStyles.emojiText}>{ing.emoji}</Text>
+              </View>
+            ))}
+            {overflow > 0 && (
+              <View style={gStyles.emojiTile}>
+                <Text style={gStyles.overflowText}>+{overflow}</Text>
+              </View>
+            )}
+          </View>
+        )}
+      </Pressable>
+    </RNAnimated.View>
+  );
+}
+
+const RecipeCard = React.memo(RecipeCardComponent, (prev, next) =>
+  prev.recipe.id === next.recipe.id &&
+  prev.recipe.name === next.recipe.name &&
+  prev.recipe.ingredients === next.recipe.ingredients &&
+  prev.inventory === next.inventory
+);
+
+// ─── Grimoire screen ─────────────────────────────────────────────────────────
 export default function Grimoire() {
   const { user } = useAuth();
   const router = useRouter();
   const { t } = useLanguage();
+  const { inventory } = useInventory();
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -45,7 +122,7 @@ export default function Grimoire() {
   const [showLevelUp, setShowLevelUp] = useState(false);
   const [levelUpRank, setLevelUpRank] = useState<CharacterRank | null>(null);
 
-  const progressAnim = useRef(new Animated.Value(0)).current;
+  const progressAnim = useRef(new RNAnimated.Value(0)).current;
 
   const fetchRecipes = useCallback(async () => {
     if (!user) return;
@@ -81,7 +158,7 @@ export default function Grimoire() {
   useEffect(() => {
     const rank = getCharacterRank(recipes.length);
     const progress = getLevelProgress(recipes.length, rank);
-    Animated.timing(progressAnim, { toValue: progress, duration: 900, delay: 200, useNativeDriver: false }).start();
+    RNAnimated.timing(progressAnim, { toValue: progress, duration: 900, delay: 200, useNativeDriver: false }).start();
   }, [recipes.length]);
 
   const onRefresh = useCallback(async () => {
@@ -129,7 +206,7 @@ export default function Grimoire() {
           <Text style={gStyles.characterLevel}>LV.{rank.level}</Text>
         </View>
         <View style={gStyles.progressTrack}>
-          <Animated.View style={[gStyles.progressFill, { width: progressAnim.interpolate({ inputRange: [0, 1], outputRange: ['0%', '100%'] }) }]} />
+          <RNAnimated.View style={[gStyles.progressFill, { width: progressAnim.interpolate({ inputRange: [0, 1], outputRange: ['0%', '100%'] }) }]} />
         </View>
         <View style={gStyles.progressMeta}>
           <Text style={gStyles.progressLabel}>{recipes.length} {t('grimoire_recipes')}</Text>
@@ -165,35 +242,13 @@ export default function Grimoire() {
           style={gStyles.list}
           keyboardShouldPersistTaps="handled"
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#e2b96f" colors={['#e2b96f']} />}
-          renderItem={({ item }) => {
-            const preview = item.ingredients.slice(0, MAX_PREVIEW);
-            const overflow = item.ingredients.length - MAX_PREVIEW;
-            return (
-              <Pressable
-                style={({ pressed }) => [gStyles.card, pressed && { backgroundColor: '#2d2d4e' }]}
-                onPress={() => router.push(`/recipe/${item.id}`)}
-              >
-                <View style={gStyles.cardTop}>
-                  <Text style={gStyles.cardTitle} numberOfLines={1}>{item.name.toUpperCase()}</Text>
-                  <Text style={gStyles.cardArrow}>▶</Text>
-                </View>
-                {item.ingredients.length > 0 && (
-                  <View style={gStyles.emojiRow}>
-                    {preview.map((ing, i) => (
-                      <View key={i} style={gStyles.emojiTile}>
-                        <Text style={gStyles.emojiText}>{ing.emoji}</Text>
-                      </View>
-                    ))}
-                    {overflow > 0 && (
-                      <View style={gStyles.emojiTile}>
-                        <Text style={gStyles.overflowText}>+{overflow}</Text>
-                      </View>
-                    )}
-                  </View>
-                )}
-              </Pressable>
-            );
-          }}
+          renderItem={({ item }) => (
+            <RecipeCard
+              recipe={item}
+              inventory={inventory}
+              onPress={() => router.push(`/recipe/${item.id}`)}
+            />
+          )}
         />
       )}
 
@@ -229,7 +284,18 @@ const gStyles = {
   search: { backgroundColor: '#16213e', color: '#c8c8e8', borderWidth: 1, borderColor: '#2d2d4e', padding: 14, marginBottom: 16, fontFamily: 'PressStart2P_400Regular', fontSize: 9 } as const,
   empty: { fontFamily: 'PressStart2P_400Regular', color: '#4a4a6a', fontSize: 10, textAlign: 'center' as const, marginTop: 60, lineHeight: 24 },
   list: { flex: 1 } as const,
-  card: { borderWidth: 1, borderColor: '#2d2d4e', backgroundColor: '#16213e', padding: 16, marginBottom: 12 } as const,
+  cardWrapper: { marginBottom: 12 } as const,
+  card: { borderWidth: 1, borderColor: '#2d2d4e', backgroundColor: '#16213e', padding: 16, position: 'relative' as const } as const,
+  cardFull: {
+    borderColor: '#c8a84b',
+    shadowColor: '#c8a84b',
+    shadowOpacity: 0.35,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 0 },
+    elevation: 6,
+  } as const,
+  readyBadge: { position: 'absolute' as const, top: 8, right: 8, backgroundColor: '#c8a84b', paddingHorizontal: 6, paddingVertical: 3, zIndex: 1 } as const,
+  readyText: { fontFamily: 'PressStart2P_400Regular', color: '#1a1a2e', fontSize: 6 } as const,
   cardTop: { flexDirection: 'row' as const, justifyContent: 'space-between' as const, alignItems: 'center' as const },
   cardTitle: { fontFamily: 'PressStart2P_400Regular', color: '#c8c8e8', fontSize: 10, flex: 1, marginRight: 8 } as const,
   cardArrow: { color: '#e2b96f', fontSize: 12 } as const,
