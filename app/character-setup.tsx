@@ -1,24 +1,27 @@
 import { useState } from 'react';
-import { Text, View, Pressable, TextInput, ScrollView, Alert } from 'react-native';
+import { Text, View, TextInput, ScrollView, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuth } from '../src/context/AuthContext';
+import { useLanguage } from '../src/context/LanguageContext';
 import { db } from '../firebase';
 import { doc, setDoc, serverTimestamp } from '@firebase/firestore';
+import { DEFAULT_EQUIPMENT } from '../lib/firestore';
 import * as Haptics from 'expo-haptics';
-import WizardSprite from '../src/components/WizardSprite';
+import PressableScale from '../src/components/PressableScale';
 
-// Character options — only male wizard available in this release
-const CHARACTERS = [
-  { id: 'male', label: 'WIZARD', unlocked: true },
-  { id: 'female', label: 'COMING\nSOON', unlocked: false },
-  { id: 'rogue', label: 'COMING\nSOON', unlocked: false },
+type CharacterOption = { id: 'male' | 'female'; emoji: string; labelKey: 'setup_wizard' | 'setup_witch' };
+
+const CHARACTERS: CharacterOption[] = [
+  { id: 'male',   emoji: '🧙',    labelKey: 'setup_wizard' },
+  { id: 'female', emoji: '🧙‍♀️', labelKey: 'setup_witch'  },
 ];
 
 export default function CharacterSetup() {
   const router = useRouter();
   const { user } = useAuth();
+  const { t } = useLanguage();
   const [nickname, setNickname] = useState('');
-  const [selectedChar, setSelectedChar] = useState('male');
+  const [selectedChar, setSelectedChar] = useState<'male' | 'female'>('male');
   const [saving, setSaving] = useState(false);
 
   const handleBegin = async () => {
@@ -37,6 +40,10 @@ export default function CharacterSetup() {
         character: selectedChar,
         createdAt: serverTimestamp(),
       });
+      await setDoc(doc(db, 'users', user!.uid), {
+        equipment: DEFAULT_EQUIPMENT,
+        ownedItems: ['starter_robe', 'starter_staff'],
+      }, { merge: true });
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       router.replace('/home');
     } catch (err) {
@@ -48,6 +55,7 @@ export default function CharacterSetup() {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+
       {/* ─── Title ─────────────────────────────────────────────────────────── */}
       <Text style={styles.title}>CREATE{'\n'}YOUR HERO</Text>
       <Text style={styles.subtitle}>Your legend begins here.</Text>
@@ -65,48 +73,45 @@ export default function CharacterSetup() {
       />
 
       {/* ─── Character selection ────────────────────────────────────────────── */}
-      <Text style={styles.label}>CHOOSE YOUR CLASS</Text>
+      <Text style={styles.label}>{t('setup_choose_character')}</Text>
       <View style={styles.characterRow}>
         {CHARACTERS.map(ch => (
-          <Pressable
+          <PressableScale
             key={ch.id}
-            style={({ pressed }) => [
-              styles.characterCard,
-              selectedChar === ch.id && styles.characterCardSelected,
-              !ch.unlocked && styles.characterCardLocked,
-              pressed && ch.unlocked && { backgroundColor: '#2d2d4e' },
-            ]}
             onPress={() => {
-              if (!ch.unlocked) return;
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
               setSelectedChar(ch.id);
             }}
+            style={styles.cardPressable}
           >
-           {ch.id === 'male' ? (
-  <View style={styles.characterPreview}>
-    <WizardSprite/>
-  </View>
-) : (
-  <View style={styles.characterPreview}>
-    <Text style={styles.lockEmoji}>🔒</Text>
-  </View>
-)}
-            <Text style={[styles.characterLabel, !ch.unlocked && styles.characterLabelMuted]}>
-              {ch.label}
-            </Text>
-            {selectedChar === ch.id && <Text style={styles.selectedBadge}>✦</Text>}
-          </Pressable>
+            <View style={[
+              styles.characterCard,
+              selectedChar === ch.id && styles.characterCardSelected,
+            ]}>
+              <Text style={styles.charEmoji}>{ch.emoji}</Text>
+              <Text style={[
+                styles.characterLabel,
+                selectedChar === ch.id && styles.characterLabelSelected,
+              ]}>
+                {t(ch.labelKey)}
+              </Text>
+              {selectedChar === ch.id && (
+                <Text style={styles.selectedBadge}>✦</Text>
+              )}
+            </View>
+          </PressableScale>
         ))}
       </View>
 
       {/* ─── Begin ─────────────────────────────────────────────────────────── */}
-      <Pressable
-        style={({ pressed }) => [styles.button, pressed && { backgroundColor: '#2d2d4e' }]}
-        onPress={handleBegin}
-        disabled={saving}
-      >
-        <Text style={styles.buttonText}>{saving ? 'SUMMONING...' : 'BEGIN QUEST  ▶'}</Text>
-      </Pressable>
+      <PressableScale onPress={handleBegin} disabled={saving}>
+        <View style={[styles.button, saving && styles.buttonDisabled]}>
+          <Text style={styles.buttonText}>
+            {saving ? 'SUMMONING...' : 'BEGIN QUEST  ▶'}
+          </Text>
+        </View>
+      </PressableScale>
+
     </ScrollView>
   );
 }
@@ -120,21 +125,27 @@ const styles = {
   label: { fontFamily: 'PressStart2P_400Regular', color: '#4a4a6a', fontSize: 8, marginBottom: 12 } as const,
   input: { backgroundColor: '#16213e', color: '#c8c8e8', borderWidth: 1, borderColor: '#2d2d4e', padding: 16, marginBottom: 32, fontFamily: 'PressStart2P_400Regular', fontSize: 10 } as const,
   characterRow: { flexDirection: 'row' as const, gap: 12, marginBottom: 40 },
+  cardPressable: { flex: 1 } as const,
   characterCard: {
     flex: 1,
     backgroundColor: '#16213e',
     borderWidth: 1,
-    borderColor: '#2d2d4e',
-    padding: 12,
+    borderColor: '#2a2a4a',
+    padding: 20,
     alignItems: 'center' as const,
+    minHeight: 130,
+    justifyContent: 'center' as const,
   },
-  characterCardSelected: { borderColor: '#e2b96f', borderWidth: 2 },
-  characterCardLocked: { opacity: 0.4 },
-  characterPreview: { width: 50, height: 70, alignItems: 'center' as const, justifyContent: 'center' as const, marginBottom: 8 },
-  lockEmoji: { fontSize: 28 } as const,
-  characterLabel: { fontFamily: 'PressStart2P_400Regular', color: '#c8c8e8', fontSize: 7, textAlign: 'center' as const, lineHeight: 13 },
-  characterLabelMuted: { color: '#4a4a6a' } as const,
-  selectedBadge: { fontFamily: 'PressStart2P_400Regular', color: '#e2b96f', fontSize: 10, marginTop: 6 } as const,
+  characterCardSelected: {
+    borderColor: '#c8a84b',
+    borderWidth: 2,
+    backgroundColor: '#1c1c2e',
+  },
+  charEmoji: { fontSize: 48, marginBottom: 12 } as const,
+  characterLabel: { fontFamily: 'PressStart2P_400Regular', color: '#4a4a6a', fontSize: 7, textAlign: 'center' as const },
+  characterLabelSelected: { color: '#c8a84b' } as const,
+  selectedBadge: { fontFamily: 'PressStart2P_400Regular', color: '#c8a84b', fontSize: 10, marginTop: 8 } as const,
   button: { backgroundColor: '#16213e', borderWidth: 2, borderColor: '#e2b96f', padding: 18, alignItems: 'center' as const },
+  buttonDisabled: { opacity: 0.5 } as const,
   buttonText: { fontFamily: 'PressStart2P_400Regular', color: '#e2b96f', fontSize: 11 } as const,
 };

@@ -28,7 +28,7 @@ export const strings = {
     register_failed_title: 'Registration failed',
 
     // ─── Grimoire ────────────────────────────────────────────────────────
-    grimoire_title: 'GRIMOIRE',
+    grimoire_title: 'GRIMOR',
     grimoire_subtitle: 'RECIPE COLLECTION',
     grimoire_back: '◀ HOME',
     grimoire_search: 'Search recipes...',
@@ -112,12 +112,17 @@ flavor_chef: 'Your name is spoken in kitchens.',
 flavor_sorcerer: 'Ingredients bend to your magic.',
 flavor_archmage: 'A legend of the culinary arts.',
     // ─── Home / HUD ──────────────────────────────────────────────────────
-    home_grimoire: 'GRIMOIRE',
+    home_grimoire: 'GRIMOR',
     home_brew: 'BREW',
     home_account: 'ACCOUNT',
     home_recipes: 'RECIPES',
     home_to: 'TO',
     home_max_rank: 'MAX RANK',
+
+    // ─── Character setup ─────────────────────────────────────────────────
+    setup_choose_character: 'CHOOSE YOUR CHARACTER',
+    setup_wizard: 'WIZARD',
+    setup_witch: 'WITCH',
 
     // ─── Nav tabs ────────────────────────────────────────────────────────
     nav_grimor: 'GRIMOR',
@@ -156,6 +161,22 @@ flavor_archmage: 'A legend of the culinary arts.',
 
     // ─── Character ───────────────────────────────────────────────────────
     character_title: 'CHARACTER',
+    character_owned: 'OWNED ITEMS',
+    character_equip: 'EQUIP',
+    character_unequip: 'UNEQUIP',
+    character_no_items: 'No items for this slot',
+    character_coming_soon: 'COMING SOON',
+    slot_hat: 'HAT',
+    slot_outfit: 'OUTFIT',
+    slot_cloak: 'CLOAK',
+    slot_staff: 'STAFF',
+    slot_accessory: 'ACCESSORY',
+    slot_pet: 'PET',
+
+    // ─── Recipe match ────────────────────────────────────────────────────────
+    recipe_ready: 'READY',
+    recipe_have: 'have',
+    recipe_need: 'need',
   },
 
   tr: {
@@ -190,7 +211,7 @@ flavor_archmage: 'Mutfak sanatlarının efsanesi.',
     register_failed_title: 'Kayıt başarısız',
 
     // ─── Grimoire ────────────────────────────────────────────────────────
-    grimoire_title: 'GRIMOIRE',
+    grimoire_title: 'GRIMOR',
     grimoire_subtitle: 'TARİF KOLEKSİYONU',
     grimoire_back: '◀ ANA EKRAN',
     grimoire_search: 'Tarif ara...',
@@ -265,12 +286,17 @@ flavor_archmage: 'Mutfak sanatlarının efsanesi.',
     account_error_title: 'Hata',
 
     // ─── Home / HUD ──────────────────────────────────────────────────────
-    home_grimoire: 'GRIMOIRE',
+    home_grimoire: 'GRIMOR',
     home_brew: 'DEMLE',
     home_account: 'HESAP',
     home_recipes: 'TARİF',
     home_to: 'KALDI',
     home_max_rank: 'MAKSİMUM RÜTBE',
+
+    // ─── Character setup ─────────────────────────────────────────────────
+    setup_choose_character: 'KARAKTERİNİ SEÇ',
+    setup_wizard: 'BÜYÜCÜ',
+    setup_witch: 'CADI',
 
     // ─── Nav tabs ────────────────────────────────────────────────────────
     nav_grimor: 'GRİMOR',
@@ -309,6 +335,22 @@ flavor_archmage: 'Mutfak sanatlarının efsanesi.',
 
     // ─── Character ───────────────────────────────────────────────────────
     character_title: 'KARAKTER',
+    character_owned: 'SAHİP OLUNAN EŞYALAR',
+    character_equip: 'GİY',
+    character_unequip: 'ÇIKAR',
+    character_no_items: 'Bu slot için eşyan yok',
+    character_coming_soon: 'YAKINDA',
+    slot_hat: 'ŞAPKA',
+    slot_outfit: 'CÜPPE',
+    slot_cloak: 'PELERIN',
+    slot_staff: 'ASA',
+    slot_accessory: 'AKSESUAR',
+    slot_pet: 'PET',
+
+    // ─── Recipe match ────────────────────────────────────────────────────────
+    recipe_ready: 'HAZIR',
+    recipe_have: 'var',
+    recipe_need: 'gerek',
   },
 } as const;
 
