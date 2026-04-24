@@ -4,7 +4,7 @@ import { useRouter, useFocusEffect } from 'expo-router';
 import { useAuth } from '../src/context/AuthContext';
 import { useLanguage } from '../src/context/LanguageContext';
 import { db } from '../firebase';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp } from '@firebase/firestore';
 import { registerIngredientCallback } from '../src/store/ingredientSelection';
 import * as Haptics from 'expo-haptics';
  

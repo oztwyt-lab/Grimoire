@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { Text, TextInput, View, Pressable, ScrollView, Alert, ActivityIndicator } from 'react-native';
 import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
 import { db } from '../../firebase';
-import { doc, getDoc, updateDoc } from 'firebase/firestore';
+import { doc, getDoc, updateDoc } from '@firebase/firestore';
 import { registerIngredientCallback } from '../../src/store/ingredientSelection';
 import { useLanguage } from '../../src/context/LanguageContext';
 import * as Haptics from 'expo-haptics';

@@ -4,7 +4,7 @@ import { useRouter } from 'expo-router';
 import { useAuth } from '../src/context/AuthContext';
 import { useLanguage } from '../src/context/LanguageContext';
 import { db } from '../firebase';
-import { collection, query, where, getDocs, deleteDoc, doc } from 'firebase/firestore';
+import { collection, query, where, getDocs, deleteDoc, doc } from '@firebase/firestore';
 import * as Haptics from 'expo-haptics';
  
 export default function Account() {

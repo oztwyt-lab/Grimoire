@@ -3,7 +3,7 @@ import { View, Text, Pressable, Animated, Dimensions, ImageBackground, StyleShee
 import { useRouter } from 'expo-router';
 import { useAuth } from '../src/context/AuthContext';
 import { db } from '../firebase';
-import { doc, getDoc, collection, query, where, getCountFromServer } from 'firebase/firestore';
+import { doc, getDoc, collection, query, where, getCountFromServer } from '@firebase/firestore';
 import { getCharacterRank, getLevelProgress } from '../src/data/character';
 import WizardSprite from '../src/components/WizardSprite';
 import * as Haptics from 'expo-haptics';

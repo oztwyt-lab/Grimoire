@@ -6,7 +6,7 @@ import { useAuth } from '../src/context/AuthContext';
 import { useRouter } from 'expo-router';
 import { useLanguage } from '../src/context/LanguageContext';
 import { db } from '../firebase';
-import { collection, query, where, getDocs, orderBy } from 'firebase/firestore';
+import { collection, query, where, getDocs, orderBy } from '@firebase/firestore';
 import { getCharacterRank, getLevelProgress, CharacterRank } from '../src/data/character';
 import LevelUpModal from '../src/components/LevelUpModal';
 import { StringKey } from '../src/i18n/strings';

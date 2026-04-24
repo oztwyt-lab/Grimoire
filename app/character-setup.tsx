@@ -3,7 +3,7 @@ import { Text, View, Pressable, TextInput, ScrollView, Alert } from 'react-nativ
 import { useRouter } from 'expo-router';
 import { useAuth } from '../src/context/AuthContext';
 import { db } from '../firebase';
-import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, setDoc, serverTimestamp } from '@firebase/firestore';
 import * as Haptics from 'expo-haptics';
 import WizardSprite from '../src/components/WizardSprite';
 

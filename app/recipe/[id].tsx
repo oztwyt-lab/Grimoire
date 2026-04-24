@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Text, View, ScrollView, Pressable, ActivityIndicator, Alert } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { db } from '../../firebase';
-import { doc, getDoc, deleteDoc } from 'firebase/firestore';
+import { doc, getDoc, deleteDoc } from '@firebase/firestore';
 import { useLanguage } from '../../src/context/LanguageContext';
  
 type Ingredient = { id: string; name: string; emoji: string; quantity: string };
