@@ -3,7 +3,7 @@ import { useEffect, useState, useCallback, useRef } from 'react';
 import { Text, View, Pressable, FlatList, ActivityIndicator, TextInput, RefreshControl, Animated } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuth } from '../src/context/AuthContext';
-import { useRouter } from 'expo-router';
+import { useRouter, useFocusEffect } from 'expo-router';
 import { useLanguage } from '../src/context/LanguageContext';
 import { db } from '../firebase';
 import { collection, query, where, getDocs, orderBy } from '@firebase/firestore';
@@ -74,7 +74,9 @@ export default function Grimoire() {
     }
   }, [user]);
 
-  useEffect(() => { fetchRecipes().finally(() => setLoading(false)); }, [fetchRecipes]);
+  useFocusEffect(
+    useCallback(() => { fetchRecipes().finally(() => setLoading(false)); }, [fetchRecipes])
+  );
 
   useEffect(() => {
     const rank = getCharacterRank(recipes.length);

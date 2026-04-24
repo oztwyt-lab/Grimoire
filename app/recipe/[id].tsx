@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useState, useCallback } from 'react';
 import { Text, View, ScrollView, Pressable, ActivityIndicator, Alert } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
 import { db } from '../../firebase';
 import { doc, getDoc, deleteDoc } from '@firebase/firestore';
 import { useLanguage } from '../../src/context/LanguageContext';
@@ -15,20 +15,23 @@ export default function RecipeDetail() {
   const [recipe, setRecipe] = useState<Recipe | null>(null);
   const [loading, setLoading] = useState(true);
  
-  useEffect(() => {
-    const fetchRecipe = async () => {
-      try {
-        const docRef = doc(db, 'recipes', id);
-        const docSnap = await getDoc(docRef);
-        if (docSnap.exists()) setRecipe({ id: docSnap.id, ...docSnap.data() } as Recipe);
-      } catch (error) {
-        console.error(error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchRecipe();
-  }, [id]);
+  useFocusEffect(
+    useCallback(() => {
+      setLoading(true);
+      const fetchRecipe = async () => {
+        try {
+          const docRef = doc(db, 'recipes', id);
+          const docSnap = await getDoc(docRef);
+          if (docSnap.exists()) setRecipe({ id: docSnap.id, ...docSnap.data() } as Recipe);
+        } catch (error) {
+          console.error(error);
+        } finally {
+          setLoading(false);
+        }
+      };
+      fetchRecipe();
+    }, [id])
+  );
  
   const handleDelete = async () => {
     Alert.alert(t('detail_delete_title'), t('detail_delete_msg'), [
