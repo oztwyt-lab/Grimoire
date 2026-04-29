@@ -5,9 +5,18 @@ import { db } from '../../firebase';
 import { doc, getDoc, deleteDoc } from '@firebase/firestore';
 import { useLanguage } from '../../src/context/LanguageContext';
 import { useInventory } from '../../src/context/InventoryContext';
+import PressableScale from '../../src/components/PressableScale';
 
 type Ingredient = { id: string; name: string; emoji: string; quantity: string };
-type Recipe = { id: string; name: string; steps: string; ingredients: Ingredient[]; createdAt: any };
+type RecipeStep = { id: string; text: string; duration: number | null };
+type Recipe = {
+  id: string;
+  name: string;
+  steps: RecipeStep[] | string;
+  preparation?: string;
+  ingredients: Ingredient[];
+  createdAt: unknown;
+};
 
 function parseRecipeQty(qty: string | undefined): number {
   if (!qty) return 1;
@@ -25,7 +34,7 @@ export default function RecipeDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const { t } = useLanguage();
-  const { inventory } = useInventory();
+  const { inventory, bulkSetItems } = useInventory();
   const [recipe, setRecipe] = useState<Recipe | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -54,10 +63,34 @@ export default function RecipeDetail() {
     ]);
   };
 
+  async function handleIngredientsReady() {
+    if (!recipe || !recipe.ingredients?.length) return;
+    const items = recipe.ingredients.map(ing => ({
+      id: ing.id,
+      quantity: parseRecipeQty(ing.quantity),
+      metric: 'adet',
+    }));
+    await bulkSetItems(items);
+    router.push(`/cook/${recipe.id}`);
+  }
+
   if (loading) return <ActivityIndicator style={{ flex: 1 }} color="#e2b96f" />;
   if (!recipe) return <Text style={{ color: '#c8c8e8', padding: 24, fontFamily: 'PressStart2P_400Regular', fontSize: 9 }}>{t('detail_not_found')}</Text>;
 
   const showMatch = inventory.length > 0;
+
+  const prepDisplay =
+    typeof recipe.preparation === 'string' && recipe.preparation.trim()
+      ? recipe.preparation
+      : Array.isArray(recipe.steps)
+      ? recipe.steps.map((s, i) => `${i + 1}. ${s.text}`).join('\n')
+      : typeof recipe.steps === 'string'
+      ? recipe.steps
+      : '';
+
+  const hasSteps = Array.isArray(recipe.steps)
+    ? recipe.steps.length > 0
+    : Boolean((recipe.steps as string)?.trim() || recipe.preparation?.trim());
 
   return (
     <ScrollView style={rdStyles.container} contentContainerStyle={rdStyles.content}>
@@ -115,7 +148,39 @@ export default function RecipeDetail() {
         </>
       )}
       <Text style={rdStyles.sectionLabel}>{t('detail_preparation')}</Text>
-      <Text style={rdStyles.steps}>{recipe.steps}</Text>
+      <Text style={rdStyles.steps}>{prepDisplay}</Text>
+
+      {/* Cook buttons */}
+      <View style={rdStyles.cookSection}>
+        {/* Ingredients Ready */}
+        <PressableScale
+          onPress={recipe.ingredients?.length ? handleIngredientsReady : undefined}
+          disabled={!recipe.ingredients?.length}
+          style={rdStyles.cookButtonWrapper}
+        >
+          <View style={[rdStyles.ingButton, !recipe.ingredients?.length && rdStyles.cookButtonDisabled]}>
+            <Text style={[rdStyles.ingButtonText, !recipe.ingredients?.length && rdStyles.cookButtonTextDisabled]}>
+              🎒 {t('recipe_ingredients_ready')}
+            </Text>
+          </View>
+        </PressableScale>
+
+        {/* Start Cooking */}
+        <PressableScale
+          onPress={hasSteps ? () => router.push(`/cook/${recipe.id}`) : undefined}
+          disabled={!hasSteps}
+          style={rdStyles.cookButtonWrapper}
+        >
+          <View style={[rdStyles.cookButton, !hasSteps && rdStyles.cookButtonDisabled]}>
+            <Text style={[rdStyles.cookButtonText, !hasSteps && rdStyles.cookButtonTextDisabled]}>
+              {t('detail_start_cooking')}
+            </Text>
+          </View>
+        </PressableScale>
+        {!hasSteps && (
+          <Text style={rdStyles.cookNoSteps}>{t('cook_no_steps')}</Text>
+        )}
+      </View>
     </ScrollView>
   );
 }
@@ -141,4 +206,13 @@ const rdStyles = {
   tileCheck: { fontFamily: 'PressStart2P_400Regular', color: '#4a9e6b', fontSize: 7, marginTop: 2 } as const,
   tileCross: { fontFamily: 'PressStart2P_400Regular', color: '#c0392b', fontSize: 7, marginTop: 2 } as const,
   steps: { fontFamily: 'PressStart2P_400Regular', color: '#c8c8e8', fontSize: 8, lineHeight: 20 } as const,
+  cookSection: { marginTop: 32, gap: 12 } as const,
+  cookButtonWrapper: { width: '100%' } as const,
+  ingButton: { borderWidth: 1, borderColor: '#c8a84b', padding: 20, alignItems: 'center' as const },
+  ingButtonText: { fontFamily: 'PressStart2P_400Regular', color: '#c8a84b', fontSize: 9 } as const,
+  cookButton: { borderWidth: 1, borderColor: '#e2b96f', padding: 20, alignItems: 'center' as const },
+  cookButtonDisabled: { borderColor: '#4a4a6a' } as const,
+  cookButtonText: { fontFamily: 'PressStart2P_400Regular', color: '#e2b96f', fontSize: 10 } as const,
+  cookButtonTextDisabled: { color: '#4a4a6a' } as const,
+  cookNoSteps: { fontFamily: 'PressStart2P_400Regular', color: '#4a4a6a', fontSize: 8, textAlign: 'center' as const, lineHeight: 18 },
 };

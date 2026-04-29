@@ -56,7 +56,12 @@ export default function Layout() {
                   animation: 'slide_from_right',
                   contentStyle: { backgroundColor: '#1a1a2e' },
                 }}
-              />
+              >
+                <Stack.Screen
+                  name="cook"
+                  options={{ headerShown: false, contentStyle: { backgroundColor: '#16213e' } }}
+                />
+              </Stack>
               <StatusBar style="light" />
             </View>
           </InventoryProvider>

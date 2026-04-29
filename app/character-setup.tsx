@@ -26,11 +26,11 @@ export default function CharacterSetup() {
 
   const handleBegin = async () => {
     if (!nickname.trim()) {
-      Alert.alert('Missing name', 'Enter a name for your hero.');
+      Alert.alert(t('setup_error_missing_name'), t('setup_error_missing_name_msg'));
       return;
     }
     if (nickname.trim().length > 14) {
-      Alert.alert('Name too long', 'Keep it under 14 characters.');
+      Alert.alert(t('setup_error_name_long'), t('setup_error_name_long_msg'));
       return;
     }
     setSaving(true);
@@ -45,7 +45,9 @@ export default function CharacterSetup() {
         ownedItems: ['starter_robe', 'starter_staff'],
       }, { merge: true });
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      router.replace('/home');
+      setTimeout(() => {
+        router.replace('/home');
+      }, 50);
     } catch (err) {
       Alert.alert('Error', String(err));
     } finally {
@@ -57,14 +59,14 @@ export default function CharacterSetup() {
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
 
       {/* ─── Title ─────────────────────────────────────────────────────────── */}
-      <Text style={styles.title}>CREATE{'\n'}YOUR HERO</Text>
-      <Text style={styles.subtitle}>Your legend begins here.</Text>
+      <Text style={styles.title}>{t('setup_title')}</Text>
+      <Text style={styles.subtitle}>{t('setup_subtitle')}</Text>
 
       {/* ─── Nickname ──────────────────────────────────────────────────────── */}
-      <Text style={styles.label}>HERO NAME</Text>
+      <Text style={styles.label}>{t('setup_hero_name')}</Text>
       <TextInput
         style={styles.input}
-        placeholder="Enter a name..."
+        placeholder={t('setup_name_placeholder')}
         placeholderTextColor="#4a4a6a"
         value={nickname}
         onChangeText={setNickname}
@@ -107,7 +109,7 @@ export default function CharacterSetup() {
       <PressableScale onPress={handleBegin} disabled={saving}>
         <View style={[styles.button, saving && styles.buttonDisabled]}>
           <Text style={styles.buttonText}>
-            {saving ? 'SUMMONING...' : 'BEGIN QUEST  ▶'}
+            {saving ? t('setup_summoning') : t('setup_begin')}
           </Text>
         </View>
       </PressableScale>

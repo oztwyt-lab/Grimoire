@@ -9,11 +9,16 @@ import * as Haptics from 'expo-haptics';
 
 export default function Settings() {
   const router = useRouter();
-  const { user, deleteAccount } = useAuth();
+  const { user, deleteAccount, logout } = useAuth();
   const { language, setLanguage, t } = useLanguage();
   const [confirming, setConfirming] = useState(false);
   const [password, setPassword] = useState('');
   const [deleting, setDeleting] = useState(false);
+
+  const handleLogout = async () => {
+    await logout();
+    router.replace('/');
+  };
 
   const handleDelete = async () => {
     if (!password.trim()) return;
@@ -79,6 +84,12 @@ export default function Settings() {
 
       {/* ─── Danger Zone ──────────────────────────────────────────────────── */}
       <Text style={sStyles.dangerLabel}>{t('settings_danger')}</Text>
+      <Pressable
+        style={({ pressed }) => [sStyles.deleteButton, pressed && { opacity: 0.8 }]}
+        onPress={handleLogout}
+      >
+        <Text style={sStyles.deleteButtonText}>{t('settings_logout')}</Text>
+      </Pressable>
       {!confirming ? (
         <Pressable
           style={({ pressed }) => [sStyles.deleteButton, pressed && { opacity: 0.8 }]}

@@ -7,7 +7,15 @@ import { useLanguage } from '../src/context/LanguageContext';
 import * as Haptics from 'expo-haptics';
  
 const CUSTOM_EMOJIS = ['🍽️','🥘','🫕','🥗','🍲','🧆','🥙','🌮','🍜','🥫','🧂','🫙','🌿','🍵','🥤','🧃','🫗','🍶','🧁','🍰','🎂','🍩','🍪','🍫','🍬','🍭','🥐','🍞','🥖','🥨','🧇','🥞','🧈','🍳','🥚','🧀','🥩','🍗','🍖','🌭','🍔','🍟','🍕','🫓','🥪','🌯','🫔','🍱','🍛','🍝','🍠','🍢','🍣','🍤','🍙','🍚','🍘','🍥','🥮','🍡','🍦','🍧','🍨','🥧','🍮','🍯'];
- 
+const UNIT_OPTIONS = ['', 'g', 'kg', 'ml', 'L', 'tsp', 'tbsp', 'cup', 'pcs', 'pinch'];
+const NUTRITION_STATS = [
+  { key: 'cal', label: 'CAL', value: 0, color: '#e2b96f' },
+  { key: 'protein', label: 'PRO', value: 0, color: '#6fcf97' },
+  { key: 'fat', label: 'FAT', value: 0, color: '#bb86fc' },
+  { key: 'carb', label: 'CARB', value: 0, color: '#56ccf2' },
+];
+const BUFF_TEXT = 'BUFFS: Effects unknown. This ingredient will later reveal what it supports, boosts, and restores.';
+
 export default function IngredientPicker() {
   const router = useRouter();
   const { t, language } = useLanguage();
@@ -16,6 +24,8 @@ export default function IngredientPicker() {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedIngredient, setSelectedIngredient] = useState<Ingredient | null>(null);
   const [quantity, setQuantity] = useState('');
+  const [selectedUnit, setSelectedUnit] = useState('');
+  const [showUnitPicker, setShowUnitPicker] = useState(false);
   const [customMode, setCustomMode] = useState(false);
   const [customName, setCustomName] = useState('');
   const [customEmoji, setCustomEmoji] = useState('🍽️');
@@ -32,11 +42,15 @@ export default function IngredientPicker() {
     setSelectedIngredient(ingredient);
     setCustomMode(false);
     setQuantity('');
+    setSelectedUnit('');
+    setShowUnitPicker(false);
   };
+
+  const getQuantityText = () => [quantity.trim(), selectedUnit].filter(Boolean).join(' ');
  
   const handleConfirm = () => {
     if (!selectedIngredient) return;
-    const result = { id: selectedIngredient.id, name: iname(selectedIngredient), emoji: selectedIngredient.emoji, quantity };
+    const result = { id: selectedIngredient.id, name: iname(selectedIngredient), emoji: selectedIngredient.emoji, quantity: getQuantityText() };
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     router.back();
     setTimeout(() => resolveIngredient(result), 150);
@@ -44,7 +58,7 @@ export default function IngredientPicker() {
  
   const handleCustomConfirm = () => {
     if (!customName.trim()) return;
-    const result = { id: `custom_${Date.now()}`, name: customName.trim(), emoji: customEmoji, quantity };
+    const result = { id: `custom_${Date.now()}`, name: customName.trim(), emoji: customEmoji, quantity: getQuantityText() };
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     router.back();
     setTimeout(() => resolveIngredient(result), 150);
@@ -76,7 +90,7 @@ export default function IngredientPicker() {
           </Pressable>
         )}
         ListFooterComponent={
-          <Pressable style={({ pressed }) => [ipStyles.customButton, pressed && { backgroundColor: '#16213e' }]} onPress={() => { setCustomMode(true); setSelectedIngredient(null); }}>
+          <Pressable style={({ pressed }) => [ipStyles.customButton, pressed && { backgroundColor: '#16213e' }]} onPress={() => { setCustomMode(true); setSelectedIngredient(null); setSelectedUnit(''); setShowUnitPicker(false); }}>
             <Text style={ipStyles.customButtonText}>{t('picker_custom_button')}</Text>
           </Pressable>
         }
@@ -101,19 +115,67 @@ export default function IngredientPicker() {
               </View>
             </ScrollView>
           )}
-          <TextInput style={[ipStyles.quantityInput, { marginTop: 8 }]} placeholder={t('picker_quantity')} placeholderTextColor="#94a3b8" value={quantity} onChangeText={setQuantity} />
+          <View style={[ipStyles.quantityUnitRow, { marginTop: 8 }]}>
+            <TextInput style={[ipStyles.quantityInput, ipStyles.quantityInputWithUnit]} placeholder={t('picker_quantity')} placeholderTextColor="#94a3b8" value={quantity} onChangeText={setQuantity} />
+            <Pressable style={({ pressed }) => [ipStyles.unitButton, pressed && { backgroundColor: '#2d2d4e' }]} onPress={() => setShowUnitPicker(!showUnitPicker)}>
+              <Text style={ipStyles.unitButtonText}>{selectedUnit || 'UNIT'}</Text>
+            </Pressable>
+          </View>
+          {showUnitPicker && (
+            <View style={ipStyles.unitGrid}>
+              {UNIT_OPTIONS.map(unit => (
+                <Pressable key={unit || 'none'} style={[ipStyles.unitOption, selectedUnit === unit && ipStyles.unitOptionSelected]} onPress={() => { setSelectedUnit(unit); setShowUnitPicker(false); }}>
+                  <Text style={ipStyles.unitOptionText}>{unit || '-'}</Text>
+                </Pressable>
+              ))}
+            </View>
+          )}
           <Pressable style={({ pressed }) => [ipStyles.confirmButton, pressed && { backgroundColor: '#2d2d4e' }]} onPress={handleCustomConfirm}>
             <Text style={ipStyles.confirmText}>{t('picker_add')}</Text>
           </Pressable>
         </View>
       )}
       {selectedIngredient && !customMode && (
-        <View style={ipStyles.quantityBar}>
-          <Text style={ipStyles.quantityLabel}>{iname(selectedIngredient)}</Text>
-          <TextInput style={ipStyles.quantityInput} placeholder={t('picker_quantity')} placeholderTextColor="#94a3b8" value={quantity} onChangeText={setQuantity} />
-          <Pressable style={({ pressed }) => [ipStyles.confirmButton, pressed && { backgroundColor: '#2d2d4e' }]} onPress={handleConfirm}>
-            <Text style={ipStyles.confirmText}>{t('picker_add')}</Text>
-          </Pressable>
+        <View style={ipStyles.cardOverlay}>
+          <Pressable style={ipStyles.cardBackdrop} onPress={() => setSelectedIngredient(null)} />
+          <View style={ipStyles.quantityCard}>
+            <Text style={ipStyles.quantityLabel}>{iname(selectedIngredient)}</Text>
+            <View style={ipStyles.ingredientArtSlot} />
+            <View style={ipStyles.statPanel}>
+              {NUTRITION_STATS.map(stat => (
+                <View key={stat.key} style={ipStyles.statRow}>
+                  <Text style={ipStyles.statLabel}>{stat.label}</Text>
+                  <View style={ipStyles.statTrack}>
+                    <View style={[ipStyles.statFill, { width: `${stat.value}%`, backgroundColor: stat.color }]} />
+                  </View>
+                  <Text style={ipStyles.statValue}>{stat.value}</Text>
+                </View>
+              ))}
+            </View>
+            <View style={ipStyles.buffPanel}>
+              <Text style={ipStyles.buffText}>{BUFF_TEXT}</Text>
+            </View>
+            <View style={ipStyles.quantityControls}>
+              <View style={ipStyles.quantityUnitRow}>
+                <TextInput style={[ipStyles.quantityInput, ipStyles.quantityInputWithUnit]} placeholder={t('picker_quantity')} placeholderTextColor="#94a3b8" value={quantity} onChangeText={setQuantity} />
+                <Pressable style={({ pressed }) => [ipStyles.unitButton, pressed && { backgroundColor: '#2d2d4e' }]} onPress={() => setShowUnitPicker(!showUnitPicker)}>
+                  <Text style={ipStyles.unitButtonText}>{selectedUnit || 'UNIT'}</Text>
+                </Pressable>
+              </View>
+              {showUnitPicker && (
+                <View style={ipStyles.unitGrid}>
+                  {UNIT_OPTIONS.map(unit => (
+                    <Pressable key={unit || 'none'} style={[ipStyles.unitOption, selectedUnit === unit && ipStyles.unitOptionSelected]} onPress={() => { setSelectedUnit(unit); setShowUnitPicker(false); }}>
+                      <Text style={ipStyles.unitOptionText}>{unit || '-'}</Text>
+                    </Pressable>
+                  ))}
+                </View>
+              )}
+              <Pressable style={({ pressed }) => [ipStyles.confirmButton, pressed && { backgroundColor: '#2d2d4e' }]} onPress={handleConfirm}>
+                <Text style={ipStyles.confirmText}>{t('picker_add')}</Text>
+              </Pressable>
+            </View>
+          </View>
         </View>
       )}
       <Pressable style={({ pressed }) => [pressed && { opacity: 0.5 }]} onPress={() => router.back()}>
@@ -139,8 +201,29 @@ const ipStyles = {
   customButton: { borderWidth: 1, borderColor: '#2d2d4e', padding: 16, alignItems: 'center' as const, marginVertical: 8 },
   customButtonText: { fontFamily: 'PressStart2P_400Regular', color: '#4a4a6a', fontSize: 8 } as const,
   quantityBar: { backgroundColor: '#16213e', borderWidth: 1, borderColor: '#2d2d4e', padding: 16, marginBottom: 12 } as const,
+  cardOverlay: { position: 'absolute' as const, top: 0, right: 0, bottom: 0, left: 0, alignItems: 'center' as const, justifyContent: 'center' as const, padding: 24 },
+  cardBackdrop: { position: 'absolute' as const, top: 0, right: 0, bottom: 0, left: 0, backgroundColor: 'rgba(10, 10, 20, 0.58)' },
+  quantityCard: { width: '100%' as const, maxWidth: 370, minHeight: 590, backgroundColor: '#16213e', borderWidth: 2, borderColor: '#e2b96f', padding: 20, justifyContent: 'space-between' as const },
+  ingredientArtSlot: { height: 150, marginTop: 16, marginBottom: 12, backgroundColor: '#1a1a2e', borderWidth: 1, borderColor: '#2d2d4e' },
+  statPanel: { marginBottom: 12, gap: 6 },
+  statRow: { flexDirection: 'row' as const, alignItems: 'center' as const, gap: 8 },
+  statLabel: { width: 36, fontFamily: 'PressStart2P_400Regular', color: '#c8c8e8', fontSize: 7 } as const,
+  statTrack: { flex: 1, height: 8, backgroundColor: '#1a1a2e', borderWidth: 1, borderColor: '#2d2d4e' },
+  statFill: { height: '100%' as const },
+  statValue: { width: 22, fontFamily: 'PressStart2P_400Regular', color: '#e2b96f', fontSize: 7, textAlign: 'right' as const },
+  buffPanel: { backgroundColor: '#1a1a2e', borderWidth: 1, borderColor: '#2d2d4e', padding: 10, marginBottom: 12 },
+  buffText: { fontFamily: 'PressStart2P_400Regular', color: '#c8c8e8', fontSize: 7, lineHeight: 14 } as const,
+  quantityControls: { marginTop: 'auto' as const },
   quantityLabel: { fontFamily: 'PressStart2P_400Regular', color: '#e2b96f', fontSize: 10, marginBottom: 8 } as const,
   quantityInput: { backgroundColor: '#1a1a2e', color: '#c8c8e8', borderWidth: 1, borderColor: '#2d2d4e', padding: 12, marginBottom: 8 } as const,
+  quantityUnitRow: { flexDirection: 'row' as const, alignItems: 'stretch' as const, gap: 8 },
+  quantityInputWithUnit: { flex: 1, marginBottom: 8 },
+  unitButton: { width: 86, backgroundColor: '#1a1a2e', borderWidth: 1, borderColor: '#e2b96f', paddingHorizontal: 8, alignItems: 'center' as const, justifyContent: 'center' as const, marginBottom: 8 },
+  unitButtonText: { fontFamily: 'PressStart2P_400Regular', color: '#e2b96f', fontSize: 8 } as const,
+  unitGrid: { flexDirection: 'row' as const, flexWrap: 'wrap' as const, marginBottom: 8, gap: 6 },
+  unitOption: { minWidth: 52, borderWidth: 1, borderColor: '#2d2d4e', backgroundColor: '#1a1a2e', paddingVertical: 8, paddingHorizontal: 8, alignItems: 'center' as const },
+  unitOptionSelected: { borderColor: '#e2b96f', backgroundColor: '#2d2d4e' } as const,
+  unitOptionText: { fontFamily: 'PressStart2P_400Regular', color: '#c8c8e8', fontSize: 7 } as const,
   confirmButton: { borderWidth: 2, borderColor: '#e2b96f', padding: 12, alignItems: 'center' as const },
   confirmText: { fontFamily: 'PressStart2P_400Regular', color: '#e2b96f', fontSize: 10 } as const,
   cancel: { fontFamily: 'PressStart2P_400Regular', color: '#4a4a6a', textAlign: 'center' as const, marginTop: 8, fontSize: 8 },

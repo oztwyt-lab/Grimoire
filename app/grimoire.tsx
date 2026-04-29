@@ -186,9 +186,7 @@ export default function Grimoire() {
           <Text style={gStyles.back}>{t('grimoire_back')}</Text>
         </Pressable>
         <Text style={gStyles.title}>{t('grimoire_title')}</Text>
-        <Pressable style={({ pressed }) => [pressed && { opacity: 0.5 }]} onPress={() => router.push('/account')}>
-          <Text style={gStyles.headerAction}>⚙</Text>
-        </Pressable>
+        <View style={gStyles.headerSpacer} />
       </View>
 
       {/* ─── Character card ───────────────────────────────────────────────── */}
@@ -266,8 +264,8 @@ export default function Grimoire() {
 const gStyles = {
   container: { flex: 1, backgroundColor: '#1a1a2e', padding: 24, paddingTop: 60 } as const,
   header: { flexDirection: 'row' as const, justifyContent: 'space-between' as const, alignItems: 'center' as const, marginBottom: 8 },
-  headerAction: { fontFamily: 'PressStart2P_400Regular', color: '#4a4a6a', fontSize: 14 } as const,
-  back: { fontFamily: 'PressStart2P_400Regular', color: '#4a4a6a', fontSize: 8 } as const,
+  headerSpacer: { width: 44 } as const,
+  back: { fontFamily: 'PressStart2P_400Regular', color: '#c84b4b', fontSize: 8 } as const,
   title: { fontFamily: 'PressStart2P_400Regular', color: '#e2b96f', fontSize: 20 } as const,
   subtitle: { fontFamily: 'PressStart2P_400Regular', color: '#4a4a6a', fontSize: 8, marginBottom: 16 } as const,
   characterCard: { backgroundColor: '#16213e', borderWidth: 1, borderColor: '#2d2d4e', padding: 14, marginBottom: 16 } as const,

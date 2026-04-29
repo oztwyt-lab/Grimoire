@@ -7,6 +7,7 @@ type InventoryContextType = {
   addItem: (item: InventoryItem) => Promise<void>;
   removeItem: (id: string) => Promise<void>;
   updateItem: (id: string, quantity: number, metric: string) => Promise<void>;
+  bulkSetItems: (items: InventoryItem[]) => Promise<void>;
 };
 
 const InventoryContext = createContext<InventoryContextType>({
@@ -14,6 +15,7 @@ const InventoryContext = createContext<InventoryContextType>({
   addItem: async () => {},
   removeItem: async () => {},
   updateItem: async () => {},
+  bulkSetItems: async () => {},
 });
 
 export function InventoryProvider({ children }: { children: ReactNode }) {
@@ -51,8 +53,21 @@ export function InventoryProvider({ children }: { children: ReactNode }) {
     persist(ref.current.map(i => i.id === id ? { ...i, quantity, metric } : i));
   }, [persist]);
 
+  const bulkSetItems = useCallback(async (items: InventoryItem[]) => {
+    const merged = [...ref.current];
+    for (const newItem of items) {
+      const idx = merged.findIndex(i => i.id === newItem.id);
+      if (idx >= 0) {
+        merged[idx] = newItem;
+      } else {
+        merged.push(newItem);
+      }
+    }
+    persist(merged);
+  }, [persist]);
+
   return (
-    <InventoryContext.Provider value={{ inventory, addItem, removeItem, updateItem }}>
+    <InventoryContext.Provider value={{ inventory, addItem, removeItem, updateItem, bulkSetItems }}>
       {children}
     </InventoryContext.Provider>
   );
