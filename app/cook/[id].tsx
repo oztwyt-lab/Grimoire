@@ -1,5 +1,5 @@
 import { useState, useReducer, useEffect, useRef, useCallback } from 'react';
-import { View, Text, Alert, ScrollView, useWindowDimensions, StyleSheet, Image } from 'react-native';
+import { View, Text, Alert, useWindowDimensions, StyleSheet, Image } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { doc, getDoc } from '@firebase/firestore';
 import { db } from '../../firebase';
@@ -39,6 +39,7 @@ type BattlePhase =
 type BattleAction =
   | { type: 'INIT'; totalSteps: number }
   | { type: 'NEXT_STEP' }
+  | { type: 'PREV_STEP' }
   | { type: 'ATTACK_DONE' }
   | { type: 'COUNTERATTACK_DONE'; dodgeSuccess: boolean }
   | { type: 'DEFEAT_DONE' };
@@ -73,6 +74,10 @@ function battleReducer(state: BattleState, action: BattleAction): BattleState {
   switch (action.type) {
     case 'INIT':
       return makeInitial(action.totalSteps);
+
+    case 'PREV_STEP':
+      if (state.phase !== 'IDLE' || state.currentStep <= 0) return state;
+      return { ...state, currentStep: state.currentStep - 1 };
 
     case 'NEXT_STEP': {
       if (state.phase !== 'IDLE' || state.currentStep >= state.totalSteps) return state;
@@ -479,6 +484,11 @@ export default function CookMode() {
     dispatch({ type: 'NEXT_STEP' });
   }
 
+  function handlePrevStep() {
+    if (battle.phase !== 'IDLE' || battle.currentStep <= 0) return;
+    dispatch({ type: 'PREV_STEP' });
+  }
+
   function handleExit() {
     Alert.alert(t('cook_exit_confirm'), '', [
       { text: t('cook_exit_no'), style: 'cancel' },
@@ -526,9 +536,12 @@ export default function CookMode() {
   const isComplete  = battle.currentStep >= totalSteps;
   const charIsAttacking = battle.phase === 'PLAYER_ATTACK';
 
+  const canGoBack = battle.currentStep > 0 && isIdle;
+
   return (
     <View style={s.container}>
-      {/* Top bar */}
+
+      {/* Section 1 — Top bar */}
       <View style={s.topBar}>
         <PressableScale onPress={handleExit} style={s.exitHitArea}>
           <Text style={s.exitText}>✕</Text>
@@ -541,14 +554,15 @@ export default function CookMode() {
         </Text>
       </View>
 
-      {/* Boss HP bar */}
-      <View style={s.bossHpTrack}>
-        <Animated.View style={[s.bossHpFill, bossHpStyle]} />
+      {/* Section 2 — Boss HP bar */}
+      <View style={s.bossHpSection}>
+        <View style={s.bossHpTrack}>
+          <Animated.View style={[s.bossHpFill, bossHpStyle]} />
+        </View>
       </View>
 
-      {/* Battle stage */}
+      {/* Section 3 — Battle arena */}
       <View style={s.battleStage}>
-        {/* Character (left) — tap = next step */}
         <PressableScale onPress={handleNextStep} style={s.heroSlot}>
           <Animated.View style={charAnimStyle}>
             <Image
@@ -563,7 +577,6 @@ export default function CookMode() {
           </Animated.View>
         </PressableScale>
 
-        {/* Fireball (player → boss) */}
         <Animated.View style={[s.fireballWrapper, fireballStyle]}>
           <Image
             source={require('../../assets/fireball_sheet.png')}
@@ -572,7 +585,6 @@ export default function CookMode() {
           />
         </Animated.View>
 
-        {/* Boss projectile (boss → player) */}
         <Animated.View style={[s.orbWrapper, bossProjectileStyle]}>
           <Image
             source={require('../../assets/boss_orb_sheet.png')}
@@ -581,14 +593,12 @@ export default function CookMode() {
           />
         </Animated.View>
 
-        {/* Damage number */}
         {battle.showDamageNumber && (
           <Animated.Text style={[s.damageNumber, damageAnimStyle]}>
             {battle.damageValue}
           </Animated.Text>
         )}
 
-        {/* Boss (right) */}
         <View style={s.bossSlot}>
           <Animated.View style={[s.bossBox, bossAnimStyle]}>
             <Animated.View style={bossFlashStyle} />
@@ -596,7 +606,7 @@ export default function CookMode() {
         </View>
       </View>
 
-      {/* Player HP bar */}
+      {/* Section 4 — Player HP bar */}
       <View style={s.playerHpRow}>
         <Text style={s.playerHpLabel}>HP</Text>
         <View style={s.playerHpTrack}>
@@ -604,32 +614,33 @@ export default function CookMode() {
         </View>
       </View>
 
-      {/* Step card */}
+      {/* Section 5 — Step card (flex:1) */}
       <Animated.View style={[s.stepCard, stepSlideStyle]}>
         <Text style={s.stepLabel}>
-          {t('cook_step')} {Math.min(battle.currentStep + 1, totalSteps)}
+          {t('cook_step')} {Math.min(battle.currentStep + 1, totalSteps)} / {totalSteps}
         </Text>
         <Text style={s.actionEmoji}>{emoji}</Text>
-        <ScrollView
-          style={s.stepScroll}
-          contentContainerStyle={s.stepScrollContent}
-          showsVerticalScrollIndicator={false}
-        >
-          <Text style={s.stepText}>{stepText}</Text>
-          {durationStr && (
-            <View style={s.durationBadge}>
-              <Text style={s.durationText}>{durationStr}</Text>
-            </View>
-          )}
-        </ScrollView>
+        <Text style={s.stepText}>{stepText}</Text>
+        {durationStr && (
+          <View style={s.durationBadge}>
+            <Text style={s.durationText}>{durationStr}</Text>
+          </View>
+        )}
       </Animated.View>
 
-      {/* Bottom button */}
+      {/* Section 6 — Bottom buttons */}
       {!isComplete && (
         <View style={s.bottomArea}>
+          {canGoBack && (
+            <PressableScale onPress={handlePrevStep} style={s.backButton}>
+              <View style={s.backButtonInner}>
+                <Text style={s.backButtonText}>← {t('cook_back')}</Text>
+              </View>
+            </PressableScale>
+          )}
           <PressableScale
             onPress={handleNextStep}
-            style={[s.fullWidthButton, !isIdle && s.buttonDisabled]}
+            style={[canGoBack ? s.nextButton : s.fullWidthButton, !isIdle && s.buttonDisabled]}
           >
             <View style={isLastStep ? s.doneButtonInner : s.nextButtonInner}>
               <Text style={isLastStep ? s.doneButtonText : s.nextButtonText}>
@@ -667,54 +678,67 @@ export default function CookMode() {
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
 const s = StyleSheet.create({
-  container:         { flex: 1, backgroundColor: '#16213e', paddingTop: 48 },
-  center:            { flex: 1, backgroundColor: '#16213e', alignItems: 'center', justifyContent: 'center', padding: 24 },
-  mutedText:         { fontFamily: 'PressStart2P_400Regular', color: '#4a4a6a', fontSize: 8 },
-  errorText:         { fontFamily: 'PressStart2P_400Regular', color: '#c8c8e8', fontSize: 9, textAlign: 'center', lineHeight: 20, marginBottom: 24 },
-  errorBackButton:   { borderWidth: 1, borderColor: '#4a4a6a', paddingHorizontal: 20, paddingVertical: 14 },
+  // Root
+  container:    { flex: 1, backgroundColor: '#16213e' },
+  center:       { flex: 1, backgroundColor: '#16213e', alignItems: 'center', justifyContent: 'center', padding: 24 },
+  mutedText:    { fontFamily: 'PressStart2P_400Regular', color: '#4a4a6a', fontSize: 8 },
+  errorText:    { fontFamily: 'PressStart2P_400Regular', color: '#c8c8e8', fontSize: 9, textAlign: 'center', lineHeight: 20, marginBottom: 24 },
+  errorBackButton: { borderWidth: 1, borderColor: '#4a4a6a', paddingHorizontal: 20, paddingVertical: 14 },
 
-  topBar:            { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 10, gap: 12 },
-  exitHitArea:       { width: 36, height: 36, alignItems: 'center', justifyContent: 'center' },
-  exitText:          { fontFamily: 'PressStart2P_400Regular', color: '#e2b96f', fontSize: 14 },
-  topTitle:          { flex: 1, fontFamily: 'PressStart2P_400Regular', color: '#e2b96f', fontSize: 7, textAlign: 'center' },
-  stepCounter:       { fontFamily: 'PressStart2P_400Regular', color: '#4a4a6a', fontSize: 8, minWidth: 40, textAlign: 'right' },
+  // Section 1 — Top bar
+  topBar:       { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingTop: 48, paddingBottom: 8, gap: 12 },
+  exitHitArea:  { width: 36, height: 36, alignItems: 'center', justifyContent: 'center' },
+  exitText:     { fontFamily: 'PressStart2P_400Regular', color: '#e2b96f', fontSize: 14 },
+  topTitle:     { flex: 1, fontFamily: 'PressStart2P_400Regular', color: '#e2b96f', fontSize: 7, textAlign: 'center' },
+  stepCounter:  { fontFamily: 'PressStart2P_400Regular', color: '#4a4a6a', fontSize: 8, minWidth: 40, textAlign: 'right' },
 
-  bossHpTrack:       { height: 10, backgroundColor: '#2a2a4a', marginHorizontal: 16, marginBottom: 2, borderWidth: 1, borderColor: '#4a4a6a' },
-  bossHpFill:        { height: '100%', backgroundColor: '#c84b4b' },
-  playerHpRow:       { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, marginTop: 4, gap: 8 },
-  playerHpLabel:     { fontFamily: 'PressStart2P_400Regular', color: '#6fcf97', fontSize: 7, width: 20 },
-  playerHpTrack:     { flex: 1, height: 8, backgroundColor: '#2a2a4a', borderWidth: 1, borderColor: '#4a4a6a' },
-  playerHpFill:      { height: '100%', backgroundColor: '#6fcf97' },
+  // Section 2 — Boss HP
+  bossHpSection: { paddingHorizontal: 16, marginBottom: 8 },
+  bossHpTrack:  { height: 10, backgroundColor: '#2a2a4a', borderWidth: 1, borderColor: '#4a4a6a' },
+  bossHpFill:   { height: '100%', backgroundColor: '#c84b4b' },
 
-  battleStage:       { height: 140, flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', paddingHorizontal: 16, paddingBottom: 8, position: 'relative' },
-  heroSlot:          { width: 88, height: 112 },
-  heroImage:         { width: 88, height: 112 },
-  bossSlot:          { width: 120, height: 120, alignItems: 'center', justifyContent: 'center' },
-  bossBox:           { width: 120, height: 120, backgroundColor: '#4a2a6a', borderWidth: 2, borderColor: '#c8a84b', overflow: 'hidden' },
+  // Section 3 — Battle arena
+  battleStage:  { height: 180, flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', paddingHorizontal: 16, marginBottom: 8, position: 'relative' },
+  heroSlot:     { width: 80, height: 100 },
+  heroImage:    { width: 80, height: 100 },
+  bossSlot:     { width: 120, height: 120, alignItems: 'center', justifyContent: 'center' },
+  bossBox:      { width: 120, height: 120, backgroundColor: '#4a2a6a', borderWidth: 2, borderColor: '#c8a84b', overflow: 'hidden' },
 
-  fireballWrapper:   { position: 'absolute', bottom: 40, left: 80, width: 56, height: 56, overflow: 'hidden' },
-  fireballSheet:     { width: 56 * 3, height: 56 },
-  orbWrapper:        { position: 'absolute', bottom: 60, right: 112, width: 48, height: 48, overflow: 'hidden' },
-  orbSheet:          { width: 48 * 2, height: 48 },
-  damageNumber:      { position: 'absolute', bottom: 100, right: 130, fontFamily: 'PressStart2P_400Regular', color: '#ff6600', fontSize: 12 },
+  // Projectiles & FX
+  fireballWrapper: { position: 'absolute', bottom: 48, left: 76, width: 56, height: 56, overflow: 'hidden' },
+  fireballSheet:   { width: 56 * 3, height: 56 },
+  orbWrapper:      { position: 'absolute', bottom: 40, right: 112, width: 48, height: 48, overflow: 'hidden' },
+  orbSheet:        { width: 48 * 2, height: 48 },
+  damageNumber:    { position: 'absolute', bottom: 100, right: 110, fontFamily: 'PressStart2P_400Regular', color: '#ff6600', fontSize: 12 },
 
-  stepCard:          { flex: 1, paddingHorizontal: 24, paddingTop: 16, alignItems: 'center', overflow: 'hidden' },
-  stepLabel:         { fontFamily: 'PressStart2P_400Regular', color: '#4a4a6a', fontSize: 8, marginBottom: 12, alignSelf: 'flex-start' },
-  actionEmoji:       { fontSize: 48, marginBottom: 12 },
-  stepScroll:        { flex: 1, width: '100%' },
-  stepScrollContent: { flexGrow: 1, alignItems: 'center', paddingBottom: 16 },
-  stepText:          { fontFamily: 'PressStart2P_400Regular', color: '#c8c8e8', fontSize: 10, textAlign: 'center', lineHeight: 24 },
-  durationBadge:     { marginTop: 16, borderWidth: 1, borderColor: '#c8a84b', paddingHorizontal: 16, paddingVertical: 8, alignSelf: 'center' },
-  durationText:      { fontFamily: 'PressStart2P_400Regular', color: '#4a4a6a', fontSize: 8 },
+  // Section 4 — Player HP
+  playerHpRow:  { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, marginBottom: 12, gap: 8 },
+  playerHpLabel: { fontFamily: 'PressStart2P_400Regular', color: '#6fcf97', fontSize: 7, width: 20 },
+  playerHpTrack: { flex: 1, height: 8, backgroundColor: '#2a2a4a', borderWidth: 1, borderColor: '#4a4a6a' },
+  playerHpFill:  { height: '100%', backgroundColor: '#6fcf97' },
 
-  bottomArea:        { paddingHorizontal: 24, paddingBottom: 36, paddingTop: 12 },
-  fullWidthButton:   { width: '100%' },
-  buttonDisabled:    { opacity: 0.4 },
-  nextButtonInner:   { borderWidth: 1, borderColor: '#e2b96f', padding: 20, alignItems: 'center' },
-  nextButtonText:    { fontFamily: 'PressStart2P_400Regular', color: '#e2b96f', fontSize: 10 },
-  doneButtonInner:   { backgroundColor: '#c8a84b', padding: 20, alignItems: 'center' },
-  doneButtonText:    { fontFamily: 'PressStart2P_400Regular', color: '#1a1a2e', fontSize: 10 },
+  // Section 5 — Step card
+  stepCard:     { flex: 1, marginHorizontal: 16, marginBottom: 12, backgroundColor: '#1a1a2e', borderWidth: 1, borderColor: '#2a2a4a', borderRadius: 4, padding: 20, justifyContent: 'center', alignItems: 'center' },
+  stepLabel:    { fontFamily: 'PressStart2P_400Regular', color: '#4a4a6a', fontSize: 7, marginBottom: 16 },
+  actionEmoji:  { fontSize: 40, marginBottom: 16 },
+  stepText:     { fontFamily: 'PressStart2P_400Regular', color: '#c8c8e8', fontSize: 10, textAlign: 'center', lineHeight: 24 },
+  durationBadge: { marginTop: 20, borderWidth: 1, borderColor: '#c8a84b', paddingHorizontal: 16, paddingVertical: 8 },
+  durationText:  { fontFamily: 'PressStart2P_400Regular', color: '#4a4a6a', fontSize: 8 },
 
+  // Section 6 — Bottom buttons
+  bottomArea:      { flexDirection: 'row', paddingHorizontal: 16, paddingBottom: 24, gap: 12 },
+  backButton:      { flex: 1 },
+  backButtonInner: { borderWidth: 1, borderColor: '#4a4a6a', padding: 18, alignItems: 'center', height: '100%', justifyContent: 'center' },
+  backButtonText:  { fontFamily: 'PressStart2P_400Regular', color: '#4a4a6a', fontSize: 8 },
+  nextButton:      { flex: 2 },
+  fullWidthButton: { flex: 1 },
+  buttonDisabled:  { opacity: 0.4 },
+  nextButtonInner: { borderWidth: 1, borderColor: '#e2b96f', padding: 18, alignItems: 'center' },
+  nextButtonText:  { fontFamily: 'PressStart2P_400Regular', color: '#e2b96f', fontSize: 10 },
+  doneButtonInner: { backgroundColor: '#c8a84b', padding: 18, alignItems: 'center' },
+  doneButtonText:  { fontFamily: 'PressStart2P_400Regular', color: '#1a1a2e', fontSize: 10 },
+
+  // Completion modal
   completionOverlay:         { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.85)', alignItems: 'center', justifyContent: 'center', padding: 24 },
   completionCard:            { backgroundColor: '#1a1a2e', borderWidth: 1, borderColor: '#2d2d4e', padding: 32, alignItems: 'center', width: '100%', gap: 16 },
   completionEmoji:           { fontSize: 64 },
