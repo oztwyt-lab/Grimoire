@@ -71,7 +71,6 @@ export default function RecipeDetail() {
       metric: 'adet',
     }));
     await bulkSetItems(items);
-    router.push(`/cook/${recipe.id}`);
   }
 
   if (loading) return <ActivityIndicator style={{ flex: 1 }} color="#e2b96f" />;

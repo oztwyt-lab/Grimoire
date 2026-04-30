@@ -1,9 +1,10 @@
 import { useState, useEffect, useRef } from 'react';
-import { View, Text, Alert, ScrollView, useWindowDimensions } from 'react-native';
+import { View, Text, Alert, ScrollView, useWindowDimensions, Image } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { doc, getDoc } from '@firebase/firestore';
 import { db } from '../../firebase';
 import { useLanguage } from '../../src/context/LanguageContext';
+import { useInventory } from '../../src/context/InventoryContext';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -15,12 +16,14 @@ import PressableScale from '../../src/components/PressableScale';
 import { getActionEmoji } from '../../src/utils/actionEmoji';
 
 type CookStep = { id: string; text: string; duration: number | null };
+type Ingredient = { id: string; quantity: string };
 
 type RawRecipe = {
   id: string;
   name: string;
   steps: CookStep[] | string;
   preparation?: string;
+  ingredients?: Ingredient[];
 };
 
 function splitTextToSteps(raw: string): CookStep[] {
@@ -58,16 +61,27 @@ function parseDuration(text: string): string | null {
   return m ? `⏱ ${m[1]} min` : null;
 }
 
+function parseRecipeQty(qty: string | undefined): number {
+  if (!qty) return 1;
+  const frac = qty.match(/^(\d+)\/(\d+)/);
+  if (frac) return parseInt(frac[1], 10) / parseInt(frac[2], 10);
+  const num = qty.match(/[\d.]+/);
+  return num ? parseFloat(num[0]) : 1;
+}
+
 export default function CookMode() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const { t } = useLanguage();
+  const { consumeItems } = useInventory();
   const { width: screenWidth } = useWindowDimensions();
 
   const [recipe, setRecipe] = useState<RawRecipe | null>(null);
   const [loading, setLoading] = useState(true);
   const [currentStep, setCurrentStep] = useState(0);
   const [showCompletion, setShowCompletion] = useState(false);
+  const [ingredientsConsumed, setIngredientsConsumed] = useState(false);
+  const [bossHits, setBossHits] = useState(0);
   const [barContainerWidth, setBarContainerWidth] = useState(0);
 
   const slideX = useSharedValue(0);
@@ -83,12 +97,20 @@ export default function CookMode() {
   const totalSteps = steps.length;
   const isLastStep = totalSteps > 0 && currentStep === totalSteps - 1;
   const activeStep = steps[currentStep];
+  const bossHealthPercent = totalSteps > 0
+    ? Math.max(0, ((totalSteps - bossHits) / totalSteps) * 100)
+    : 0;
+  const bossDefeated = totalSteps > 0 && bossHits >= totalSteps;
 
   useEffect(() => {
     const fetch = async () => {
       try {
         const snap = await getDoc(doc(db, 'recipes', id));
-        if (snap.exists()) setRecipe({ id: snap.id, ...snap.data() } as RawRecipe);
+        if (snap.exists()) {
+          setRecipe({ id: snap.id, ...snap.data() } as RawRecipe);
+          setBossHits(0);
+          setIngredientsConsumed(false);
+        }
       } catch (e) {
         console.error(e);
       } finally {
@@ -151,11 +173,38 @@ export default function CookMode() {
     });
   }
 
+  function handleNextStep() {
+    setBossHits(prev => Math.min(totalSteps, Math.max(prev, currentStep + 1)));
+    goToStep(currentStep + 1, 'forward');
+  }
+
   function handleExit() {
     Alert.alert(t('cook_exit_confirm'), '', [
       { text: t('cook_exit_no'), style: 'cancel' },
       { text: t('cook_exit_yes'), onPress: () => router.back() },
     ]);
+  }
+
+  async function handleCompleteCooking() {
+    setBossHits(totalSteps);
+
+    if (!recipe || ingredientsConsumed) {
+      setShowCompletion(true);
+      return;
+    }
+
+    const items = (recipe.ingredients ?? []).map(ing => ({
+      id: ing.id,
+      quantity: parseRecipeQty(ing.quantity),
+      metric: 'adet',
+    }));
+
+    if (items.length > 0) {
+      await consumeItems(items);
+    }
+
+    setIngredientsConsumed(true);
+    setShowCompletion(true);
   }
 
   if (loading) {
@@ -212,6 +261,21 @@ export default function CookMode() {
 
       {/* Step content */}
       <Animated.View style={[cStyles.contentArea, animatedContentStyle]}>
+        <View style={cStyles.battleCard}>
+          <View style={cStyles.battleStage}>
+            <View style={cStyles.heroSlot}>
+              <Image
+                source={require('../../assets/characters/wizard_fireball_cast.png')}
+                style={cStyles.heroImage}
+                resizeMode="contain"
+              />
+            </View>
+            <View style={[cStyles.bossSlot, bossDefeated && cStyles.bossSlotDefeated]} />
+          </View>
+          <View style={cStyles.bossHpTrack}>
+            <View style={[cStyles.bossHpFill, { width: `${bossHealthPercent}%` }]} />
+          </View>
+        </View>
         <Text style={cStyles.stepLabel}>
           {t('cook_step')} {currentStep + 1}
         </Text>
@@ -242,7 +306,7 @@ export default function CookMode() {
         )}
         {isLastStep ? (
           <PressableScale
-            onPress={() => setShowCompletion(true)}
+            onPress={handleCompleteCooking}
             style={cStyles.fullWidthButton}
           >
             <View style={cStyles.doneButtonInner}>
@@ -251,7 +315,7 @@ export default function CookMode() {
           </PressableScale>
         ) : (
           <PressableScale
-            onPress={() => goToStep(currentStep + 1, 'forward')}
+            onPress={handleNextStep}
             style={cStyles.fullWidthButton}
           >
             <View style={cStyles.nextButtonInner}>
@@ -318,6 +382,14 @@ const cStyles = {
   progressContainer: { height: 6, backgroundColor: '#2a2a4a', marginHorizontal: 16, marginBottom: 4 } as const,
   progressFill: { height: 6, backgroundColor: '#c8a84b' } as const,
   contentArea: { flex: 1, paddingHorizontal: 24, paddingTop: 20, alignItems: 'center' as const, overflow: 'hidden' as const },
+  battleCard: { width: '100%' as const, borderWidth: 1, borderColor: '#2d2d4e', backgroundColor: '#1a1a2e', padding: 12, marginBottom: 18 },
+  battleStage: { height: 130, flexDirection: 'row' as const, alignItems: 'flex-end' as const, justifyContent: 'space-between' as const },
+  heroSlot: { width: 88, height: 112, borderWidth: 1, borderColor: '#2d2d4e', backgroundColor: '#16213e', overflow: 'hidden' as const },
+  heroImage: { width: '100%' as const, height: '100%' as const },
+  bossSlot: { width: 112, height: 112, borderWidth: 1, borderColor: '#c84b4b', backgroundColor: '#16213e' },
+  bossSlotDefeated: { opacity: 0.35, borderColor: '#4a4a6a' } as const,
+  bossHpTrack: { height: 8, backgroundColor: '#2a2a4a', borderWidth: 1, borderColor: '#4a4a6a', marginTop: 10 },
+  bossHpFill: { height: '100%' as const, backgroundColor: '#c84b4b' },
   stepLabel: { fontFamily: 'PressStart2P_400Regular', color: '#4a4a6a', fontSize: 8, marginBottom: 20, alignSelf: 'flex-start' as const },
   actionEmoji: { fontSize: 64, marginBottom: 20 } as const,
   stepScroll: { flex: 1, width: '100%' } as const,

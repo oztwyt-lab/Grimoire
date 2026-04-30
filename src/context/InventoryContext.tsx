@@ -8,6 +8,7 @@ type InventoryContextType = {
   removeItem: (id: string) => Promise<void>;
   updateItem: (id: string, quantity: number, metric: string) => Promise<void>;
   bulkSetItems: (items: InventoryItem[]) => Promise<void>;
+  consumeItems: (items: InventoryItem[]) => Promise<void>;
 };
 
 const InventoryContext = createContext<InventoryContextType>({
@@ -16,6 +17,7 @@ const InventoryContext = createContext<InventoryContextType>({
   removeItem: async () => {},
   updateItem: async () => {},
   bulkSetItems: async () => {},
+  consumeItems: async () => {},
 });
 
 export function InventoryProvider({ children }: { children: ReactNode }) {
@@ -66,8 +68,22 @@ export function InventoryProvider({ children }: { children: ReactNode }) {
     persist(merged);
   }, [persist]);
 
+  const consumeItems = useCallback(async (items: InventoryItem[]) => {
+    let next = [...ref.current];
+    for (const consumed of items) {
+      next = next
+        .map(item => (
+          item.id === consumed.id
+            ? { ...item, quantity: Math.max(0, item.quantity - consumed.quantity) }
+            : item
+        ))
+        .filter(item => item.quantity > 0);
+    }
+    persist(next);
+  }, [persist]);
+
   return (
-    <InventoryContext.Provider value={{ inventory, addItem, removeItem, updateItem, bulkSetItems }}>
+    <InventoryContext.Provider value={{ inventory, addItem, removeItem, updateItem, bulkSetItems, consumeItems }}>
       {children}
     </InventoryContext.Provider>
   );
