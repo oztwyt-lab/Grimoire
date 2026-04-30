@@ -1,7 +1,6 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
-import { View, Text, Pressable, Animated, Dimensions, StyleSheet } from 'react-native';
+import { View, Text, Pressable, Animated, Dimensions, ImageBackground, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
-import { VideoView, useVideoPlayer } from 'expo-video';
 import { useAuth } from '../src/context/AuthContext';
 import { db } from '../firebase';
 import { doc, getDoc, collection, query, where, getCountFromServer } from '@firebase/firestore';
@@ -29,14 +28,6 @@ export default function Home() {
   const grimoireScale = useRef(new Animated.Value(1)).current;
   const inventoryScale = useRef(new Animated.Value(1)).current;
   const characterScale = useRef(new Animated.Value(1)).current;
-  const backgroundPlayer = useVideoPlayer(
-    require('../assets/backgrounds/home_loop.mp4'),
-    (player) => {
-      player.loop = true;
-      player.muted = true;
-      player.play();
-    }
-  );
 
   const pressIn = (scale: Animated.Value) => {
     Animated.spring(scale, {
@@ -93,15 +84,13 @@ export default function Home() {
     <View style={{ flex: 1, backgroundColor: '#1a1a2e' }}>
 
       {/* ── Room background image ── */}
-      <View style={{ position: 'absolute', top: hudBottom, left: 0, right: 0, height: roomHeight }}>
-        <VideoView
-          player={backgroundPlayer}
-          style={StyleSheet.absoluteFill}
-          contentFit="cover"
-          nativeControls={false}
-        />
+      <ImageBackground
+        source={require('../assets/room-bg.jpg')}
+        style={{ position: 'absolute', top: hudBottom, left: 0, right: 0, height: roomHeight }}
+        resizeMode="cover"
+      >
         <View style={{ ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(10, 12, 24, 0.35)' }} />
-      </View>
+      </ImageBackground>
 
       {/* ── Wizard character ── */}
       <View style={{ position: 'absolute', left: width / 2 - 45, top: charTop }}>
