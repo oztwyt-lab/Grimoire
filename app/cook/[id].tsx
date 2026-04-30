@@ -252,7 +252,6 @@ export default function CookMode() {
 
   const stepSlideStyle = useAnimatedStyle(() => ({
     transform: [{ translateX: stepSlideX.value }],
-    opacity: stepOpacity.value,
   }));
 
   const modalCardStyle = useAnimatedStyle(() => ({
@@ -536,7 +535,7 @@ export default function CookMode() {
   const isComplete  = battle.currentStep >= totalSteps;
   const charIsAttacking = battle.phase === 'PLAYER_ATTACK';
 
-  const canGoBack = battle.currentStep > 0 && isIdle;
+  const canGoBack = battle.currentStep > 0;
 
   return (
     <View style={s.container}>
@@ -614,42 +613,45 @@ export default function CookMode() {
         </View>
       </View>
 
-      {/* Section 5 — Step card (flex:1) */}
-      <Animated.View style={[s.stepCard, stepSlideStyle]}>
+      {/* Section 5 — Step card (stable flex:1 shell, only content slides) */}
+      <View style={s.stepCard}>
         <Text style={s.stepLabel}>
           {t('cook_step')} {Math.min(battle.currentStep + 1, totalSteps)} / {totalSteps}
         </Text>
         <Text style={s.actionEmoji}>{emoji}</Text>
-        <Text style={s.stepText}>{stepText}</Text>
+        <Animated.Text style={[s.stepText, stepSlideStyle]}>{stepText}</Animated.Text>
         {durationStr && (
           <View style={s.durationBadge}>
             <Text style={s.durationText}>{durationStr}</Text>
           </View>
         )}
-      </Animated.View>
+      </View>
 
-      {/* Section 6 — Bottom buttons */}
-      {!isComplete && (
-        <View style={s.bottomArea}>
-          {canGoBack && (
-            <PressableScale onPress={handlePrevStep} style={s.backButton}>
-              <View style={s.backButtonInner}>
-                <Text style={s.backButtonText}>← {t('cook_back')}</Text>
-              </View>
-            </PressableScale>
-          )}
-          <PressableScale
-            onPress={handleNextStep}
-            style={[canGoBack ? s.nextButton : s.fullWidthButton, !isIdle && s.buttonDisabled]}
-          >
-            <View style={isLastStep ? s.doneButtonInner : s.nextButtonInner}>
-              <Text style={isLastStep ? s.doneButtonText : s.nextButtonText}>
-                {isLastStep ? `✓ ${t('cook_done')}` : `${t('cook_next')} →`}
-              </Text>
-            </View>
-          </PressableScale>
-        </View>
-      )}
+      {/* Section 6 — Bottom buttons (always mounted, always visible) */}
+      <View style={s.bottomArea}>
+        <PressableScale
+          onPress={handlePrevStep}
+          disabled={!isIdle || !canGoBack || isComplete}
+          pointerEvents={!isIdle || !canGoBack || isComplete ? 'none' : 'auto'}
+          style={[s.backButton, (!isIdle || !canGoBack || isComplete) && s.buttonDisabled]}
+        >
+          <View style={s.backButtonInner}>
+            <Text style={s.backButtonText}>← {t('cook_back')}</Text>
+          </View>
+        </PressableScale>
+        <PressableScale
+          onPress={handleNextStep}
+          disabled={!isIdle || isComplete}
+          pointerEvents={!isIdle || isComplete ? 'none' : 'auto'}
+          style={[s.nextButton, (!isIdle || isComplete) && s.nextButtonDisabled]}
+        >
+          <View style={isLastStep ? s.doneButtonInner : s.nextButtonInner}>
+            <Text style={isLastStep ? s.doneButtonText : s.nextButtonText}>
+              {isLastStep ? `✓ ${t('cook_done')}` : `${t('cook_next')} →`}
+            </Text>
+          </View>
+        </PressableScale>
+      </View>
 
       {/* Completion modal */}
       {battle.showCompletion && (
@@ -658,12 +660,12 @@ export default function CookMode() {
             <Text style={s.completionEmoji}>🎉</Text>
             <Text style={s.completionTitle}>{t('cook_complete_title')}</Text>
             <Text style={s.completionRecipeName}>{recipe.name}</Text>
-            <PressableScale onPress={() => router.back()} style={s.fullWidthButton}>
+            <PressableScale onPress={() => router.back()} style={s.completionButtonWrap}>
               <View style={s.completionButtonMuted}>
                 <Text style={s.completionButtonMutedText}>{t('cook_back_to_recipe')}</Text>
               </View>
             </PressableScale>
-            <PressableScale onPress={() => router.replace('/')} style={s.fullWidthButton}>
+            <PressableScale onPress={() => router.replace('/')} style={s.completionButtonWrap}>
               <View style={s.completionButtonGold}>
                 <Text style={s.completionButtonGoldText}>{t('cook_home')}</Text>
               </View>
@@ -709,7 +711,7 @@ const s = StyleSheet.create({
   fireballSheet:   { width: 56 * 3, height: 56 },
   orbWrapper:      { position: 'absolute', bottom: 40, right: 112, width: 48, height: 48, overflow: 'hidden' },
   orbSheet:        { width: 48 * 2, height: 48 },
-  damageNumber:    { position: 'absolute', bottom: 100, right: 110, fontFamily: 'PressStart2P_400Regular', color: '#ff6600', fontSize: 12 },
+  damageNumber:    { position: 'absolute', bottom: 100, right: 110, zIndex: 10, fontFamily: 'PressStart2P_400Regular', color: '#ff6600', fontSize: 12 },
 
   // Section 4 — Player HP
   playerHpRow:  { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, marginBottom: 12, gap: 8 },
@@ -718,7 +720,7 @@ const s = StyleSheet.create({
   playerHpFill:  { height: '100%', backgroundColor: '#6fcf97' },
 
   // Section 5 — Step card
-  stepCard:     { flex: 1, marginHorizontal: 16, marginBottom: 12, backgroundColor: '#1a1a2e', borderWidth: 1, borderColor: '#2a2a4a', borderRadius: 4, padding: 20, justifyContent: 'center', alignItems: 'center' },
+  stepCard:     { flex: 1, minHeight: 160, marginHorizontal: 16, marginBottom: 12, backgroundColor: '#1a1a2e', borderWidth: 1, borderColor: '#2a2a4a', borderRadius: 4, padding: 20, justifyContent: 'center', alignItems: 'center' },
   stepLabel:    { fontFamily: 'PressStart2P_400Regular', color: '#4a4a6a', fontSize: 7, marginBottom: 16 },
   actionEmoji:  { fontSize: 40, marginBottom: 16 },
   stepText:     { fontFamily: 'PressStart2P_400Regular', color: '#c8c8e8', fontSize: 10, textAlign: 'center', lineHeight: 24 },
@@ -726,26 +728,28 @@ const s = StyleSheet.create({
   durationText:  { fontFamily: 'PressStart2P_400Regular', color: '#4a4a6a', fontSize: 8 },
 
   // Section 6 — Bottom buttons
-  bottomArea:      { flexDirection: 'row', paddingHorizontal: 16, paddingBottom: 24, gap: 12 },
+  bottomArea:      { flexDirection: 'row', minHeight: 82, paddingHorizontal: 16, paddingBottom: 24, gap: 12 },
   backButton:      { flex: 1 },
-  backButtonInner: { borderWidth: 1, borderColor: '#4a4a6a', padding: 18, alignItems: 'center', height: '100%', justifyContent: 'center' },
+  backButtonInner: { borderWidth: 1, borderColor: '#4a4a6a', padding: 18, minHeight: 58, alignItems: 'center', justifyContent: 'center' },
   backButtonText:  { fontFamily: 'PressStart2P_400Regular', color: '#4a4a6a', fontSize: 8 },
   nextButton:      { flex: 2 },
   fullWidthButton: { flex: 1 },
   buttonDisabled:  { opacity: 0.4 },
-  nextButtonInner: { borderWidth: 1, borderColor: '#e2b96f', padding: 18, alignItems: 'center' },
+  nextButtonDisabled: { opacity: 0.6 },
+  nextButtonInner: { borderWidth: 1, borderColor: '#e2b96f', padding: 18, minHeight: 58, alignItems: 'center', justifyContent: 'center' },
   nextButtonText:  { fontFamily: 'PressStart2P_400Regular', color: '#e2b96f', fontSize: 10 },
-  doneButtonInner: { backgroundColor: '#c8a84b', padding: 18, alignItems: 'center' },
+  doneButtonInner: { backgroundColor: '#c8a84b', padding: 18, minHeight: 58, alignItems: 'center', justifyContent: 'center' },
   doneButtonText:  { fontFamily: 'PressStart2P_400Regular', color: '#1a1a2e', fontSize: 10 },
 
   // Completion modal
-  completionOverlay:         { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.85)', alignItems: 'center', justifyContent: 'center', padding: 24 },
+  completionOverlay:         { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 20, elevation: 20, backgroundColor: 'rgba(0,0,0,0.85)', alignItems: 'center', justifyContent: 'center', padding: 24 },
   completionCard:            { backgroundColor: '#1a1a2e', borderWidth: 1, borderColor: '#2d2d4e', padding: 32, alignItems: 'center', width: '100%', gap: 16 },
   completionEmoji:           { fontSize: 64 },
   completionTitle:           { fontFamily: 'PressStart2P_400Regular', color: '#e2b96f', fontSize: 12, textAlign: 'center', lineHeight: 26 },
   completionRecipeName:      { fontFamily: 'PressStart2P_400Regular', color: '#4a4a6a', fontSize: 8, textAlign: 'center', marginBottom: 8 },
-  completionButtonMuted:     { borderWidth: 1, borderColor: '#4a4a6a', padding: 16, alignItems: 'center' },
+  completionButtonWrap:      { width: '100%' },
+  completionButtonMuted:     { borderWidth: 1, borderColor: '#4a4a6a', padding: 16, minHeight: 52, alignItems: 'center', justifyContent: 'center' },
   completionButtonMutedText: { fontFamily: 'PressStart2P_400Regular', color: '#4a4a6a', fontSize: 8 },
-  completionButtonGold:      { borderWidth: 1, borderColor: '#e2b96f', padding: 16, alignItems: 'center' },
+  completionButtonGold:      { borderWidth: 1, borderColor: '#e2b96f', padding: 16, minHeight: 52, alignItems: 'center', justifyContent: 'center' },
   completionButtonGoldText:  { fontFamily: 'PressStart2P_400Regular', color: '#e2b96f', fontSize: 8 },
 });
