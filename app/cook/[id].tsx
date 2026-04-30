@@ -173,6 +173,12 @@ export default function CookMode() {
   const [loading, setLoading] = useState(true);
   const ingredientsConsumedRef = useRef(false);
 
+  // Sprite frame cycling
+  const [fireballFrame, setFireballFrame] = useState(0);
+  const [orbFrame, setOrbFrame] = useState(0);
+  const fireballIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const orbIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
   const [battle, dispatch] = useReducer(battleReducer, makeInitial(0));
 
   // ─── Shared values ──────────────────────────────────────────────────────────
@@ -318,21 +324,51 @@ export default function CookMode() {
     if (items.length > 0) consumeItems(items);
   }, [battle.showCompletion, recipe]);
 
+  // ─── Sprite frame cycling ────────────────────────────────────────────────────
+
+  const startFireballAnim = useCallback(() => {
+    setFireballFrame(0);
+    fireballIntervalRef.current = setInterval(() => setFireballFrame(f => (f + 1) % 3), 100);
+  }, []);
+
+  const stopFireballAnim = useCallback(() => {
+    if (fireballIntervalRef.current) { clearInterval(fireballIntervalRef.current); fireballIntervalRef.current = null; }
+    setFireballFrame(0);
+  }, []);
+
+  const startOrbAnim = useCallback(() => {
+    setOrbFrame(0);
+    orbIntervalRef.current = setInterval(() => setOrbFrame(f => (f + 1) % 2), 150);
+  }, []);
+
+  const stopOrbAnim = useCallback(() => {
+    if (orbIntervalRef.current) { clearInterval(orbIntervalRef.current); orbIntervalRef.current = null; }
+    setOrbFrame(0);
+  }, []);
+
+  useEffect(() => () => {
+    if (fireballIntervalRef.current) clearInterval(fireballIntervalRef.current);
+    if (orbIntervalRef.current) clearInterval(orbIntervalRef.current);
+  }, []);
+
   // ─── Animation callbacks ─────────────────────────────────────────────────────
 
   const onAttackDone = useCallback(() => {
+    stopFireballAnim();
     dispatch({ type: 'ATTACK_DONE' });
-  }, []);
+  }, [stopFireballAnim]);
 
   const onCounterattackDone = useCallback((dodgeSuccess: boolean) => {
+    stopOrbAnim();
     dispatch({ type: 'COUNTERATTACK_DONE', dodgeSuccess });
-  }, []);
+  }, [stopOrbAnim]);
 
   const onDefeatDone = useCallback(() => {
     dispatch({ type: 'DEFEAT_DONE' });
   }, []);
 
   const runPlayerAttack = useCallback((damageAmount: number) => {
+    runOnJS(startFireballAnim)();
     fireballX.value = 0;
     fireballOpacity.value = 1;
     fireballX.value = withTiming(screenWidth * 0.55, { duration: 400 }, (finished) => {
@@ -362,6 +398,7 @@ export default function CookMode() {
   }, [screenWidth, onAttackDone]);
 
   const runCounterattack = useCallback((dodgeSuccess: boolean) => {
+    runOnJS(startOrbAnim)();
     bossX.value = withSequence(
       withTiming(-20, { duration: 150 }),
       withTiming(0,   { duration: 200 })
@@ -527,10 +564,22 @@ export default function CookMode() {
         </PressableScale>
 
         {/* Fireball (player → boss) */}
-        <Animated.View style={[s.fireball, fireballStyle]} />
+        <Animated.View style={[s.fireballWrapper, fireballStyle]}>
+          <Image
+            source={require('../../assets/fireball_sheet.png')}
+            style={[s.fireballSheet, { marginLeft: -fireballFrame * 56 }]}
+            resizeMode="stretch"
+          />
+        </Animated.View>
 
         {/* Boss projectile (boss → player) */}
-        <Animated.View style={[s.bossProjectile, bossProjectileStyle]} />
+        <Animated.View style={[s.orbWrapper, bossProjectileStyle]}>
+          <Image
+            source={require('../../assets/boss_orb_sheet.png')}
+            style={[s.orbSheet, { marginLeft: -orbFrame * 48 }]}
+            resizeMode="stretch"
+          />
+        </Animated.View>
 
         {/* Damage number */}
         {battle.showDamageNumber && (
@@ -643,8 +692,10 @@ const s = StyleSheet.create({
   bossSlot:          { width: 120, height: 120, alignItems: 'center', justifyContent: 'center' },
   bossBox:           { width: 120, height: 120, backgroundColor: '#4a2a6a', borderWidth: 2, borderColor: '#c8a84b', overflow: 'hidden' },
 
-  fireball:          { position: 'absolute', bottom: 56, left: 88, width: 20, height: 20, borderRadius: 10, backgroundColor: '#ff6600' },
-  bossProjectile:    { position: 'absolute', bottom: 80, right: 120, width: 16, height: 16, borderRadius: 8, backgroundColor: '#c84b4b' },
+  fireballWrapper:   { position: 'absolute', bottom: 40, left: 80, width: 56, height: 56, overflow: 'hidden' },
+  fireballSheet:     { width: 56 * 3, height: 56 },
+  orbWrapper:        { position: 'absolute', bottom: 60, right: 112, width: 48, height: 48, overflow: 'hidden' },
+  orbSheet:          { width: 48 * 2, height: 48 },
   damageNumber:      { position: 'absolute', bottom: 100, right: 130, fontFamily: 'PressStart2P_400Regular', color: '#ff6600', fontSize: 12 },
 
   stepCard:          { flex: 1, paddingHorizontal: 24, paddingTop: 16, alignItems: 'center', overflow: 'hidden' },
