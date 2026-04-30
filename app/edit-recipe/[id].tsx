@@ -16,6 +16,7 @@ function stepsFromData(data: Record<string, unknown>): LocalStep[] {
       id: s.id ?? String(i),
       text: s.text ?? '',
       duration: s.duration ?? null,
+      emoji: s.emoji,
     }));
   }
   const raw =

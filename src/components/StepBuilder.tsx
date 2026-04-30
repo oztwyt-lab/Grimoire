@@ -1,9 +1,18 @@
 import { useState } from 'react';
-import { View, Text, TextInput, Modal } from 'react-native';
+import { View, Text, TextInput, Modal, ScrollView, TouchableOpacity } from 'react-native';
 import PressableScale from './PressableScale';
 import { useLanguage } from '../context/LanguageContext';
 
-export type LocalStep = { id: string; text: string; duration: number | null };
+export type LocalStep = { id: string; text: string; duration: number | null; emoji?: string };
+
+const STEP_EMOJIS = [
+  '🔪', '🥄', '🍳', '🥣', '🫕',
+  '🔥', '💧', '🧂', '🫚', '⏱️',
+  '🌡️', '🧅', '🧄', '🍋', '🥩',
+  '🥕', '🥚', '🧈', '🍞', '🥗',
+  '🍝', '🥘', '🫙', '🍽️', '❄️',
+  '🫧', '🥐', '🌿', '🧁', '🧴',
+];
 
 interface Props {
   steps: LocalStep[];
@@ -14,11 +23,13 @@ export default function StepBuilder({ steps, onChange }: Props) {
   const [modalVisible, setModalVisible] = useState(false);
   const [draftText, setDraftText] = useState('');
   const [draftDuration, setDraftDuration] = useState('');
+  const [draftEmoji, setDraftEmoji] = useState('');
   const { t } = useLanguage();
 
   function openModal() {
     setDraftText('');
     setDraftDuration('');
+    setDraftEmoji('');
     setModalVisible(true);
   }
 
@@ -35,6 +46,7 @@ export default function StepBuilder({ steps, onChange }: Props) {
         id: Date.now().toString(),
         text: draftText.trim(),
         duration: draftDuration.trim() && !isNaN(parsed) ? parsed : null,
+        emoji: draftEmoji || undefined,
       },
     ]);
     closeModal();
@@ -62,7 +74,11 @@ export default function StepBuilder({ steps, onChange }: Props) {
     <View>
       {steps.map((step, idx) => (
         <View key={step.id} style={sb.stepRow}>
-          <Text style={sb.stepNum}>{idx + 1}</Text>
+          {step.emoji ? (
+            <Text style={sb.stepEmoji}>{step.emoji}</Text>
+          ) : (
+            <Text style={sb.stepNum}>{idx + 1}</Text>
+          )}
           <View style={sb.stepContent}>
             <Text style={sb.stepText}>{step.text}</Text>
             {step.duration ? (
@@ -97,6 +113,25 @@ export default function StepBuilder({ steps, onChange }: Props) {
       >
         <View style={sb.modalOverlay}>
           <View style={sb.modalCard}>
+            <Text style={sb.emojiPickerLabel}>ICON</Text>
+            <ScrollView
+              horizontal={false}
+              style={sb.emojiGrid}
+              contentContainerStyle={sb.emojiGridContent}
+              showsVerticalScrollIndicator={false}
+            >
+              {STEP_EMOJIS.map(e => (
+                <TouchableOpacity
+                  key={e}
+                  onPress={() => setDraftEmoji(prev => prev === e ? '' : e)}
+                  style={[sb.emojiCell, draftEmoji === e && sb.emojiCellSelected]}
+                  activeOpacity={0.7}
+                >
+                  <Text style={sb.emojiCellText}>{e}</Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+
             <TextInput
               style={[sb.modalInput, sb.modalInputMulti]}
               placeholder={t('recipe_step_placeholder')}
@@ -148,6 +183,11 @@ const sb = {
     fontSize: 8,
     paddingTop: 2,
     minWidth: 16,
+  },
+  stepEmoji: {
+    fontSize: 18,
+    minWidth: 24,
+    textAlign: 'center' as const,
   },
   stepContent: { flex: 1, gap: 4 },
   stepText: {
@@ -203,6 +243,35 @@ const sb = {
     padding: 24,
     width: '100%' as const,
     gap: 16,
+  },
+  emojiPickerLabel: {
+    fontFamily: 'PressStart2P_400Regular',
+    color: '#4a4a6a',
+    fontSize: 7,
+  },
+  emojiGrid: {
+    maxHeight: 110,
+  },
+  emojiGridContent: {
+    flexDirection: 'row' as const,
+    flexWrap: 'wrap' as const,
+    gap: 6,
+  },
+  emojiCell: {
+    width: 40,
+    height: 40,
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
+    borderWidth: 1,
+    borderColor: '#2d2d4e',
+    backgroundColor: '#1a1a2e',
+  },
+  emojiCellSelected: {
+    borderColor: '#e2b96f',
+    backgroundColor: '#2a2a1e',
+  },
+  emojiCellText: {
+    fontSize: 20,
   },
   modalInput: {
     backgroundColor: '#1a1a2e',

@@ -1,11 +1,11 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
-import { View, Text, Pressable, Animated, Dimensions, ImageBackground, StyleSheet } from 'react-native';
+import { View, Text, Pressable, Animated, Dimensions, ImageBackground, StyleSheet, Image } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuth } from '../src/context/AuthContext';
 import { db } from '../firebase';
 import { doc, getDoc, collection, query, where, getCountFromServer } from '@firebase/firestore';
 import { getCharacterRank, getLevelProgress } from '../src/data/character';
-import WizardSprite from '../src/components/WizardSprite';
+import WizardSprite, { WizardSpriteHandle } from '../src/components/WizardSprite';
 import PressableScale from '../src/components/PressableScale';
 import * as Haptics from 'expo-haptics';
 import { useLanguage } from '../src/context/LanguageContext';
@@ -14,6 +14,10 @@ import { RANK_TITLE_KEY } from '../src/i18n/strings';
 const { width, height } = Dimensions.get('window');
 const HUD_HEIGHT = 90;
 const NAV_HEIGHT = 96;
+// Wizard container anchor: left = width/2 - 45, so wizard right edge ≈ width/2 + 45
+const WIZARD_RIGHT_OFFSET = 45;
+const FIREBALL_SIZE = 60;
+const FIREBALL_FRAMES = 3;
 
 type Profile = { nickname: string; character: string };
 
@@ -24,27 +28,82 @@ export default function Home() {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [recipeCount, setRecipeCount] = useState(0);
 
-  // ─── Nav button scale animations (native driver only) ────────────────────
+  // ─── Wizard ref (imperative control) ─────────────────────────────────────
+  const wizardRef = useRef<WizardSpriteHandle>(null);
+
+  // ─── Double-tap detection ─────────────────────────────────────────────────
+  const lastWizardTapRef = useRef(0);
+
+  // ─── Fireball animation ───────────────────────────────────────────────────
+  const fireballX = useRef(new Animated.Value(0)).current;
+  const [fireballVisible, setFireballVisible] = useState(false);
+  const [fireballFrame, setFireballFrame] = useState(0);
+  const fireballFrameRef = useRef(0);
+  const fireballIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (fireballIntervalRef.current) clearInterval(fireballIntervalRef.current);
+    };
+  }, []);
+
+  function shootFireball() {
+    if (fireballVisible) return;
+    const wizX = wizardRef.current?.getX() ?? 0;
+    const startX = width / 2 + WIZARD_RIGHT_OFFSET + wizX;
+
+    fireballX.setValue(startX);
+    fireballFrameRef.current = 0;
+    setFireballFrame(0);
+    setFireballVisible(true);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+
+    fireballIntervalRef.current = setInterval(() => {
+      fireballFrameRef.current = (fireballFrameRef.current + 1) % FIREBALL_FRAMES;
+      setFireballFrame(fireballFrameRef.current);
+    }, 100);
+
+    Animated.timing(fireballX, {
+      toValue: width + 100,
+      duration: 520,
+      useNativeDriver: true,
+    }).start(() => {
+      if (fireballIntervalRef.current) clearInterval(fireballIntervalRef.current);
+      setFireballVisible(false);
+    });
+  }
+
+  function handleWizardPress() {
+    const now = Date.now();
+    if (now - lastWizardTapRef.current < 350) {
+      lastWizardTapRef.current = 0;
+      shootFireball();
+    } else {
+      lastWizardTapRef.current = now;
+    }
+  }
+
+  function handleRoomPressIn(e: { nativeEvent: { locationX: number } }) {
+    const tapX = e.nativeEvent.locationX;
+    const wizScreenX = width / 2 + (wizardRef.current?.getX() ?? 0);
+    const direction = tapX >= wizScreenX ? 'right' : 'left';
+    wizardRef.current?.startWalking(direction);
+  }
+
+  function handleRoomPressOut() {
+    wizardRef.current?.stopWalking();
+  }
+
+  // ─── Nav button scale animations ──────────────────────────────────────────
   const grimoireScale = useRef(new Animated.Value(1)).current;
   const inventoryScale = useRef(new Animated.Value(1)).current;
   const characterScale = useRef(new Animated.Value(1)).current;
 
   const pressIn = (scale: Animated.Value) => {
-    Animated.spring(scale, {
-      toValue: 1.25,
-      useNativeDriver: true,
-      speed: 50,
-      bounciness: 0,
-    }).start();
+    Animated.spring(scale, { toValue: 1.25, useNativeDriver: true, speed: 50, bounciness: 0 }).start();
   };
-
   const pressOut = (scale: Animated.Value) => {
-    Animated.spring(scale, {
-      toValue: 1,
-      useNativeDriver: true,
-      speed: 50,
-      bounciness: 0,
-    }).start();
+    Animated.spring(scale, { toValue: 1, useNativeDriver: true, speed: 50, bounciness: 0 }).start();
   };
 
   // ─── Profile + recipe count fetch ────────────────────────────────────────
@@ -92,10 +151,47 @@ export default function Home() {
         <View style={{ ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(10, 12, 24, 0.35)' }} />
       </ImageBackground>
 
-      {/* ── Wizard character ── */}
-      <View style={{ position: 'absolute', left: width / 2 - 45, top: charTop }}>
-        <WizardSprite />
-      </View>
+      {/* ── Room press area — hold to walk wizard in that direction ── */}
+      <Pressable
+        style={{ position: 'absolute', top: hudBottom, left: 0, right: 0, height: roomHeight }}
+        onPressIn={handleRoomPressIn}
+        onPressOut={handleRoomPressOut}
+      />
+
+      {/* ── Wizard (on top of room tap area, receives its own touches) ── */}
+      <Pressable
+        style={{ position: 'absolute', left: width / 2 - 45, top: charTop }}
+        onPress={handleWizardPress}
+      >
+        <WizardSprite ref={wizardRef} />
+      </Pressable>
+
+      {/* ── Fireball ── */}
+      {fireballVisible && (
+        <Animated.View
+          style={{
+            position: 'absolute',
+            top: charTop + 28,
+            left: 0,
+            width: FIREBALL_SIZE,
+            height: FIREBALL_SIZE,
+            overflow: 'hidden',
+            transform: [{ translateX: fireballX }],
+            zIndex: 10,
+          }}
+          pointerEvents="none"
+        >
+          <Image
+            source={require('../assets/fireball_sheet.png')}
+            style={{
+              width: FIREBALL_SIZE * FIREBALL_FRAMES,
+              height: FIREBALL_SIZE,
+              marginLeft: -fireballFrame * FIREBALL_SIZE,
+            }}
+            resizeMode="stretch"
+          />
+        </Animated.View>
+      )}
 
       {/* ── HUD — top overlay ── */}
       <View style={styles.hud}>
@@ -168,7 +264,6 @@ export default function Home() {
   );
 }
 
-// ─── Styles ──────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
   hud: {
     position: 'absolute',

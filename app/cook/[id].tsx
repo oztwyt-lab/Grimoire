@@ -1,5 +1,6 @@
 import { useState, useReducer, useEffect, useRef, useCallback } from 'react';
 import { View, Text, Alert, useWindowDimensions, StyleSheet, Image } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { doc, getDoc } from '@firebase/firestore';
 import { db } from '../../firebase';
@@ -20,7 +21,7 @@ import { getActionEmoji } from '../../src/utils/actionEmoji';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-type CookStep = { id: string; text: string; duration: number | null };
+type CookStep = { id: string; text: string; duration: number | null; emoji?: string };
 type Ingredient = { id: string; quantity: string };
 type RawRecipe = {
   id: string;
@@ -140,6 +141,7 @@ function normalizeSteps(recipe: RawRecipe): CookStep[] {
       id: s.id ?? String(i),
       text: s.text ?? '',
       duration: s.duration ?? null,
+      emoji: (s as CookStep).emoji,
     }));
   }
   if (typeof recipe.steps === 'string' && recipe.steps.trim()) {
@@ -172,6 +174,7 @@ export default function CookMode() {
   const { t } = useLanguage();
   const { consumeItems } = useInventory();
   const { width: screenWidth } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
 
   const [recipe, setRecipe] = useState<RawRecipe | null>(null);
   const [steps, setSteps] = useState<CookStep[]>([]);
@@ -608,7 +611,7 @@ export default function CookMode() {
   const clampedStep = Math.min(battle.currentStep, totalSteps - 1);
   const activeStep  = steps[clampedStep];
   const stepText    = activeStep?.text ?? '';
-  const emoji       = getActionEmoji(stepText);
+  const emoji       = activeStep?.emoji || getActionEmoji(stepText);
   const durationStr = activeStep?.duration
     ? `⏱ ${activeStep.duration} min`
     : parseDuration(stepText);
@@ -727,7 +730,7 @@ export default function CookMode() {
       </View>
 
       {/* Section 6 — Bottom buttons (always mounted, always visible) */}
-      <View style={s.bottomArea}>
+      <View style={[s.bottomArea, { paddingBottom: Math.max(insets.bottom, 16) + 16 }]}>
         <PressableScale
           onPress={handlePrevStep}
           disabled={!isIdle || !canGoBack || isComplete}
@@ -821,7 +824,7 @@ const s = StyleSheet.create({
   playerHpFill:  { height: '100%', backgroundColor: '#6fcf97' },
 
   // Section 5 — Step card
-  stepCard:     { flex: 1, minHeight: 160, marginHorizontal: 16, marginBottom: 12, backgroundColor: '#1a1a2e', borderWidth: 1, borderColor: '#2a2a4a', borderRadius: 4, padding: 20, justifyContent: 'center', alignItems: 'center' },
+  stepCard:     { flex: 1, minHeight: 140, maxHeight: 220, marginHorizontal: 16, marginBottom: 12, backgroundColor: '#1a1a2e', borderWidth: 1, borderColor: '#2a2a4a', borderRadius: 4, padding: 18, justifyContent: 'center', alignItems: 'center' },
   stepLabel:    { fontFamily: 'PressStart2P_400Regular', color: '#4a4a6a', fontSize: 7, marginBottom: 16 },
   actionEmoji:  { fontSize: 40, marginBottom: 16 },
   stepText:     { fontFamily: 'PressStart2P_400Regular', color: '#c8c8e8', fontSize: 10, textAlign: 'center', lineHeight: 24 },
@@ -829,7 +832,7 @@ const s = StyleSheet.create({
   durationText:  { fontFamily: 'PressStart2P_400Regular', color: '#4a4a6a', fontSize: 8 },
 
   // Section 6 — Bottom buttons
-  bottomArea:      { flexDirection: 'row', minHeight: 82, paddingHorizontal: 16, paddingBottom: 24, gap: 12 },
+  bottomArea:      { flexDirection: 'row', minHeight: 82, paddingHorizontal: 16, gap: 12 },
   backButton:      { flex: 1 },
   backButtonInner: { borderWidth: 1, borderColor: '#4a4a6a', padding: 18, minHeight: 58, alignItems: 'center', justifyContent: 'center' },
   backButtonText:  { fontFamily: 'PressStart2P_400Regular', color: '#4a4a6a', fontSize: 8 },
