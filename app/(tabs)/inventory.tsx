@@ -7,8 +7,10 @@ import {
 import { useLanguage } from '../../src/context/LanguageContext';
 import { useInventory } from '../../src/context/InventoryContext';
 import { INGREDIENTS, CATEGORIES, CATEGORY_TRANSLATIONS, Ingredient } from '../../src/data/ingredients';
+import { INGREDIENT_BUFFS } from '../../src/data/ingredientBuffs';
 import { StringKey } from '../../src/i18n/strings';
 import PressableScale from '../../src/components/PressableScale';
+import { calculateNutrition, formatNutritionValue, getAvailableUnits, getDefaultUnit } from '../../src/utils/nutrition';
 
 const { width: SW, height: SH } = Dimensions.get('window');
 const COL_GAP = 8;
@@ -31,17 +33,17 @@ const METRICS: { key: string; labelKey: StringKey }[] = [
 ];
 
 const NUTRITION_STATS = [
-  { key: 'cal', label: 'CAL', value: 0, color: '#e2b96f' },
-  { key: 'protein', label: 'PRO', value: 0, color: '#6fcf97' },
-  { key: 'fat', label: 'FAT', value: 0, color: '#bb86fc' },
-  { key: 'carb', label: 'CARB', value: 0, color: '#56ccf2' },
-];
+  { key: 'calories', label: { en: 'CAL', tr: 'KAL' }, cap: 5000, color: '#e2b96f' },
+  { key: 'protein', label: { en: 'PRO', tr: 'PRO' }, cap: 500, color: '#6fcf97' },
+  { key: 'fat', label: { en: 'FAT', tr: 'YAG' }, cap: 500, color: '#bb86fc' },
+  { key: 'carbs', label: { en: 'CARB', tr: 'KARB' }, cap: 1000, color: '#56ccf2' },
+] as const;
 
 const BUFF_TEXT = 'BUFFS: Effects unknown. This ingredient will later reveal what it supports, boosts, and restores.';
 
 export default function Inventory() {
   const { language, t } = useLanguage();
-  const { inventory, addItem, removeItem } = useInventory();
+  const { inventory, addItem, removeItem, updateItem } = useInventory();
 
   // ─── Main screen state ───────────────────────────────────────────────────
   const [activeCategory, setActiveCategory] = useState('All');
@@ -54,6 +56,10 @@ export default function Inventory() {
   const [metric, setMetric] = useState('piece');
   const [search, setSearch] = useState('');
   const [modalCat, setModalCat] = useState('All');
+  const [detailIngredient, setDetailIngredient] = useState<Ingredient | null>(null);
+  const [detailQuantity, setDetailQuantity] = useState('1');
+  const [detailMetric, setDetailMetric] = useState('g');
+  const [detailQuantityEditable, setDetailQuantityEditable] = useState(false);
 
   // ─── Slide animation ─────────────────────────────────────────────────────
   const slideY = useRef(new Animated.Value(SH)).current;
@@ -97,6 +103,26 @@ export default function Inventory() {
     return list;
   }, [modalCat, search]);
 
+  const selectedMetricOptions = useMemo(() => (
+    selected ? getAvailableUnits(selected.id) : METRICS.map(metricOption => metricOption.key)
+  ), [selected]);
+
+  const selectedNutrition = useMemo(() => (
+    selected
+      ? calculateNutrition(selected.id, quantity, metric || getDefaultUnit(selected.id))
+      : calculateNutrition('', '', '')
+  ), [selected, quantity, metric]);
+
+  const detailNutrition = useMemo(() => (
+    detailIngredient
+      ? calculateNutrition(detailIngredient.id, detailQuantity, detailMetric || getDefaultUnit(detailIngredient.id))
+      : calculateNutrition('', '', '')
+  ), [detailIngredient, detailQuantity, detailMetric]);
+
+  const detailMetricOptions = useMemo(() => (
+    detailIngredient ? getAvailableUnits(detailIngredient.id) : []
+  ), [detailIngredient]);
+
   // ─── Helpers ─────────────────────────────────────────────────────────────
   const catLabel = (cat: string) =>
     cat === 'All'
@@ -119,7 +145,21 @@ export default function Inventory() {
     setSelected(ing);
     setStep(2);
     setQuantity('1');
-    setMetric('piece');
+    setMetric(getDefaultUnit(ing.id));
+  }, []);
+
+  const handleOpenInventoryDetail = useCallback((id: string, itemQuantity: number, itemMetric: string) => {
+    const ing = INGREDIENTS.find(i => i.id === id);
+    if (!ing) return;
+    setDetailIngredient(ing);
+    setDetailQuantity(String(itemQuantity));
+    setDetailMetric(itemMetric);
+    setDetailQuantityEditable(false);
+  }, []);
+
+  const closeDetail = useCallback(() => {
+    setDetailIngredient(null);
+    setDetailQuantityEditable(false);
   }, []);
 
   const handleAdd = useCallback(async () => {
@@ -128,11 +168,20 @@ export default function Inventory() {
     closeSheet();
   }, [selected, quantity, metric, addItem, closeSheet]);
 
+  const handleSaveDetailQuantity = useCallback(async () => {
+    if (!detailIngredient) return;
+    const nextQuantity = parseFloat(detailQuantity) || 1;
+    await updateItem(detailIngredient.id, nextQuantity, detailMetric || getDefaultUnit(detailIngredient.id));
+    setDetailQuantity(String(nextQuantity));
+    setDetailQuantityEditable(false);
+  }, [detailIngredient, detailQuantity, detailMetric, updateItem]);
+
   // ─── Render: inventory card ───────────────────────────────────────────────
   const renderInventoryCard = useCallback(({ item }: { item: typeof inventory[0] }) => {
     const ing = INGREDIENTS.find(i => i.id === item.id);
     return (
       <PressableScale
+        onPress={() => handleOpenInventoryDetail(item.id, item.quantity, item.metric)}
         onLongPress={() => handleRemove(item.id)}
         style={[s.card, { width: CARD_W }]}
       >
@@ -141,7 +190,7 @@ export default function Inventory() {
         <Text style={s.cardQty}>{item.quantity} {item.metric}</Text>
       </PressableScale>
     );
-  }, [language, handleRemove]);
+  }, [language, handleRemove, handleOpenInventoryDetail]);
 
   // ─── Render: ingredient pick card (modal step 1) ──────────────────────────
   const renderPickCard = useCallback(({ item }: { item: Ingredient }) => {
@@ -211,18 +260,22 @@ export default function Inventory() {
             <Text style={s.selectedEmoji}>{selected.emoji}</Text>
           </View>
           <View style={s.statPanel}>
-            {NUTRITION_STATS.map(stat => (
+            {NUTRITION_STATS.map(stat => {
+              const value = selectedNutrition[stat.key];
+              return (
               <View key={stat.key} style={s.statRow}>
-                <Text style={s.statLabel}>{stat.label}</Text>
+                <Text style={s.statLabel}>{stat.label[language]}</Text>
                 <View style={s.statTrack}>
-                  <View style={[s.statFill, { width: `${stat.value}%`, backgroundColor: stat.color }]} />
+                  <View style={[s.statFill, { width: `${Math.min(100, value / stat.cap * 100)}%`, backgroundColor: stat.color }]} />
                 </View>
-                <Text style={s.statValue}>{stat.value}</Text>
+                <Text style={s.statValue}>{formatNutritionValue(value)}</Text>
               </View>
-            ))}
+              );
+            })}
           </View>
+          <Text style={s.sourceCredit}>{language === 'tr' ? 'Besin verisi: USDA FoodData Central' : 'Nutrition data: USDA FoodData Central'}</Text>
           <View style={s.buffPanel}>
-            <Text style={s.buffText}>{BUFF_TEXT}</Text>
+            <Text style={s.buffText}>{language === 'tr' ? (INGREDIENT_BUFFS[selected.id]?.textTr ?? BUFF_TEXT) : (INGREDIENT_BUFFS[selected.id]?.text ?? BUFF_TEXT)}</Text>
           </View>
         </View>
       )}
@@ -237,11 +290,14 @@ export default function Inventory() {
       />
 
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={s.chipRow} contentContainerStyle={s.chipRowContent}>
-        {METRICS.map(m => (
-          <PressableScale key={m.key} onPress={() => setMetric(m.key)} style={[s.chip, metric === m.key && s.chipActive]}>
-            <Text style={[s.chipText, metric === m.key && s.chipTextActive]}>{t(m.labelKey)}</Text>
+        {selectedMetricOptions.map(unit => {
+          const metricConfig = METRICS.find(item => item.key === unit);
+          return (
+          <PressableScale key={unit} onPress={() => setMetric(unit)} style={[s.chip, metric === unit && s.chipActive]}>
+            <Text style={[s.chipText, metric === unit && s.chipTextActive]}>{metricConfig ? t(metricConfig.labelKey) : unit}</Text>
           </PressableScale>
-        ))}
+          );
+        })}
       </ScrollView>
 
       <PressableScale onPress={handleAdd} style={s.addButton}>
@@ -309,6 +365,82 @@ export default function Inventory() {
         </View>
       </Modal>
 
+      <Modal visible={!!detailIngredient} transparent animationType="fade" onRequestClose={closeDetail}>
+        <View style={s.detailOverlay}>
+          <Pressable style={StyleSheet.absoluteFill} onPress={closeDetail} />
+          {detailIngredient && (
+            <View style={s.detailCard}>
+              <Text style={s.selectedName}>
+                {language === 'tr' ? detailIngredient.name_tr : detailIngredient.name}
+              </Text>
+              <View style={s.ingredientArtSlot}>
+                <Text style={s.selectedEmoji}>{detailIngredient.emoji}</Text>
+              </View>
+              <View style={s.statPanel}>
+                {NUTRITION_STATS.map(stat => {
+                  const value = detailNutrition[stat.key];
+                  return (
+                    <View key={stat.key} style={s.statRow}>
+                      <Text style={s.statLabel}>{stat.label[language]}</Text>
+                      <View style={s.statTrack}>
+                        <View style={[s.statFill, { width: `${Math.min(100, value / stat.cap * 100)}%`, backgroundColor: stat.color }]} />
+                      </View>
+                      <Text style={s.statValue}>{formatNutritionValue(value)}</Text>
+                    </View>
+                  );
+                })}
+              </View>
+              <Text style={s.sourceCredit}>{language === 'tr' ? 'Besin verisi: USDA FoodData Central' : 'Nutrition data: USDA FoodData Central'}</Text>
+              <View style={s.buffPanel}>
+                <Text style={s.buffText}>{language === 'tr' ? (INGREDIENT_BUFFS[detailIngredient.id]?.textTr ?? BUFF_TEXT) : (INGREDIENT_BUFFS[detailIngredient.id]?.text ?? BUFF_TEXT)}</Text>
+              </View>
+
+              <Text style={s.label}>{t('inventory_how_many')}</Text>
+              <View style={s.detailQuantityRow}>
+                <TextInput
+                  style={[s.qtyInput, s.detailQtyInput, !detailQuantityEditable && s.lockedInput]}
+                  keyboardType="numeric"
+                  value={detailQuantity}
+                  onChangeText={setDetailQuantity}
+                  editable={detailQuantityEditable}
+                  selectTextOnFocus
+                />
+                <PressableScale
+                  onPress={detailQuantityEditable ? handleSaveDetailQuantity : () => setDetailQuantityEditable(true)}
+                  style={s.detailEditButton}
+                >
+                  <Text style={s.detailEditButtonText}>
+                    {detailQuantityEditable
+                      ? (language === 'tr' ? 'KAYDET' : 'SAVE')
+                      : (language === 'tr' ? 'MIKTARI DUZENLE' : 'EDIT QUANTITY')}
+                  </Text>
+                </PressableScale>
+              </View>
+
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={s.detailChipRow} contentContainerStyle={s.chipRowContent}>
+                {detailMetricOptions.map(unit => {
+                  const metricConfig = METRICS.find(item => item.key === unit);
+                  return (
+                    <PressableScale
+                      key={unit}
+                      disabled={!detailQuantityEditable}
+                      onPress={() => setDetailMetric(unit)}
+                      style={[s.chip, detailMetric === unit && s.chipActive, !detailQuantityEditable && s.lockedChip]}
+                    >
+                      <Text style={[s.chipText, detailMetric === unit && s.chipTextActive]}>{metricConfig ? t(metricConfig.labelKey) : unit}</Text>
+                    </PressableScale>
+                  );
+                })}
+              </ScrollView>
+
+              <PressableScale onPress={closeDetail} style={s.detailCloseButton}>
+                <Text style={s.addButtonText}>{t('account_cancel')}</Text>
+              </PressableScale>
+            </View>
+          )}
+        </View>
+      </Modal>
+
     </View>
   );
 }
@@ -372,11 +504,22 @@ const s = StyleSheet.create({
   statPanel:        { marginBottom: 12, gap: 6 },
   statRow:          { flexDirection: 'row', alignItems: 'center', gap: 8 },
   statLabel:        { width: 36, fontFamily: 'PressStart2P_400Regular', color: '#c8c8e8', fontSize: 7 },
-  statTrack:        { flex: 1, height: 8, backgroundColor: '#1a1a2e', borderWidth: 1, borderColor: '#2d2d4e' },
+  statTrack:        { flex: 1, maxWidth: 250, height: 8, backgroundColor: '#1a1a2e', borderWidth: 1, borderColor: '#2d2d4e' },
   statFill:         { height: '100%' },
-  statValue:        { width: 22, fontFamily: 'PressStart2P_400Regular', color: '#e2b96f', fontSize: 7, textAlign: 'right' },
-  buffPanel:        { backgroundColor: '#1a1a2e', borderWidth: 1, borderColor: '#2d2d4e', padding: 10 },
+  statValue:        { width: 48, fontFamily: 'PressStart2P_400Regular', color: '#e2b96f', fontSize: 7, textAlign: 'left' },
+  sourceCredit:     { fontFamily: 'PressStart2P_400Regular', color: '#4a4a6a', fontSize: 6, marginBottom: 8 },
+  buffPanel:        { backgroundColor: '#1a1a2e', borderWidth: 1, borderColor: '#2d2d4e', padding: 10, marginBottom: 18 },
   buffText:         { fontFamily: 'PressStart2P_400Regular', color: '#c8c8e8', fontSize: 7, lineHeight: 14 },
+  detailOverlay:    { flex: 1, backgroundColor: 'rgba(10, 10, 20, 0.72)', alignItems: 'center', justifyContent: 'center', padding: 16 },
+  detailCard:       { width: '100%', maxWidth: 390, backgroundColor: '#16213e', borderWidth: 2, borderColor: '#c8a84b', padding: 18 },
+  detailQuantityRow:{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12 },
+  detailQtyInput:   { flex: 1, marginBottom: 0 },
+  detailEditButton: { borderWidth: 1, borderColor: '#c8a84b', paddingHorizontal: 10, paddingVertical: 12, alignItems: 'center', justifyContent: 'center', minHeight: 50, maxWidth: 142 },
+  detailEditButtonText:{ fontFamily: 'PressStart2P_400Regular', color: '#c8a84b', fontSize: 6, lineHeight: 12, textAlign: 'center' },
+  detailChipRow:    { flexGrow: 0, marginBottom: 4 },
+  lockedInput:      { opacity: 0.55, color: '#8f8fb8' },
+  lockedChip:       { opacity: 0.55 },
+  detailCloseButton:{ borderWidth: 2, borderColor: '#c8a84b', padding: 12, alignItems: 'center', marginTop: 16 },
   label:           { fontFamily: 'PressStart2P_400Regular', color: '#4a4a6a', fontSize: 8, marginBottom: 8 },
   qtyInput:        { backgroundColor: '#16213e', color: '#c8c8e8', borderWidth: 1, borderColor: '#2d2d4e', padding: 14, marginBottom: 16, fontFamily: 'PressStart2P_400Regular', fontSize: 14, textAlign: 'center' },
   addButton:       { borderWidth: 2, borderColor: '#c8a84b', padding: 16, alignItems: 'center', marginTop: 16 },
