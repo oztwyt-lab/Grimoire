@@ -193,6 +193,11 @@ export default function CookMode() {
   const fireballOpacity= useSharedValue(0);
   const bossProjectileX= useSharedValue(0);
   const bossProjectileOpacity = useSharedValue(0);
+  const ambientOrbX    = useSharedValue(0);
+  const ambientOrbOpacity = useSharedValue(0);
+  const ambientOrbTwoX = useSharedValue(0);
+  const ambientOrbTwoOpacity = useSharedValue(0);
+  const ambientDodgeY  = useSharedValue(0);
   const bossX          = useSharedValue(0);
   const bossScale      = useSharedValue(1);
   const bossOpacity    = useSharedValue(1);
@@ -224,7 +229,7 @@ export default function CookMode() {
   }));
 
   const charAnimStyle = useAnimatedStyle(() => ({
-    transform: [{ translateY: charBob.value }],
+    transform: [{ translateY: charBob.value + ambientDodgeY.value }],
   }));
 
   const fireballStyle = useAnimatedStyle(() => ({
@@ -235,6 +240,16 @@ export default function CookMode() {
   const bossProjectileStyle = useAnimatedStyle(() => ({
     opacity: bossProjectileOpacity.value,
     transform: [{ translateX: bossProjectileX.value }],
+  }));
+
+  const ambientOrbStyle = useAnimatedStyle(() => ({
+    opacity: ambientOrbOpacity.value,
+    transform: [{ translateX: ambientOrbX.value }],
+  }));
+
+  const ambientOrbTwoStyle = useAnimatedStyle(() => ({
+    opacity: ambientOrbTwoOpacity.value,
+    transform: [{ translateX: ambientOrbTwoX.value }],
   }));
 
   const bossHpStyle = useAnimatedStyle(() => ({
@@ -277,6 +292,71 @@ export default function CookMode() {
       -1, false
     );
   }, []);
+
+  useEffect(() => {
+    const travel = -screenWidth * 0.62;
+
+    ambientOrbX.value = 0;
+    ambientOrbOpacity.value = 0;
+    ambientOrbX.value = withRepeat(
+      withSequence(
+        withTiming(0, { duration: 1 }),
+        withTiming(travel, { duration: 1300 }),
+        withDelay(250, withTiming(0, { duration: 1 }))
+      ),
+      -1,
+      false
+    );
+    ambientOrbOpacity.value = withRepeat(
+      withSequence(
+        withTiming(1, { duration: 120 }),
+        withDelay(1040, withTiming(1, { duration: 1 })),
+        withTiming(0, { duration: 140 }),
+        withDelay(290, withTiming(0, { duration: 1 }))
+      ),
+      -1,
+      false
+    );
+
+    ambientOrbTwoX.value = 0;
+    ambientOrbTwoOpacity.value = 0;
+    ambientOrbTwoX.value = withDelay(
+      700,
+      withRepeat(
+        withSequence(
+          withTiming(0, { duration: 1 }),
+          withTiming(travel, { duration: 1200 }),
+          withDelay(350, withTiming(0, { duration: 1 }))
+        ),
+        -1,
+        false
+      )
+    );
+    ambientOrbTwoOpacity.value = withDelay(
+      700,
+      withRepeat(
+        withSequence(
+          withTiming(1, { duration: 120 }),
+          withDelay(940, withTiming(1, { duration: 1 })),
+          withTiming(0, { duration: 140 }),
+          withDelay(390, withTiming(0, { duration: 1 }))
+        ),
+        -1,
+        false
+      )
+    );
+
+    ambientDodgeY.value = withRepeat(
+      withSequence(
+        withDelay(480, withTiming(0, { duration: 1 })),
+        withTiming(-16, { duration: 120 }),
+        withTiming(0, { duration: 180 }),
+        withDelay(520, withTiming(0, { duration: 1 }))
+      ),
+      -1,
+      false
+    );
+  }, [screenWidth]);
 
   // ─── Load recipe ────────────────────────────────────────────────────────────
 
@@ -341,19 +421,22 @@ export default function CookMode() {
   }, []);
 
   const startOrbAnim = useCallback(() => {
+    if (orbIntervalRef.current) return;
     setOrbFrame(0);
-    orbIntervalRef.current = setInterval(() => setOrbFrame(f => (f + 1) % 2), 150);
+    orbIntervalRef.current = setInterval(() => setOrbFrame(f => (f + 1) % 3), 150);
   }, []);
 
   const stopOrbAnim = useCallback(() => {
-    if (orbIntervalRef.current) { clearInterval(orbIntervalRef.current); orbIntervalRef.current = null; }
-    setOrbFrame(0);
+    // Ambient orb traffic keeps this sprite sheet cycling between active counterattacks.
   }, []);
 
-  useEffect(() => () => {
-    if (fireballIntervalRef.current) clearInterval(fireballIntervalRef.current);
-    if (orbIntervalRef.current) clearInterval(orbIntervalRef.current);
-  }, []);
+  useEffect(() => {
+    startOrbAnim();
+    return () => {
+      if (fireballIntervalRef.current) clearInterval(fireballIntervalRef.current);
+      if (orbIntervalRef.current) clearInterval(orbIntervalRef.current);
+    };
+  }, [startOrbAnim]);
 
   // ─── Animation callbacks ─────────────────────────────────────────────────────
 
@@ -584,10 +667,26 @@ export default function CookMode() {
           />
         </Animated.View>
 
+        <Animated.View style={[s.ambientOrbWrapper, ambientOrbStyle]}>
+          <Image
+            source={require('../../assets/new_dark_orb.png')}
+            style={[s.orbSheet, { marginLeft: -orbFrame * 96 }]}
+            resizeMode="stretch"
+          />
+        </Animated.View>
+
+        <Animated.View style={[s.ambientOrbTwoWrapper, ambientOrbTwoStyle]}>
+          <Image
+            source={require('../../assets/new_dark_orb.png')}
+            style={[s.orbSheet, { marginLeft: -orbFrame * 96 }]}
+            resizeMode="stretch"
+          />
+        </Animated.View>
+
         <Animated.View style={[s.orbWrapper, bossProjectileStyle]}>
           <Image
-            source={require('../../assets/boss_orb_sheet.png')}
-            style={[s.orbSheet, { marginLeft: -orbFrame * 48 }]}
+            source={require('../../assets/new_dark_orb.png')}
+            style={[s.orbSheet, { marginLeft: -orbFrame * 96 }]}
             resizeMode="stretch"
           />
         </Animated.View>
@@ -709,8 +808,10 @@ const s = StyleSheet.create({
   // Projectiles & FX
   fireballWrapper: { position: 'absolute', bottom: 28, left: 76, width: 96, height: 96, overflow: 'hidden' },
   fireballSheet:   { width: 96 * 3, height: 432, marginTop: -166 },
-  orbWrapper:      { position: 'absolute', bottom: 40, right: 112, width: 48, height: 48, overflow: 'hidden' },
-  orbSheet:        { width: 48 * 2, height: 48 },
+  ambientOrbWrapper: { position: 'absolute', bottom: 46, right: 104, width: 96, height: 96, overflow: 'hidden', zIndex: 2 },
+  ambientOrbTwoWrapper: { position: 'absolute', bottom: 10, right: 118, width: 96, height: 96, overflow: 'hidden', zIndex: 2 },
+  orbWrapper:      { position: 'absolute', bottom: 24, right: 112, width: 96, height: 96, overflow: 'hidden' },
+  orbSheet:        { width: 96 * 3, height: 192, marginTop: -48 },
   damageNumber:    { position: 'absolute', bottom: 100, right: 110, zIndex: 10, fontFamily: 'PressStart2P_400Regular', color: '#ff6600', fontSize: 12 },
 
   // Section 4 — Player HP
