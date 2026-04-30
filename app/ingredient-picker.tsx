@@ -1,19 +1,21 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Text, View, TextInput, FlatList, Pressable, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
 import { INGREDIENTS, CATEGORIES, CATEGORY_TRANSLATIONS, Ingredient } from '../src/data/ingredients';
+import { INGREDIENT_BUFFS } from '../src/data/ingredientBuffs';
 import { resolveIngredient } from '../src/store/ingredientSelection';
 import { useLanguage } from '../src/context/LanguageContext';
+import { calculateNutrition, formatNutritionValue, getAvailableUnits, getDefaultUnit } from '../src/utils/nutrition';
 import * as Haptics from 'expo-haptics';
  
 const CUSTOM_EMOJIS = ['🍽️','🥘','🫕','🥗','🍲','🧆','🥙','🌮','🍜','🥫','🧂','🫙','🌿','🍵','🥤','🧃','🫗','🍶','🧁','🍰','🎂','🍩','🍪','🍫','🍬','🍭','🥐','🍞','🥖','🥨','🧇','🥞','🧈','🍳','🥚','🧀','🥩','🍗','🍖','🌭','🍔','🍟','🍕','🫓','🥪','🌯','🫔','🍱','🍛','🍝','🍠','🍢','🍣','🍤','🍙','🍚','🍘','🍥','🥮','🍡','🍦','🍧','🍨','🥧','🍮','🍯'];
 const UNIT_OPTIONS = ['', 'g', 'kg', 'ml', 'L', 'tsp', 'tbsp', 'cup', 'pcs', 'pinch'];
 const NUTRITION_STATS = [
-  { key: 'cal', label: 'CAL', value: 0, color: '#e2b96f' },
-  { key: 'protein', label: 'PRO', value: 0, color: '#6fcf97' },
-  { key: 'fat', label: 'FAT', value: 0, color: '#bb86fc' },
-  { key: 'carb', label: 'CARB', value: 0, color: '#56ccf2' },
-];
+  { key: 'calories', label: { en: 'CAL', tr: 'KAL' }, cap: 5000, color: '#e2b96f' },
+  { key: 'protein', label: { en: 'PRO', tr: 'PRO' }, cap: 500, color: '#6fcf97' },
+  { key: 'fat', label: { en: 'FAT', tr: 'YAG' }, cap: 500, color: '#bb86fc' },
+  { key: 'carbs', label: { en: 'CARB', tr: 'KARB' }, cap: 1000, color: '#56ccf2' },
+] as const;
 const BUFF_TEXT = 'BUFFS: Effects unknown. This ingredient will later reveal what it supports, boosts, and restores.';
 
 export default function IngredientPicker() {
@@ -31,6 +33,13 @@ export default function IngredientPicker() {
   const [customEmoji, setCustomEmoji] = useState('🍽️');
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
  
+  const selectedUnitOptions = selectedIngredient ? getAvailableUnits(selectedIngredient.id) : UNIT_OPTIONS;
+  const selectedNutrition = useMemo(() => (
+    selectedIngredient
+      ? calculateNutrition(selectedIngredient.id, quantity, selectedUnit || getDefaultUnit(selectedIngredient.id))
+      : calculateNutrition('', '', '')
+  ), [selectedIngredient, quantity, selectedUnit]);
+
   const filtered = INGREDIENTS.filter(i => {
     const matchesSearch = iname(i).toLowerCase().includes(search.toLowerCase());
     const matchesCategory = selectedCategory ? i.category === selectedCategory : true;
@@ -142,18 +151,22 @@ export default function IngredientPicker() {
             <Text style={ipStyles.quantityLabel}>{iname(selectedIngredient)}</Text>
             <View style={ipStyles.ingredientArtSlot} />
             <View style={ipStyles.statPanel}>
-              {NUTRITION_STATS.map(stat => (
+              {NUTRITION_STATS.map(stat => {
+                const value = selectedNutrition[stat.key];
+                return (
                 <View key={stat.key} style={ipStyles.statRow}>
-                  <Text style={ipStyles.statLabel}>{stat.label}</Text>
+                  <Text style={ipStyles.statLabel}>{stat.label[language]}</Text>
                   <View style={ipStyles.statTrack}>
-                    <View style={[ipStyles.statFill, { width: `${stat.value}%`, backgroundColor: stat.color }]} />
+                    <View style={[ipStyles.statFill, { width: `${Math.min(100, value / stat.cap * 100)}%`, backgroundColor: stat.color }]} />
                   </View>
-                  <Text style={ipStyles.statValue}>{stat.value}</Text>
+                  <Text style={ipStyles.statValue}>{formatNutritionValue(value)}</Text>
                 </View>
-              ))}
+                );
+              })}
             </View>
+            <Text style={ipStyles.sourceCredit}>{language === 'tr' ? 'Besin verisi: USDA FoodData Central' : 'Nutrition data: USDA FoodData Central'}</Text>
             <View style={ipStyles.buffPanel}>
-              <Text style={ipStyles.buffText}>{BUFF_TEXT}</Text>
+              <Text style={ipStyles.buffText}>{language === 'tr' ? (INGREDIENT_BUFFS[selectedIngredient.id]?.textTr ?? BUFF_TEXT) : (INGREDIENT_BUFFS[selectedIngredient.id]?.text ?? BUFF_TEXT)}</Text>
             </View>
             <View style={ipStyles.quantityControls}>
               <View style={ipStyles.quantityUnitRow}>
@@ -164,7 +177,7 @@ export default function IngredientPicker() {
               </View>
               {showUnitPicker && (
                 <View style={ipStyles.unitGrid}>
-                  {UNIT_OPTIONS.map(unit => (
+                  {selectedUnitOptions.map(unit => (
                     <Pressable key={unit || 'none'} style={[ipStyles.unitOption, selectedUnit === unit && ipStyles.unitOptionSelected]} onPress={() => { setSelectedUnit(unit); setShowUnitPicker(false); }}>
                       <Text style={ipStyles.unitOptionText}>{unit || '-'}</Text>
                     </Pressable>
@@ -208,9 +221,10 @@ const ipStyles = {
   statPanel: { marginBottom: 12, gap: 6 },
   statRow: { flexDirection: 'row' as const, alignItems: 'center' as const, gap: 8 },
   statLabel: { width: 36, fontFamily: 'PressStart2P_400Regular', color: '#c8c8e8', fontSize: 7 } as const,
-  statTrack: { flex: 1, height: 8, backgroundColor: '#1a1a2e', borderWidth: 1, borderColor: '#2d2d4e' },
+  statTrack: { flex: 1, maxWidth: 250, height: 8, backgroundColor: '#1a1a2e', borderWidth: 1, borderColor: '#2d2d4e' },
   statFill: { height: '100%' as const },
-  statValue: { width: 22, fontFamily: 'PressStart2P_400Regular', color: '#e2b96f', fontSize: 7, textAlign: 'right' as const },
+  statValue: { width: 48, fontFamily: 'PressStart2P_400Regular', color: '#e2b96f', fontSize: 7, textAlign: 'left' as const },
+  sourceCredit: { fontFamily: 'PressStart2P_400Regular', color: '#4a4a6a', fontSize: 6, marginBottom: 8 } as const,
   buffPanel: { backgroundColor: '#1a1a2e', borderWidth: 1, borderColor: '#2d2d4e', padding: 10, marginBottom: 12 },
   buffText: { fontFamily: 'PressStart2P_400Regular', color: '#c8c8e8', fontSize: 7, lineHeight: 14 } as const,
   quantityControls: { marginTop: 'auto' as const },
