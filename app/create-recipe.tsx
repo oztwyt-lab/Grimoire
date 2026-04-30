@@ -32,6 +32,14 @@ export default function CreateRecipe() {
     }, [])
   );
 
+  const handleEditIngredient = (ingredient: SelectedIngredient) => {
+    if (ingredient.id.startsWith('custom_')) return;
+    registerIngredientCallback((updated) => {
+      setIngredients(prev => prev.map(i => i.id === ingredient.id ? updated : i));
+    });
+    router.push({ pathname: '/ingredient-picker', params: { editId: ingredient.id, editQuantity: ingredient.quantity } } as any);
+  };
+
   const handleSave = async () => {
     if (!name.trim()) {
       Alert.alert(t('create_missing_name_title'), t('create_missing_name_msg'));
@@ -69,11 +77,15 @@ export default function CreateRecipe() {
       <Text style={[crStyles.label, crStyles.ingredientsLabel]}>{t('create_ingredients_label')}</Text>
       <View style={crStyles.ingredientRow}>
         {ingredients.map(i => (
-          <View key={i.id} style={crStyles.ingredientTile}>
+          <Pressable
+            key={i.id}
+            style={({ pressed }) => [crStyles.ingredientTile, pressed && { backgroundColor: '#2d2d4e' }]}
+            onPress={() => handleEditIngredient(i)}
+          >
             <Text style={crStyles.tileEmoji}>{i.emoji}</Text>
             <Text style={crStyles.tileName}>{i.name}</Text>
             {i.quantity ? <Text style={crStyles.tileQty}>{i.quantity}</Text> : null}
-          </View>
+          </Pressable>
         ))}
         <Pressable
           style={({ pressed }) => [crStyles.addTile, pressed && { backgroundColor: '#2d2d4e' }]}

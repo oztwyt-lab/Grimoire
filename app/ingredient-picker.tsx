@@ -1,6 +1,6 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { Text, View, TextInput, FlatList, Pressable, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { INGREDIENTS, CATEGORIES, CATEGORY_TRANSLATIONS, Ingredient } from '../src/data/ingredients';
 import { INGREDIENT_BUFFS } from '../src/data/ingredientBuffs';
 import { resolveIngredient } from '../src/store/ingredientSelection';
@@ -18,10 +18,24 @@ const NUTRITION_STATS = [
 ] as const;
 const BUFF_TEXT = 'BUFFS: Effects unknown. This ingredient will later reveal what it supports, boosts, and restores.';
 
+function parseQuantityString(qs: string): { amount: string; unit: string } {
+  const parts = qs.trim().split(' ');
+  if (parts.length >= 2) {
+    const possibleUnit = parts[parts.length - 1];
+    if (UNIT_OPTIONS.includes(possibleUnit)) {
+      return { amount: parts.slice(0, -1).join(' '), unit: possibleUnit };
+    }
+  }
+  return { amount: qs.trim(), unit: '' };
+}
+
 export default function IngredientPicker() {
   const router = useRouter();
   const { t, language } = useLanguage();
   const iname = (ing: Ingredient) => language === 'tr' ? ing.name_tr : ing.name;
+  const { editId, editQuantity } = useLocalSearchParams<{ editId?: string; editQuantity?: string }>();
+  const isEditing = !!editId;
+
   const [search, setSearch] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedIngredient, setSelectedIngredient] = useState<Ingredient | null>(null);
@@ -32,6 +46,18 @@ export default function IngredientPicker() {
   const [customName, setCustomName] = useState('');
   const [customEmoji, setCustomEmoji] = useState('🍽️');
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+
+  useEffect(() => {
+    if (!editId) return;
+    const ing = INGREDIENTS.find(i => i.id === editId);
+    if (!ing) return;
+    setSelectedIngredient(ing);
+    if (editQuantity) {
+      const { amount, unit } = parseQuantityString(editQuantity);
+      setQuantity(amount);
+      setSelectedUnit(unit);
+    }
+  }, []);
  
   const selectedUnitOptions = selectedIngredient ? getAvailableUnits(selectedIngredient.id) : UNIT_OPTIONS;
   const selectedNutrition = useMemo(() => (
@@ -61,16 +87,16 @@ export default function IngredientPicker() {
     if (!selectedIngredient) return;
     const result = { id: selectedIngredient.id, name: iname(selectedIngredient), emoji: selectedIngredient.emoji, quantity: getQuantityText() };
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    resolveIngredient(result);
     router.back();
-    setTimeout(() => resolveIngredient(result), 150);
   };
- 
+
   const handleCustomConfirm = () => {
     if (!customName.trim()) return;
     const result = { id: `custom_${Date.now()}`, name: customName.trim(), emoji: customEmoji, quantity: getQuantityText() };
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    resolveIngredient(result);
     router.back();
-    setTimeout(() => resolveIngredient(result), 150);
   };
  
   return (
@@ -185,7 +211,7 @@ export default function IngredientPicker() {
                 </View>
               )}
               <Pressable style={({ pressed }) => [ipStyles.confirmButton, pressed && { backgroundColor: '#2d2d4e' }]} onPress={handleConfirm}>
-                <Text style={ipStyles.confirmText}>{t('picker_add')}</Text>
+                <Text style={ipStyles.confirmText}>{isEditing ? 'UPDATE' : t('picker_add')}</Text>
               </Pressable>
             </View>
           </View>

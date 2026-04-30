@@ -113,7 +113,7 @@ export default function StepBuilder({ steps, onChange }: Props) {
       >
         <View style={sb.modalOverlay}>
           <View style={sb.modalCard}>
-            <Text style={sb.emojiPickerLabel}>ICON</Text>
+            <Text style={sb.emojiPickerLabel}>PICK AN ICON</Text>
             <ScrollView
               horizontal={false}
               style={sb.emojiGrid}
@@ -238,19 +238,23 @@ const sb = {
   },
   modalCard: {
     backgroundColor: '#16213e',
-    borderWidth: 1,
-    borderColor: '#2d2d4e',
+    borderWidth: 2,
+    borderColor: '#a08840',
     padding: 24,
     width: '100%' as const,
     gap: 16,
   },
   emojiPickerLabel: {
     fontFamily: 'PressStart2P_400Regular',
-    color: '#4a4a6a',
+    color: '#a08840',
     fontSize: 7,
   },
   emojiGrid: {
     maxHeight: 110,
+    borderWidth: 1,
+    borderColor: '#2d2d4e',
+    padding: 6,
+    backgroundColor: '#1a1a2e',
   },
   emojiGridContent: {
     flexDirection: 'row' as const,
