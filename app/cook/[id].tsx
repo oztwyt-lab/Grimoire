@@ -578,8 +578,8 @@ export default function CookMode() {
 
         <Animated.View style={[s.fireballWrapper, fireballStyle]}>
           <Image
-            source={require('../../assets/fireball_sheet.png')}
-            style={[s.fireballSheet, { marginLeft: -fireballFrame * 56 }]}
+            source={require('../../assets/new_fireball.png')}
+            style={[s.fireballSheet, { marginLeft: -fireballFrame * 96 }]}
             resizeMode="stretch"
           />
         </Animated.View>
@@ -707,8 +707,8 @@ const s = StyleSheet.create({
   bossBox:      { width: 120, height: 120, backgroundColor: '#4a2a6a', borderWidth: 2, borderColor: '#c8a84b', overflow: 'hidden' },
 
   // Projectiles & FX
-  fireballWrapper: { position: 'absolute', bottom: 48, left: 76, width: 56, height: 56, overflow: 'hidden' },
-  fireballSheet:   { width: 56 * 3, height: 56 },
+  fireballWrapper: { position: 'absolute', bottom: 28, left: 76, width: 96, height: 96, overflow: 'hidden' },
+  fireballSheet:   { width: 96 * 3, height: 432, marginTop: -166 },
   orbWrapper:      { position: 'absolute', bottom: 40, right: 112, width: 48, height: 48, overflow: 'hidden' },
   orbSheet:        { width: 48 * 2, height: 48 },
   damageNumber:    { position: 'absolute', bottom: 100, right: 110, zIndex: 10, fontFamily: 'PressStart2P_400Regular', color: '#ff6600', fontSize: 12 },
