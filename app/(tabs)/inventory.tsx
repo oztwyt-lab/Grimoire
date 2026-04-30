@@ -30,6 +30,15 @@ const METRICS: { key: string; labelKey: StringKey }[] = [
   { key: 'slice', labelKey: 'metric_slice' },
 ];
 
+const NUTRITION_STATS = [
+  { key: 'cal', label: 'CAL', value: 0, color: '#e2b96f' },
+  { key: 'protein', label: 'PRO', value: 0, color: '#6fcf97' },
+  { key: 'fat', label: 'FAT', value: 0, color: '#bb86fc' },
+  { key: 'carb', label: 'CARB', value: 0, color: '#56ccf2' },
+];
+
+const BUFF_TEXT = 'BUFFS: Effects unknown. This ingredient will later reveal what it supports, boosts, and restores.';
+
 export default function Inventory() {
   const { language, t } = useLanguage();
   const { inventory, addItem, removeItem } = useInventory();
@@ -109,6 +118,8 @@ export default function Inventory() {
   const handleSelectIngredient = useCallback((ing: Ingredient) => {
     setSelected(ing);
     setStep(2);
+    setQuantity('1');
+    setMetric('piece');
   }, []);
 
   const handleAdd = useCallback(async () => {
@@ -193,10 +204,26 @@ export default function Inventory() {
 
       {selected && (
         <View style={s.selectedPreview}>
-          <Text style={s.selectedEmoji}>{selected.emoji}</Text>
           <Text style={s.selectedName}>
             {language === 'tr' ? selected.name_tr : selected.name}
           </Text>
+          <View style={s.ingredientArtSlot}>
+            <Text style={s.selectedEmoji}>{selected.emoji}</Text>
+          </View>
+          <View style={s.statPanel}>
+            {NUTRITION_STATS.map(stat => (
+              <View key={stat.key} style={s.statRow}>
+                <Text style={s.statLabel}>{stat.label}</Text>
+                <View style={s.statTrack}>
+                  <View style={[s.statFill, { width: `${stat.value}%`, backgroundColor: stat.color }]} />
+                </View>
+                <Text style={s.statValue}>{stat.value}</Text>
+              </View>
+            ))}
+          </View>
+          <View style={s.buffPanel}>
+            <Text style={s.buffText}>{BUFF_TEXT}</Text>
+          </View>
         </View>
       )}
 
@@ -338,9 +365,18 @@ const s = StyleSheet.create({
   // Step 2
   backRow:         { marginBottom: 16 },
   backText:        { fontFamily: 'PressStart2P_400Regular', color: '#4a4a6a', fontSize: 8 },
-  selectedPreview: { alignItems: 'center', marginBottom: 20 },
-  selectedEmoji:   { fontSize: 52, marginBottom: 8 },
-  selectedName:    { fontFamily: 'PressStart2P_400Regular', color: '#c8c8e8', fontSize: 10, textAlign: 'center' },
+  selectedPreview: { backgroundColor: '#16213e', borderWidth: 2, borderColor: '#c8a84b', padding: 16, marginBottom: 20 },
+  selectedEmoji:   { fontSize: 62 },
+  selectedName:    { fontFamily: 'PressStart2P_400Regular', color: '#e2b96f', fontSize: 10, lineHeight: 18, textAlign: 'center', marginBottom: 12 },
+  ingredientArtSlot:{ height: 124, marginBottom: 12, backgroundColor: '#1a1a2e', borderWidth: 1, borderColor: '#2d2d4e', alignItems: 'center', justifyContent: 'center' },
+  statPanel:        { marginBottom: 12, gap: 6 },
+  statRow:          { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  statLabel:        { width: 36, fontFamily: 'PressStart2P_400Regular', color: '#c8c8e8', fontSize: 7 },
+  statTrack:        { flex: 1, height: 8, backgroundColor: '#1a1a2e', borderWidth: 1, borderColor: '#2d2d4e' },
+  statFill:         { height: '100%' },
+  statValue:        { width: 22, fontFamily: 'PressStart2P_400Regular', color: '#e2b96f', fontSize: 7, textAlign: 'right' },
+  buffPanel:        { backgroundColor: '#1a1a2e', borderWidth: 1, borderColor: '#2d2d4e', padding: 10 },
+  buffText:         { fontFamily: 'PressStart2P_400Regular', color: '#c8c8e8', fontSize: 7, lineHeight: 14 },
   label:           { fontFamily: 'PressStart2P_400Regular', color: '#4a4a6a', fontSize: 8, marginBottom: 8 },
   qtyInput:        { backgroundColor: '#16213e', color: '#c8c8e8', borderWidth: 1, borderColor: '#2d2d4e', padding: 14, marginBottom: 16, fontFamily: 'PressStart2P_400Regular', fontSize: 14, textAlign: 'center' },
   addButton:       { borderWidth: 2, borderColor: '#c8a84b', padding: 16, alignItems: 'center', marginTop: 16 },
