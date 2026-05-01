@@ -1,15 +1,20 @@
 import { useEffect, useRef, useState, forwardRef, useImperativeHandle } from 'react';
-import { View, Image, Animated, StyleSheet, Dimensions } from 'react-native';
+import { View, Image, Animated, StyleSheet, Dimensions, ImageSourcePropType } from 'react-native';
 
-const SHEET_W = 500;
-const SHEET_H = 500;
+const SHEET_W = 1024;
+const SHEET_H = 1024;
 const COLS = 4;
 const ROWS = 3;
 const FRAME_W = SHEET_W / COLS;
 const FRAME_H = SHEET_H / ROWS;
-const SCALE = 0.72;
-const DISPLAY_W = FRAME_W * SCALE;
-const DISPLAY_H = FRAME_H * SCALE;
+const DISPLAY_W = 90;
+const DISPLAY_H = 120;
+const SCALE_X = DISPLAY_W / FRAME_W;
+const SCALE_Y = DISPLAY_H / FRAME_H;
+const WIZARD_IDLE = require('../../assets/characters/wizard_idle_new.png');
+const WIZARD_WALK = require('../../assets/characters/wizard_walk_new.png');
+const WIZARD_WALK_MIRRORED = require('../../assets/characters/wizard_walk_new_mirrored.png');
+const WIZARD_CAST = require('../../assets/characters/wizard_fireball_cast_new.png');
 
 const { width } = Dimensions.get('window');
 const WALK_RANGE = width * 0.28;
@@ -20,7 +25,6 @@ const WALK_SPEED = 180; // dp per second
 type AnimState = 'walk_right' | 'idle' | 'brew' | 'walk_left';
 
 interface StateConfig {
-  row: number;
   frames: number;
   fps: number;
   duration: number;
@@ -28,13 +32,20 @@ interface StateConfig {
 }
 
 const STATE_CONFIG: Record<AnimState, StateConfig> = {
-  walk_right: { row: 0, frames: 4, fps: 8, duration: 3000, flipX: false },
-  idle:       { row: 1, frames: 4, fps: 4, duration: 2500, flipX: false },
-  brew:       { row: 2, frames: 4, fps: 5, duration: 3000, flipX: false },
-  walk_left:  { row: 0, frames: 4, fps: 8, duration: 3000, flipX: true  },
+  walk_right: { frames: 12, fps: 8, duration: 3000, flipX: false },
+  idle:       { frames: 12, fps: 5, duration: 2500, flipX: false },
+  brew:       { frames: 12, fps: 6, duration: 3000, flipX: false },
+  walk_left:  { frames: 12, fps: 8, duration: 3000, flipX: false },
 };
 
 const STATE_SEQUENCE: AnimState[] = ['walk_right', 'idle', 'brew', 'walk_left'];
+
+function getSheetSource(state: AnimState): ImageSourcePropType {
+  if (state === 'walk_right') return WIZARD_WALK;
+  if (state === 'walk_left') return WIZARD_WALK_MIRRORED;
+  if (state === 'brew') return WIZARD_CAST;
+  return WIZARD_IDLE;
+}
 
 export type WizardSpriteHandle = {
   startWalking: (direction: 'left' | 'right') => void;
@@ -141,8 +152,9 @@ const WizardSprite = forwardRef<WizardSpriteHandle>(function WizardSprite(_, ref
 
   const cfg = STATE_CONFIG[animState];
   const col = frame % COLS;
-  const offsetX = -col * FRAME_W * SCALE;
-  const offsetY = -cfg.row * FRAME_H * SCALE;
+  const row = Math.floor(frame / COLS);
+  const offsetX = -col * DISPLAY_W;
+  const offsetY = -row * DISPLAY_H;
 
   return (
     <Animated.View
@@ -153,10 +165,10 @@ const WizardSprite = forwardRef<WizardSpriteHandle>(function WizardSprite(_, ref
     >
       <View style={styles.viewport}>
         <Image
-          source={require('../../assets/wizard-sprite.png')}
+          source={getSheetSource(animState)}
           style={[
             styles.sheet,
-            { transform: [{ translateX: offsetX }, { translateY: offsetY }] },
+            { marginLeft: offsetX, marginTop: offsetY },
           ]}
           resizeMode="stretch"
         />
@@ -170,5 +182,5 @@ export default WizardSprite;
 const styles = StyleSheet.create({
   wrapper: { alignItems: 'center' },
   viewport: { width: DISPLAY_W, height: DISPLAY_H, overflow: 'hidden' },
-  sheet: { width: SHEET_W * SCALE, height: SHEET_H * SCALE, position: 'absolute', top: 0, left: 0 },
+  sheet: { width: SHEET_W * SCALE_X, height: SHEET_H * SCALE_Y, position: 'absolute', top: 0, left: 0 },
 });

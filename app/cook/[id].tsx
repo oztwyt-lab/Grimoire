@@ -19,6 +19,19 @@ import Animated, {
 import PressableScale from '../../src/components/PressableScale';
 import { getActionEmoji } from '../../src/utils/actionEmoji';
 
+const WIZARD_IDLE_SHEET = require('../../assets/characters/wizard_idle_new.png');
+const WIZARD_CAST_SHEET = require('../../assets/characters/wizard_fireball_cast_new.png');
+const TOMATO_BOSS_SHEET = require('../../assets/characters/tomato_boss_idle.png');
+const CHARACTER_SHEET_COLS = 4;
+const CHARACTER_SHEET_ROWS = 3;
+const CHARACTER_FRAME_COUNT = CHARACTER_SHEET_COLS * CHARACTER_SHEET_ROWS;
+const CHARACTER_FRAME_W = 1024 / CHARACTER_SHEET_COLS;
+const CHARACTER_FRAME_H = 1024 / CHARACTER_SHEET_ROWS;
+const HERO_FRAME_W = 75;
+const HERO_FRAME_H = 100;
+const BOSS_FRAME_W = 90;
+const BOSS_FRAME_H = 120;
+
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 type CookStep = { id: string; text: string; duration: number | null; emoji?: string };
@@ -184,6 +197,8 @@ export default function CookMode() {
   // Sprite frame cycling
   const [fireballFrame, setFireballFrame] = useState(0);
   const [orbFrame, setOrbFrame] = useState(0);
+  const [wizardFrame, setWizardFrame] = useState(0);
+  const [bossFrame, setBossFrame] = useState(0);
   const fireballIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const orbIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -294,6 +309,19 @@ export default function CookMode() {
       ),
       -1, false
     );
+  }, []);
+
+  useEffect(() => {
+    const wizardTimer = setInterval(() => {
+      setWizardFrame(frame => (frame + 1) % CHARACTER_FRAME_COUNT);
+    }, 140);
+    const bossTimer = setInterval(() => {
+      setBossFrame(frame => (frame + 1) % CHARACTER_FRAME_COUNT);
+    }, 180);
+    return () => {
+      clearInterval(wizardTimer);
+      clearInterval(bossTimer);
+    };
   }, []);
 
   useEffect(() => {
@@ -620,6 +648,10 @@ export default function CookMode() {
   const isLastStep  = battle.currentStep === totalSteps - 1;
   const isComplete  = battle.currentStep >= totalSteps;
   const charIsAttacking = battle.phase === 'PLAYER_ATTACK';
+  const wizardCol = wizardFrame % CHARACTER_SHEET_COLS;
+  const wizardRow = Math.floor(wizardFrame / CHARACTER_SHEET_COLS);
+  const bossCol = bossFrame % CHARACTER_SHEET_COLS;
+  const bossRow = Math.floor(bossFrame / CHARACTER_SHEET_COLS);
 
   const canGoBack = battle.currentStep > 0;
 
@@ -650,15 +682,21 @@ export default function CookMode() {
       <View style={s.battleStage}>
         <PressableScale onPress={handleNextStep} style={s.heroSlot}>
           <Animated.View style={charAnimStyle}>
-            <Image
-              source={
-                charIsAttacking
-                  ? require('../../assets/characters/wizard_fireball_cast.png')
-                  : require('../../assets/characters/wizard_idle.png')
-              }
-              style={s.heroImage}
-              resizeMode="contain"
-            />
+            <View style={s.heroFrameViewport}>
+              <Image
+                source={charIsAttacking ? WIZARD_CAST_SHEET : WIZARD_IDLE_SHEET}
+                style={[
+                  s.heroFrameSheet,
+                  {
+                    width: HERO_FRAME_W * CHARACTER_SHEET_COLS,
+                    height: HERO_FRAME_H * CHARACTER_SHEET_ROWS,
+                    marginLeft: (80 - HERO_FRAME_W) / 2 - wizardCol * HERO_FRAME_W,
+                    marginTop: -wizardRow * HERO_FRAME_H,
+                  },
+                ]}
+                resizeMode="stretch"
+              />
+            </View>
           </Animated.View>
         </PressableScale>
 
@@ -702,6 +740,19 @@ export default function CookMode() {
 
         <View style={s.bossSlot}>
           <Animated.View style={[s.bossBox, bossAnimStyle]}>
+            <Image
+              source={TOMATO_BOSS_SHEET}
+              style={[
+                s.bossFrameSheet,
+                {
+                  width: BOSS_FRAME_W * CHARACTER_SHEET_COLS,
+                  height: BOSS_FRAME_H * CHARACTER_SHEET_ROWS,
+                  marginLeft: (120 - BOSS_FRAME_W) / 2 - bossCol * BOSS_FRAME_W,
+                  marginTop: -bossRow * BOSS_FRAME_H,
+                },
+              ]}
+              resizeMode="stretch"
+            />
             <Animated.View style={bossFlashStyle} />
           </Animated.View>
         </View>
@@ -805,8 +856,11 @@ const s = StyleSheet.create({
   battleStage:  { height: 180, flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', paddingHorizontal: 16, marginBottom: 8, position: 'relative' },
   heroSlot:     { width: 80, height: 100 },
   heroImage:    { width: 80, height: 100 },
+  heroFrameViewport: { width: 80, height: 100, overflow: 'hidden' },
+  heroFrameSheet: { position: 'absolute', top: 0, left: 0 },
   bossSlot:     { width: 120, height: 120, alignItems: 'center', justifyContent: 'center' },
   bossBox:      { width: 120, height: 120, backgroundColor: '#4a2a6a', borderWidth: 2, borderColor: '#c8a84b', overflow: 'hidden' },
+  bossFrameSheet: { position: 'absolute', top: 0, left: 0 },
 
   // Projectiles & FX
   fireballWrapper: { position: 'absolute', bottom: 28, left: 76, width: 96, height: 96, overflow: 'hidden' },
