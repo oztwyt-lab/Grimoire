@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react';
 import {
-  Text, View, ScrollView, Modal, Pressable,
+  Text, View, ScrollView, Modal, Pressable, Image,
   ActivityIndicator, FlatList,
 } from 'react-native';
 import { useFocusEffect } from 'expo-router';
@@ -16,6 +16,12 @@ import {
   DEFAULT_EQUIPMENT, STARTER_ITEMS,
   getUserEquipment, saveUserEquipment, getUserOwnedItems,
 } from '../../lib/firestore';
+
+const WIZARD_IDLE_SHEET = require('../../assets/characters/wizard_idle_new.png');
+const WIZARD_SHEET_COLS = 4;
+const WIZARD_SHEET_ROWS = 3;
+const WIZARD_DISPLAY_W = 86;
+const WIZARD_DISPLAY_H = 116;
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type Profile = { nickname: string; character: string };
@@ -160,8 +166,6 @@ export default function Character() {
     ? equipment[modalState.slot] === modalState.item.id
     : false;
 
-  const charEmoji = profile?.character === 'female' ? '🧙‍♀️' : '🧙';
-
   if (loading) return <ActivityIndicator style={{ flex: 1, backgroundColor: '#16213e' }} color="#e2b96f" />;
 
   return (
@@ -208,7 +212,9 @@ export default function Character() {
 
           {/* Character sprite */}
           <View style={cStyles.spriteContainer}>
-            <Text style={cStyles.spriteEmoji}>{charEmoji}</Text>
+            <View style={cStyles.spriteFrame}>
+              <Image source={WIZARD_IDLE_SHEET} style={cStyles.spriteImage} resizeMode="stretch" />
+            </View>
           </View>
 
           {/* Right column: CLOAK + ACC1 + ACC2 */}
@@ -328,7 +334,15 @@ const cStyles = {
     justifyContent: 'center' as const,
     paddingHorizontal: 4,
   },
-  spriteEmoji: { fontSize: 80 } as const,
+  spriteFrame: {
+    width: WIZARD_DISPLAY_W,
+    height: WIZARD_DISPLAY_H,
+    overflow: 'hidden' as const,
+  },
+  spriteImage: {
+    width: WIZARD_DISPLAY_W * WIZARD_SHEET_COLS,
+    height: WIZARD_DISPLAY_H * WIZARD_SHEET_ROWS,
+  } as const,
   petRow: { marginTop: 8 } as const,
 
   // Slot card
