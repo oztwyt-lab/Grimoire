@@ -1,12 +1,15 @@
 import { useEffect, useState } from 'react';
-import { Text, View, Pressable } from 'react-native';
+import { Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuth } from '../src/context/AuthContext';
+import { useLanguage } from '../src/context/LanguageContext';
+import PressableScale from '../src/components/PressableScale';
 
 export default function Home() {
   const router = useRouter();
   const { user, loading } = useAuth();
+  const { t } = useLanguage();
   const [onboardingChecked, setOnboardingChecked] = useState(false);
 
   useEffect(() => {
@@ -32,7 +35,12 @@ export default function Home() {
   if (loading || !onboardingChecked) {
     return (
       <View style={styles.container}>
-        <Text style={styles.title}>GRIMOR</Text>
+        <View style={styles.logoBlock}>
+          <View style={styles.logoLine} />
+          <Text style={styles.title}>{t('grimoire_title')}</Text>
+          <View style={styles.logoLine} />
+          <Text style={styles.subtitle}>{t('app_tagline')}</Text>
+        </View>
       </View>
     );
   }
@@ -41,20 +49,24 @@ export default function Home() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>GRIMOR</Text>
-      <Text style={styles.subtitle}>Your recipe spellbook</Text>
-      <Pressable
-        style={({ pressed }) => [styles.button, pressed && { backgroundColor: '#2d2d4e' }]}
+      <View style={styles.logoBlock}>
+        <View style={styles.logoLine} />
+        <Text style={styles.title}>{t('grimoire_title')}</Text>
+        <View style={styles.logoLine} />
+        <Text style={styles.subtitle}>{t('app_tagline')}</Text>
+      </View>
+      <PressableScale
+        style={styles.button}
         onPress={() => router.push('/login')}
       >
-        <Text style={styles.buttonText}>LOG IN</Text>
-      </Pressable>
-      <Pressable
-        style={({ pressed }) => [styles.button, styles.secondary, pressed && { backgroundColor: '#2d2d4e' }]}
+        <Text style={styles.buttonText}>{t('login_title')}</Text>
+      </PressableScale>
+      <PressableScale
+        style={[styles.button, styles.secondary]}
         onPress={() => router.push('/register')}
       >
-        <Text style={styles.buttonText}>NEW GAME</Text>
-      </Pressable>
+        <Text style={styles.buttonText}>{t('register_title')}</Text>
+      </PressableScale>
     </View>
   );
 }
@@ -71,15 +83,30 @@ const styles = {
     fontFamily: 'PressStart2P_400Regular',
     color: '#e2b96f',
     fontSize: 28,
-    marginBottom: 16,
     textAlign: 'center' as const,
+    textShadowColor: '#c8a84b',
+    textShadowOffset: { width: 0, height: 0 },
+    textShadowRadius: 8,
   },
   subtitle: {
     fontFamily: 'PressStart2P_400Regular',
     color: '#4a4a6a',
     fontSize: 10,
+    lineHeight: 18,
     marginBottom: 48,
     textAlign: 'center' as const,
+  },
+  logoBlock: {
+    width: '100%' as const,
+    alignItems: 'center' as const,
+    marginBottom: 32,
+  },
+  logoLine: {
+    width: 220,
+    height: 1,
+    backgroundColor: '#c8a84b',
+    marginVertical: 14,
+    opacity: 0.8,
   },
   button: {
     backgroundColor: '#16213e',

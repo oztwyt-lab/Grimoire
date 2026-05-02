@@ -17,11 +17,10 @@ import {
   getUserEquipment, saveUserEquipment, getUserOwnedItems,
 } from '../../lib/firestore';
 
-const WIZARD_IDLE_SHEET = require('../../assets/characters/wizard_idle_new.png');
-const WIZARD_SHEET_COLS = 4;
-const WIZARD_SHEET_ROWS = 3;
-const WIZARD_DISPLAY_W = 86;
-const WIZARD_DISPLAY_H = 116;
+const WIZARD_IDLE_SHEET = require('../../assets/characters/wizard_character/mage_idle.png');
+const WIZARD_IDLE_FRAMES = 7;
+const WIZARD_DISPLAY_W = 92;
+const WIZARD_DISPLAY_H = 92;
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type Profile = { nickname: string; character: string };
@@ -340,8 +339,8 @@ const cStyles = {
     overflow: 'hidden' as const,
   },
   spriteImage: {
-    width: WIZARD_DISPLAY_W * WIZARD_SHEET_COLS,
-    height: WIZARD_DISPLAY_H * WIZARD_SHEET_ROWS,
+    width: WIZARD_DISPLAY_W * WIZARD_IDLE_FRAMES,
+    height: WIZARD_DISPLAY_H,
   } as const,
   petRow: { marginTop: 8 } as const,
 

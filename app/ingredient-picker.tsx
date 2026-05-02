@@ -6,6 +6,7 @@ import { INGREDIENT_BUFFS } from '../src/data/ingredientBuffs';
 import { resolveIngredient } from '../src/store/ingredientSelection';
 import { useLanguage } from '../src/context/LanguageContext';
 import { calculateNutrition, formatNutritionValue, getAvailableUnits, getDefaultUnit } from '../src/utils/nutrition';
+import IngredientIcon from '../src/components/IngredientIcon';
 import * as Haptics from 'expo-haptics';
  
 const CUSTOM_EMOJIS = ['🍽️','🥘','🫕','🥗','🍲','🧆','🥙','🌮','🍜','🥫','🧂','🫙','🌿','🍵','🥤','🧃','🫗','🍶','🧁','🍰','🎂','🍩','🍪','🍫','🍬','🍭','🥐','🍞','🥖','🥨','🧇','🥞','🧈','🍳','🥚','🧀','🥩','🍗','🍖','🌭','🍔','🍟','🍕','🫓','🥪','🌯','🫔','🍱','🍛','🍝','🍠','🍢','🍣','🍤','🍙','🍚','🍘','🍥','🥮','🍡','🍦','🍧','🍨','🥧','🍮','🍯'];
@@ -120,7 +121,7 @@ export default function IngredientPicker() {
         style={ipStyles.grid}
         renderItem={({ item }) => (
           <Pressable style={({ pressed }) => [ipStyles.tile, selectedIngredient?.id === item.id && ipStyles.tileSelected, pressed && { opacity: 0.6 }]} onPress={() => handleSelect(item)}>
-            <Text style={ipStyles.tileEmoji}>{item.emoji}</Text>
+            <IngredientIcon id={item.id} emoji={item.emoji} size={32} imageStyle={ipStyles.tileIcon} textStyle={ipStyles.tileEmoji} />
             <Text style={ipStyles.tileName} numberOfLines={1}>{iname(item)}</Text>
           </Pressable>
         )}
@@ -175,7 +176,15 @@ export default function IngredientPicker() {
           <Pressable style={ipStyles.cardBackdrop} onPress={() => setSelectedIngredient(null)} />
           <View style={ipStyles.quantityCard}>
             <Text style={ipStyles.quantityLabel}>{iname(selectedIngredient)}</Text>
-            <View style={ipStyles.ingredientArtSlot} />
+            <View style={ipStyles.ingredientArtSlot}>
+              <IngredientIcon
+                id={selectedIngredient.id}
+                emoji={selectedIngredient.emoji}
+                size={104}
+                imageStyle={ipStyles.ingredientArtIcon}
+                textStyle={ipStyles.ingredientArtEmoji}
+              />
+            </View>
             <View style={ipStyles.statPanel}>
               {NUTRITION_STATS.map(stat => {
                 const value = selectedNutrition[stat.key];
@@ -236,6 +245,7 @@ const ipStyles = {
   tile: { flex: 1, margin: 6, backgroundColor: '#16213e', borderWidth: 1, borderColor: '#2d2d4e', padding: 10, alignItems: 'center' as const },
   tileSelected: { borderColor: '#e2b96f' } as const,
   tileEmoji: { fontSize: 28, marginBottom: 4 } as const,
+  tileIcon: { marginBottom: 4 } as const,
   tileName: { fontFamily: 'PressStart2P_400Regular', color: '#c8c8e8', fontSize: 7, textAlign: 'center' as const },
   customButton: { borderWidth: 1, borderColor: '#2d2d4e', padding: 16, alignItems: 'center' as const, marginVertical: 8 },
   customButtonText: { fontFamily: 'PressStart2P_400Regular', color: '#4a4a6a', fontSize: 8 } as const,
@@ -243,7 +253,9 @@ const ipStyles = {
   cardOverlay: { position: 'absolute' as const, top: 0, right: 0, bottom: 0, left: 0, alignItems: 'center' as const, justifyContent: 'center' as const, padding: 24 },
   cardBackdrop: { position: 'absolute' as const, top: 0, right: 0, bottom: 0, left: 0, backgroundColor: 'rgba(10, 10, 20, 0.58)' },
   quantityCard: { width: '100%' as const, maxWidth: 370, minHeight: 590, backgroundColor: '#16213e', borderWidth: 2, borderColor: '#e2b96f', padding: 20, justifyContent: 'space-between' as const },
-  ingredientArtSlot: { height: 150, marginTop: 16, marginBottom: 12, backgroundColor: '#1a1a2e', borderWidth: 1, borderColor: '#2d2d4e' },
+  ingredientArtSlot: { height: 150, marginTop: 16, marginBottom: 12, backgroundColor: '#1a1a2e', borderWidth: 1, borderColor: '#2d2d4e', alignItems: 'center' as const, justifyContent: 'center' as const },
+  ingredientArtIcon: {} as const,
+  ingredientArtEmoji: { fontSize: 86 } as const,
   statPanel: { marginBottom: 12, gap: 6 },
   statRow: { flexDirection: 'row' as const, alignItems: 'center' as const, gap: 8 },
   statLabel: { width: 36, fontFamily: 'PressStart2P_400Regular', color: '#c8c8e8', fontSize: 7 } as const,

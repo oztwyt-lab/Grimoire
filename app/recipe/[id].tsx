@@ -6,6 +6,7 @@ import { doc, getDoc, deleteDoc } from '@firebase/firestore';
 import { useLanguage } from '../../src/context/LanguageContext';
 import { useInventory } from '../../src/context/InventoryContext';
 import PressableScale from '../../src/components/PressableScale';
+import IngredientIcon from '../../src/components/IngredientIcon';
 
 type Ingredient = { id: string; name: string; emoji: string; quantity: string };
 type RecipeStep = { id: string; text: string; duration: number | null };
@@ -126,7 +127,7 @@ export default function RecipeDetail() {
                     showMatch && !invItem && rdStyles.tileMissing,
                   ]}
                 >
-                  <Text style={rdStyles.tileEmoji}>{ing.emoji}</Text>
+                  <IngredientIcon id={ing.id} emoji={ing.emoji} size={28} imageStyle={rdStyles.tileIcon} textStyle={rdStyles.tileEmoji} />
                   <Text style={rdStyles.tileName}>{ing.name}</Text>
                   {showMatch ? (
                     <>
@@ -199,6 +200,7 @@ const rdStyles = {
   tileSufficient: { borderColor: '#4a9e6b' } as const,
   tileMissing: { opacity: 0.5 } as const,
   tileEmoji: { fontSize: 24, marginBottom: 2 } as const,
+  tileIcon: { marginBottom: 2 } as const,
   tileName: { fontFamily: 'PressStart2P_400Regular', color: '#c8c8e8', fontSize: 8, textAlign: 'center' as const },
   tileQty: { fontFamily: 'PressStart2P_400Regular', color: '#e2b96f', fontSize: 8, marginTop: 2 } as const,
   tileQtyMuted: { color: '#7a6a3a' } as const,

@@ -10,6 +10,7 @@ import { db } from '../firebase';
 import { collection, query, where, getDocs, orderBy } from '@firebase/firestore';
 import { getCharacterRank, getLevelProgress, CharacterRank } from '../src/data/character';
 import LevelUpModal from '../src/components/LevelUpModal';
+import IngredientIcon from '../src/components/IngredientIcon';
 import { StringKey } from '../src/i18n/strings';
 import { InventoryItem } from '../lib/firestore';
 
@@ -87,7 +88,7 @@ function RecipeCardComponent({ recipe, inventory, onPress }: RecipeCardProps) {
           <View style={gStyles.emojiRow}>
             {preview.map((ing, i) => (
               <View key={i} style={gStyles.emojiTile}>
-                <Text style={gStyles.emojiText}>{ing.emoji}</Text>
+                <IngredientIcon id={ing.id} emoji={ing.emoji} size={22} textStyle={gStyles.emojiText} />
               </View>
             ))}
             {overflow > 0 && (

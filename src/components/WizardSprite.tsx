@@ -1,174 +1,290 @@
-import { useEffect, useRef, useState, forwardRef, useImperativeHandle } from 'react';
-import { View, Image, Animated, StyleSheet, Dimensions, ImageSourcePropType } from 'react-native';
+import { useEffect, useRef, useState, forwardRef, useImperativeHandle, useCallback } from 'react';
+import { View, Image, StyleSheet, Dimensions, ImageSourcePropType } from 'react-native';
+import Animated, {
+  Easing,
+  cancelAnimation,
+  runOnJS,
+  useAnimatedReaction,
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
+} from 'react-native-reanimated';
 
-const SHEET_W = 1024;
-const SHEET_H = 1024;
-const COLS = 4;
-const ROWS = 3;
-const FRAME_W = SHEET_W / COLS;
-const FRAME_H = SHEET_H / ROWS;
-const DISPLAY_W = 90;
-const DISPLAY_H = 120;
-const SCALE_X = DISPLAY_W / FRAME_W;
-const SCALE_Y = DISPLAY_H / FRAME_H;
-const WIZARD_IDLE = require('../../assets/characters/wizard_idle_new.png');
-const WIZARD_WALK = require('../../assets/characters/wizard_walk_new.png');
-const WIZARD_WALK_MIRRORED = require('../../assets/characters/wizard_walk_new_mirrored.png');
-const WIZARD_CAST = require('../../assets/characters/wizard_fireball_cast_new.png');
+const DISPLAY_W = 92;
+const DISPLAY_H = 92;
+const WIZARD_IDLE = require('../../assets/characters/wizard_character/mage_idle.png');
+const WIZARD_WALK_RIGHT = require('../../assets/characters/wizard_character/walk_right.png');
+const WIZARD_WALK_LEFT = require('../../assets/characters/wizard_character/walk_left.png');
+const WIZARD_ATTACK_RIGHT = require('../../assets/characters/wizard_character/attack_right.png');
+const WIZARD_ATTACK_LEFT = require('../../assets/characters/wizard_character/attack_left.png');
 
-const { width } = Dimensions.get('window');
-const WALK_RANGE = width * 0.28;
-const MIN_X = 53 - width / 2;
-const MAX_X = width / 2 - 53;
-const WALK_SPEED = 180; // dp per second
+const { width: screenWidth } = Dimensions.get('window');
+const SCREEN_CENTER_X = screenWidth / 2;
+const MIN_X = 40;
+const MAX_X = screenWidth - 40;
+const WALK_SPEED = 180;
+const MIN_IDLE_MS = 3000;
+const MAX_IDLE_MS = 6000;
+const FRAME_INTERVAL_MS = 250;
+const IDLE_FRAME_INTERVAL_MS = 320;
+const BREW_MS = 2000;
+const CAST_MS = 520;
 
-type AnimState = 'walk_right' | 'idle' | 'brew' | 'walk_left';
+type WizardState = 'IDLE' | 'WALKING' | 'BREWING';
+type Direction = 1 | -1;
 
-interface StateConfig {
+type SpriteConfig = {
+  source: ImageSourcePropType;
   frames: number;
-  fps: number;
-  duration: number;
-  flipX: boolean;
-}
-
-const STATE_CONFIG: Record<AnimState, StateConfig> = {
-  walk_right: { frames: 12, fps: 8, duration: 3000, flipX: false },
-  idle:       { frames: 12, fps: 5, duration: 2500, flipX: false },
-  brew:       { frames: 12, fps: 6, duration: 3000, flipX: false },
-  walk_left:  { frames: 12, fps: 8, duration: 3000, flipX: false },
+  mirrored: boolean;
 };
 
-const STATE_SEQUENCE: AnimState[] = ['walk_right', 'idle', 'brew', 'walk_left'];
+function getSpriteConfig(state: WizardState, direction: Direction): SpriteConfig {
+  if (state === 'WALKING') {
+    return {
+      source: direction === 1 ? WIZARD_WALK_RIGHT : WIZARD_WALK_LEFT,
+      frames: 5,
+      mirrored: false,
+    };
+  }
 
-function getSheetSource(state: AnimState): ImageSourcePropType {
-  if (state === 'walk_right') return WIZARD_WALK;
-  if (state === 'walk_left') return WIZARD_WALK_MIRRORED;
-  if (state === 'brew') return WIZARD_CAST;
-  return WIZARD_IDLE;
+  if (state === 'BREWING') {
+    return {
+      source: direction === 1 ? WIZARD_ATTACK_RIGHT : WIZARD_ATTACK_LEFT,
+      frames: 7,
+      mirrored: false,
+    };
+  }
+
+  return {
+    source: WIZARD_IDLE,
+    frames: 7,
+    mirrored: direction === -1,
+  };
+}
+
+function randomBetween(min: number, max: number) {
+  return Math.random() * (max - min) + min;
+}
+
+function clampPosition(value: number) {
+  return Math.min(MAX_X, Math.max(MIN_X, value));
 }
 
 export type WizardSpriteHandle = {
-  startWalking: (direction: 'left' | 'right') => void;
+  startWalking: (direction: 'left' | 'right', targetScreenX?: number) => void;
   stopWalking: () => void;
+  castFireball: () => void;
   getX: () => number;
 };
 
 const WizardSprite = forwardRef<WizardSpriteHandle>(function WizardSprite(_, ref) {
-  const [animState, setAnimState] = useState<AnimState>('walk_right');
+  const [wizardState, setWizardState] = useState<WizardState>('IDLE');
   const [frame, setFrame] = useState(0);
+  const [direction, setDirection] = useState<Direction>(1);
 
-  const stateIndexRef = useRef(0);
-  const frameRef = useRef(0);
-  const frameTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const stateTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const positionX = useSharedValue(SCREEN_CENTER_X);
+  const positionXRef = useRef(SCREEN_CENTER_X);
   const manualRef = useRef(false);
-  const posXRef = useRef(-WALK_RANGE / 2);
+  const castRef = useRef(false);
+  const idleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const actionTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const frameTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const posX = useRef(new Animated.Value(-WALK_RANGE / 2)).current;
-
-  useEffect(() => {
-    const id = posX.addListener(({ value }) => { posXRef.current = value; });
-    return () => posX.removeListener(id);
-  }, [posX]);
-
-  const startFrameLoop = (state: AnimState) => {
-    if (frameTimerRef.current) clearInterval(frameTimerRef.current);
-    const cfg = STATE_CONFIG[state];
-    frameRef.current = 0;
-    setFrame(0);
-    frameTimerRef.current = setInterval(() => {
-      frameRef.current = (frameRef.current + 1) % cfg.frames;
-      setFrame(frameRef.current);
-    }, 1000 / cfg.fps);
-  };
-
-  const startState = (stateKey: AnimState) => {
-    if (manualRef.current) return;
-    const cfg = STATE_CONFIG[stateKey];
-    startFrameLoop(stateKey);
-    setAnimState(stateKey);
-
-    if (stateKey === 'walk_right') {
-      Animated.timing(posX, { toValue: WALK_RANGE / 2, duration: cfg.duration, useNativeDriver: true }).start();
-    } else if (stateKey === 'walk_left') {
-      Animated.timing(posX, { toValue: -WALK_RANGE / 2, duration: cfg.duration, useNativeDriver: true }).start();
+  const clearIdleTimer = useCallback(() => {
+    if (idleTimerRef.current) {
+      clearTimeout(idleTimerRef.current);
+      idleTimerRef.current = null;
     }
-
-    if (stateTimerRef.current) clearTimeout(stateTimerRef.current);
-    stateTimerRef.current = setTimeout(() => {
-      if (manualRef.current) return;
-      stateIndexRef.current = (stateIndexRef.current + 1) % STATE_SEQUENCE.length;
-      startState(STATE_SEQUENCE[stateIndexRef.current]);
-    }, cfg.duration);
-  };
-
-  const startWalking = (direction: 'left' | 'right') => {
-    manualRef.current = true;
-    if (stateTimerRef.current) clearTimeout(stateTimerRef.current);
-    posX.stopAnimation();
-
-    const walkState: AnimState = direction === 'right' ? 'walk_right' : 'walk_left';
-    const target = direction === 'right' ? MAX_X : MIN_X;
-    const distance = Math.abs(target - posXRef.current);
-    const duration = (distance / WALK_SPEED) * 1000;
-
-    startFrameLoop(walkState);
-    setAnimState(walkState);
-
-    if (duration < 20) return; // already at edge
-
-    Animated.timing(posX, {
-      toValue: target,
-      duration,
-      useNativeDriver: true,
-    }).start(({ finished }) => {
-      // Reached the edge while still held — go idle until released
-      if (finished && manualRef.current) {
-        if (frameTimerRef.current) clearInterval(frameTimerRef.current);
-        startFrameLoop('idle');
-        setAnimState('idle');
-      }
-    });
-  };
-
-  const stopWalking = () => {
-    posX.stopAnimation();
-    manualRef.current = false;
-    if (stateTimerRef.current) clearTimeout(stateTimerRef.current);
-    stateIndexRef.current = 1; // resume from idle
-    startState(STATE_SEQUENCE[1]);
-  };
-
-  useImperativeHandle(ref, () => ({ startWalking, stopWalking, getX: () => posXRef.current }));
-
-  useEffect(() => {
-    startState('walk_right');
-    return () => {
-      if (frameTimerRef.current) clearInterval(frameTimerRef.current);
-      if (stateTimerRef.current) clearTimeout(stateTimerRef.current);
-      posX.stopAnimation();
-    };
   }, []);
 
-  const cfg = STATE_CONFIG[animState];
-  const col = frame % COLS;
-  const row = Math.floor(frame / COLS);
-  const offsetX = -col * DISPLAY_W;
-  const offsetY = -row * DISPLAY_H;
+  const clearActionTimer = useCallback(() => {
+    if (actionTimerRef.current) {
+      clearTimeout(actionTimerRef.current);
+      actionTimerRef.current = null;
+    }
+  }, []);
+
+  const clearFrameTimer = useCallback(() => {
+    if (frameTimerRef.current) {
+      clearInterval(frameTimerRef.current);
+      frameTimerRef.current = null;
+    }
+  }, []);
+
+  const updatePositionRef = useCallback((value: number) => {
+    positionXRef.current = value;
+  }, []);
+
+  useAnimatedReaction(
+    () => positionX.value,
+    (value) => {
+      runOnJS(updatePositionRef)(value);
+    },
+    [updatePositionRef]
+  );
+
+  const startFrameLoop = useCallback((frameCount: number, intervalMs: number) => {
+    clearFrameTimer();
+    setFrame(0);
+    frameTimerRef.current = setInterval(() => {
+      setFrame((current) => (current + 1) % frameCount);
+    }, intervalMs);
+  }, [clearFrameTimer]);
+
+  const scheduleIdleDecision = useCallback(() => {
+    clearIdleTimer();
+    idleTimerRef.current = setTimeout(() => {
+      if (manualRef.current || castRef.current) return;
+
+      const roll = Math.random();
+      if (roll < 0.6) {
+        const targetX = randomBetween(MIN_X, MAX_X);
+        const currentX = positionXRef.current;
+        const nextDirection: Direction = targetX > currentX ? 1 : -1;
+        const distance = Math.abs(targetX - currentX);
+        const duration = Math.max(250, (distance / WALK_SPEED) * 1000);
+
+        setDirection(nextDirection);
+        setWizardState('WALKING');
+        startFrameLoop(5, FRAME_INTERVAL_MS);
+
+        positionX.value = withTiming(
+          targetX,
+          {
+            duration,
+            easing: Easing.inOut(Easing.ease),
+          },
+          (finished) => {
+            if (finished) {
+              runOnJS(returnToIdle)();
+            }
+          }
+        );
+      } else if (roll < 0.85) {
+        setWizardState('BREWING');
+        startFrameLoop(7, FRAME_INTERVAL_MS);
+        clearActionTimer();
+        actionTimerRef.current = setTimeout(() => {
+          returnToIdle();
+        }, BREW_MS);
+      } else {
+        returnToIdle();
+      }
+    }, randomBetween(MIN_IDLE_MS, MAX_IDLE_MS));
+  }, [clearActionTimer, clearIdleTimer, startFrameLoop]);
+
+  const returnToIdle = useCallback(() => {
+    if (manualRef.current || castRef.current) return;
+    cancelAnimation(positionX);
+    clearActionTimer();
+    setWizardState('IDLE');
+    startFrameLoop(7, IDLE_FRAME_INTERVAL_MS);
+    scheduleIdleDecision();
+  }, [clearActionTimer, positionX, scheduleIdleDecision, startFrameLoop]);
+
+  const finishTargetedWalk = useCallback(() => {
+    manualRef.current = false;
+    returnToIdle();
+  }, [returnToIdle]);
+
+  const startManualWalk = useCallback((walkDirection: 'left' | 'right', targetScreenX?: number) => {
+    manualRef.current = true;
+    castRef.current = false;
+    clearIdleTimer();
+    clearActionTimer();
+    cancelAnimation(positionX);
+
+    const targetX = typeof targetScreenX === 'number'
+      ? clampPosition(targetScreenX)
+      : walkDirection === 'right' ? MAX_X : MIN_X;
+    const shouldResumeOnArrival = typeof targetScreenX === 'number';
+    const currentX = positionXRef.current;
+    const distance = Math.abs(targetX - currentX);
+    const duration = Math.max(250, (distance / WALK_SPEED) * 1000);
+
+    setDirection(walkDirection === 'right' ? 1 : -1);
+    setWizardState('WALKING');
+    startFrameLoop(5, FRAME_INTERVAL_MS);
+
+    positionX.value = withTiming(
+      targetX,
+      {
+        duration,
+        easing: Easing.inOut(Easing.ease),
+      },
+      (finished) => {
+        if (finished) {
+          if (shouldResumeOnArrival) {
+            runOnJS(finishTargetedWalk)();
+          } else if (manualRef.current) {
+            runOnJS(startFrameLoop)(7, IDLE_FRAME_INTERVAL_MS);
+            runOnJS(setWizardState)('IDLE');
+          }
+        }
+      }
+    );
+  }, [clearActionTimer, clearIdleTimer, finishTargetedWalk, positionX, startFrameLoop]);
+
+  const stopManualWalk = useCallback(() => {
+    manualRef.current = false;
+    cancelAnimation(positionX);
+    returnToIdle();
+  }, [positionX, returnToIdle]);
+
+  const castFireball = useCallback(() => {
+    castRef.current = true;
+    manualRef.current = false;
+    clearIdleTimer();
+    clearActionTimer();
+    cancelAnimation(positionX);
+    setWizardState('BREWING');
+    startFrameLoop(7, 80);
+
+    actionTimerRef.current = setTimeout(() => {
+      castRef.current = false;
+      returnToIdle();
+    }, CAST_MS);
+  }, [clearActionTimer, clearIdleTimer, positionX, returnToIdle, startFrameLoop]);
+
+  useImperativeHandle(ref, () => ({
+    startWalking: startManualWalk,
+    stopWalking: stopManualWalk,
+    castFireball,
+    getX: () => positionXRef.current - SCREEN_CENTER_X,
+  }), [castFireball, startManualWalk, stopManualWalk]);
+
+  useEffect(() => {
+    setWizardState('IDLE');
+    startFrameLoop(7, IDLE_FRAME_INTERVAL_MS);
+    scheduleIdleDecision();
+
+    return () => {
+      clearIdleTimer();
+      clearActionTimer();
+      clearFrameTimer();
+      cancelAnimation(positionX);
+    };
+  }, [clearActionTimer, clearFrameTimer, clearIdleTimer, positionX, scheduleIdleDecision, startFrameLoop]);
+
+  const wrapperStyle = useAnimatedStyle(() => ({
+    transform: [
+      { translateX: positionX.value - SCREEN_CENTER_X },
+    ],
+  }));
+
+  const sprite = getSpriteConfig(wizardState, direction);
+  const frameIndex = frame % sprite.frames;
+  const offsetX = -frameIndex * DISPLAY_W;
 
   return (
-    <Animated.View
-      style={[
-        styles.wrapper,
-        { transform: [{ translateX: posX }, { scaleX: cfg.flipX ? -1 : 1 }] },
-      ]}
-    >
-      <View style={styles.viewport}>
+    <Animated.View style={[styles.wrapper, wrapperStyle]}>
+      <View style={[styles.viewport, { transform: [{ scaleX: sprite.mirrored ? -1 : 1 }] }]}>
         <Image
-          source={getSheetSource(animState)}
+          source={sprite.source}
           style={[
             styles.sheet,
-            { marginLeft: offsetX, marginTop: offsetY },
+            { width: DISPLAY_W * sprite.frames, marginLeft: offsetX },
           ]}
           resizeMode="stretch"
         />
@@ -182,5 +298,5 @@ export default WizardSprite;
 const styles = StyleSheet.create({
   wrapper: { alignItems: 'center' },
   viewport: { width: DISPLAY_W, height: DISPLAY_H, overflow: 'hidden' },
-  sheet: { width: SHEET_W * SCALE_X, height: SHEET_H * SCALE_Y, position: 'absolute', top: 0, left: 0 },
+  sheet: { height: DISPLAY_H, position: 'absolute', top: 0, left: 0 },
 });

@@ -1,12 +1,13 @@
 // ─── app/login.tsx ───────────────────────────────────────────────────────────
 import { useState } from 'react';
-import { Text, TextInput, View, Pressable, Alert } from 'react-native';
+import { Text, TextInput, View, Pressable, Alert, Image, useWindowDimensions } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuth } from '../src/context/AuthContext';
 import { useLanguage } from '../src/context/LanguageContext';
 
 export default function Login() {
   const router = useRouter();
+  const { width, height } = useWindowDimensions();
   const { login } = useAuth();
   const { language, setLanguage, t } = useLanguage();
   const [email, setEmail] = useState('');
@@ -25,8 +26,20 @@ export default function Login() {
     }
   };
 
+  const bgScale = Math.max(width / 1000, height / 700);
+  const bgWidth = 1000 * bgScale;
+  const bgHeight = 700 * bgScale;
+  const towerSourceX = 845;
+  const bgLeft = width / 2 - towerSourceX * bgScale;
+
   return (
     <View style={styles.container}>
+      <Image
+      source={require('../assets/backgrounds/wizardtower.png')}
+        style={[styles.backgroundImage, { width: bgWidth, height: bgHeight, left: bgLeft }]}
+        resizeMode="cover"
+      />
+      <View style={styles.scrim} />
 
       {/* ─── Language toggle — pinned to top ─────────────────────────────── */}
       <View style={styles.langRow}>
@@ -91,7 +104,9 @@ export default function Login() {
 
 // ─── Styles ──────────────────────────────────────────────────────────────────
 const styles = {
-  container: { flex: 1, backgroundColor: '#1a1a2e', padding: 24 } as const,
+  container: { flex: 1, backgroundColor: '#1a1a2e', padding: 24, overflow: 'hidden' as const },
+  backgroundImage: { position: 'absolute' as const, top: 0 },
+  scrim: { position: 'absolute' as const, top: 0, right: 0, bottom: 0, left: 0, backgroundColor: 'rgba(10, 12, 24, 0.58)' },
   langRow: { flexDirection: 'row' as const, justifyContent: 'flex-end' as const, paddingTop: 52, gap: 8 },
   langButton: { borderWidth: 1, borderColor: '#2d2d4e', paddingHorizontal: 12, paddingVertical: 8, backgroundColor: '#16213e' },
   langButtonActive: { borderColor: '#e2b96f' },

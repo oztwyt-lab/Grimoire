@@ -2,11 +2,19 @@ import { AuthProvider } from '../src/context/AuthContext';
 import { LanguageProvider } from '../src/context/LanguageContext';
 import { InventoryProvider } from '../src/context/InventoryContext';
 import { StatusBar } from 'expo-status-bar';
-import { View, Text } from 'react-native';
+import { StyleSheet, View, Text } from 'react-native';
 import { useFonts, PressStart2P_400Regular } from '@expo-google-fonts/press-start-2p';
 import * as SplashScreen from 'expo-splash-screen';
-import { useEffect, Component, ReactNode } from 'react';
+import { useEffect, useState, Component, ReactNode } from 'react';
 import { Stack } from 'expo-router';
+import Animated, {
+  runOnJS,
+  useAnimatedStyle,
+  useSharedValue,
+  withDelay,
+  withSequence,
+  withTiming,
+} from 'react-native-reanimated';
 
 class ErrorBoundary extends Component<{ children: ReactNode }, { error: string | null }> {
   state = { error: null };
@@ -35,12 +43,29 @@ export default function Layout() {
   const [fontsLoaded] = useFonts({
     PressStart2P_400Regular,
   });
+  const [showAppSplash, setShowAppSplash] = useState(true);
+  const splashOpacity = useSharedValue(0);
 
   useEffect(() => {
     if (fontsLoaded) {
       SplashScreen.hideAsync();
+      splashOpacity.value = withSequence(
+        withTiming(1, { duration: 400 }),
+        withDelay(
+          800,
+          withTiming(0, { duration: 300 }, (finished) => {
+            if (finished) {
+              runOnJS(setShowAppSplash)(false);
+            }
+          })
+        )
+      );
     }
-  }, [fontsLoaded]);
+  }, [fontsLoaded, splashOpacity]);
+
+  const splashStyle = useAnimatedStyle(() => ({
+    opacity: splashOpacity.value,
+  }));
 
   if (!fontsLoaded) return null;
 
@@ -63,6 +88,11 @@ export default function Layout() {
                 />
               </Stack>
               <StatusBar style="light" />
+              {showAppSplash && (
+                <Animated.View pointerEvents="auto" style={[styles.appSplash, splashStyle]}>
+                  <Text style={styles.appSplashTitle}>GRIMOR</Text>
+                </Animated.View>
+              )}
             </View>
           </InventoryProvider>
         </AuthProvider>
@@ -70,3 +100,20 @@ export default function Layout() {
     </ErrorBoundary>
   );
 }
+
+const styles = StyleSheet.create({
+  appSplash: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: '#16213e',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  appSplashTitle: {
+    fontFamily: 'PressStart2P_400Regular',
+    color: '#c8a84b',
+    fontSize: 28,
+    textShadowColor: '#c8a84b',
+    textShadowOffset: { width: 0, height: 0 },
+    textShadowRadius: 8,
+  },
+});

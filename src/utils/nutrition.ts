@@ -8,14 +8,21 @@ export type CalculatedNutrition = {
   grams: number;
 };
 
-const FALLBACK_UNITS: Record<string, number> = {
+const UNIT_TO_GRAMS: Record<string, number> = {
   g: 1,
   kg: 1000,
+  ml: 1,
+  l: 1000,
+  tsp: 5,
+  tbsp: 15,
+  cup: 240,
+  pinch: 0.5,
+  // pcs / adet / none → 'piece' via normalizeUnit; gram weight comes from nutrition.units.piece
 };
 
 function normalizeUnit(unit: string): string {
   const trimmed = unit.trim();
-  if (trimmed === 'pcs') return 'piece';
+  if (trimmed === 'pcs' || trimmed === 'adet' || trimmed === 'none') return 'piece';
   if (trimmed === 'lt') return 'l';
   return trimmed;
 }
@@ -61,7 +68,7 @@ export function quantityToGrams(quantityInput: string, unit: string, ingredientI
   const quantity = parseQuantity(quantityInput) ?? 1;
   const normalizedUnit = normalizeUnit(unit || 'g');
   const nutrition = INGREDIENT_NUTRITION[ingredientId];
-  const gramsPerUnit = nutrition?.units[normalizedUnit] ?? FALLBACK_UNITS[normalizedUnit] ?? 1;
+  const gramsPerUnit = nutrition?.units[normalizedUnit] ?? UNIT_TO_GRAMS[normalizedUnit] ?? 1;
   return quantity * gramsPerUnit;
 }
 

@@ -1,5 +1,5 @@
 import { useState, useReducer, useEffect, useRef, useCallback } from 'react';
-import { View, Text, Alert, useWindowDimensions, StyleSheet, Image } from 'react-native';
+import { View, Text, Alert, useWindowDimensions, StyleSheet, Image, ImageBackground } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { doc, getDoc } from '@firebase/firestore';
@@ -19,18 +19,60 @@ import Animated, {
 import PressableScale from '../../src/components/PressableScale';
 import { getActionEmoji } from '../../src/utils/actionEmoji';
 
-const WIZARD_IDLE_SHEET = require('../../assets/characters/wizard_idle_new.png');
-const WIZARD_CAST_SHEET = require('../../assets/characters/wizard_fireball_cast_new.png');
-const TOMATO_BOSS_SHEET = require('../../assets/characters/tomato_boss_idle.png');
-const CHARACTER_SHEET_COLS = 4;
-const CHARACTER_SHEET_ROWS = 3;
-const CHARACTER_FRAME_COUNT = CHARACTER_SHEET_COLS * CHARACTER_SHEET_ROWS;
-const CHARACTER_FRAME_W = 1024 / CHARACTER_SHEET_COLS;
-const CHARACTER_FRAME_H = 1024 / CHARACTER_SHEET_ROWS;
-const HERO_FRAME_W = 75;
-const HERO_FRAME_H = 100;
-const BOSS_FRAME_W = 90;
+const WIZARD_IDLE_SHEET = require('../../assets/characters/wizard_character/mage_idle.png');
+const WIZARD_CAST_SHEET = require('../../assets/characters/wizard_character/attack_right.png');
+const BATTLE_BACKGROUND = require('../../assets/battle/battleback1.png');
+const GHOST_BOSS_SHEETS = [
+  require('../../assets/bosses/ghosts/ghost.png'),
+  require('../../assets/bosses/ghosts/ghost_green.png'),
+  require('../../assets/bosses/ghosts/ghost_red.png'),
+];
+const FIREBALL_FRAMES = [
+  require('../../assets/effects/fireball/Effects_Fire_0_01.png'),
+  require('../../assets/effects/fireball/Effects_Fire_0_02.png'),
+  require('../../assets/effects/fireball/Effects_Fire_0_03.png'),
+  require('../../assets/effects/fireball/Effects_Fire_0_04.png'),
+  require('../../assets/effects/fireball/Effects_Fire_0_05.png'),
+  require('../../assets/effects/fireball/Effects_Fire_0_06.png'),
+  require('../../assets/effects/fireball/Effects_Fire_0_07.png'),
+  require('../../assets/effects/fireball/Effects_Fire_0_08.png'),
+  require('../../assets/effects/fireball/Effects_Fire_0_09.png'),
+  require('../../assets/effects/fireball/Effects_Fire_0_10.png'),
+  require('../../assets/effects/fireball/Effects_Fire_0_11.png'),
+  require('../../assets/effects/fireball/Effects_Fire_0_12.png'),
+  require('../../assets/effects/fireball/Effects_Fire_0_13.png'),
+  require('../../assets/effects/fireball/Effects_Fire_0_14.png'),
+  require('../../assets/effects/fireball/Effects_Fire_0_15.png'),
+  require('../../assets/effects/fireball/Effects_Fire_0_16.png'),
+  require('../../assets/effects/fireball/Effects_Fire_0_17.png'),
+  require('../../assets/effects/fireball/Effects_Fire_0_18.png'),
+  require('../../assets/effects/fireball/Effects_Fire_0_19.png'),
+  require('../../assets/effects/fireball/Effects_Fire_0_20.png'),
+  require('../../assets/effects/fireball/Effects_Fire_0_21.png'),
+  require('../../assets/effects/fireball/Effects_Fire_0_22.png'),
+  require('../../assets/effects/fireball/Effects_Fire_0_23.png'),
+  require('../../assets/effects/fireball/Effects_Fire_0_24.png'),
+  require('../../assets/effects/fireball/Effects_Fire_0_25.png'),
+  require('../../assets/effects/fireball/Effects_Fire_0_26.png'),
+  require('../../assets/effects/fireball/Effects_Fire_0_27.png'),
+  require('../../assets/effects/fireball/Effects_Fire_0_28.png'),
+];
+const EXPLOSION_SHEET = require('../../assets/effects/explosion/explosion_1.png');
+const HERO_IDLE_FRAME_COUNT = 7;
+const HERO_ATTACK_FRAME_COUNT = 7;
+const HERO_MAX_FRAME_COUNT = 7;
+const HERO_FRAME_W = 88;
+const HERO_FRAME_H = 88;
+const BOSS_SHEET_COLS = 5;
+const BOSS_SHEET_ROWS = 2;
+const BOSS_FRAME_COUNT = BOSS_SHEET_COLS * BOSS_SHEET_ROWS;
+const BOSS_FRAME_W = 86;
 const BOSS_FRAME_H = 120;
+const BOSS_VIEW_W = 76;
+const BOSS_VIEW_H = 112;
+const EXPLOSION_FRAMES = 8;
+const EXPLOSION_FRAME_W = 96;
+const EXPLOSION_FRAME_H = 96;
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -188,6 +230,7 @@ export default function CookMode() {
   const { consumeItems } = useInventory();
   const { width: screenWidth } = useWindowDimensions();
   const insets = useSafeAreaInsets();
+  const bossSheet = useRef(GHOST_BOSS_SHEETS[Math.floor(Math.random() * GHOST_BOSS_SHEETS.length)]).current;
 
   const [recipe, setRecipe] = useState<RawRecipe | null>(null);
   const [steps, setSteps] = useState<CookStep[]>([]);
@@ -196,10 +239,13 @@ export default function CookMode() {
 
   // Sprite frame cycling
   const [fireballFrame, setFireballFrame] = useState(0);
+  const [explosionVisible, setExplosionVisible] = useState(false);
+  const [explosionFrame, setExplosionFrame] = useState(0);
   const [orbFrame, setOrbFrame] = useState(0);
   const [wizardFrame, setWizardFrame] = useState(0);
   const [bossFrame, setBossFrame] = useState(0);
   const fireballIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const explosionIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const orbIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const [battle, dispatch] = useReducer(battleReducer, makeInitial(0));
@@ -313,10 +359,10 @@ export default function CookMode() {
 
   useEffect(() => {
     const wizardTimer = setInterval(() => {
-      setWizardFrame(frame => (frame + 1) % CHARACTER_FRAME_COUNT);
+      setWizardFrame(frame => (frame + 1) % HERO_MAX_FRAME_COUNT);
     }, 140);
     const bossTimer = setInterval(() => {
-      setBossFrame(frame => (frame + 1) % CHARACTER_FRAME_COUNT);
+      setBossFrame(frame => (frame + 1) % BOSS_FRAME_COUNT);
     }, 180);
     return () => {
       clearInterval(wizardTimer);
@@ -442,13 +488,32 @@ export default function CookMode() {
   // ─── Sprite frame cycling ────────────────────────────────────────────────────
 
   const startFireballAnim = useCallback(() => {
+    if (fireballIntervalRef.current) clearInterval(fireballIntervalRef.current);
     setFireballFrame(0);
-    fireballIntervalRef.current = setInterval(() => setFireballFrame(f => (f + 1) % 3), 100);
+    fireballIntervalRef.current = setInterval(() => setFireballFrame(f => (f + 1) % FIREBALL_FRAMES.length), 45);
   }, []);
 
   const stopFireballAnim = useCallback(() => {
     if (fireballIntervalRef.current) { clearInterval(fireballIntervalRef.current); fireballIntervalRef.current = null; }
     setFireballFrame(0);
+  }, []);
+
+  const triggerExplosion = useCallback(() => {
+    if (explosionIntervalRef.current) clearInterval(explosionIntervalRef.current);
+    setExplosionFrame(0);
+    setExplosionVisible(true);
+
+    let nextFrame = 0;
+    explosionIntervalRef.current = setInterval(() => {
+      nextFrame += 1;
+      if (nextFrame >= EXPLOSION_FRAMES) {
+        if (explosionIntervalRef.current) clearInterval(explosionIntervalRef.current);
+        explosionIntervalRef.current = null;
+        setExplosionVisible(false);
+        return;
+      }
+      setExplosionFrame(nextFrame);
+    }, 55);
   }, []);
 
   const startOrbAnim = useCallback(() => {
@@ -465,6 +530,7 @@ export default function CookMode() {
     startOrbAnim();
     return () => {
       if (fireballIntervalRef.current) clearInterval(fireballIntervalRef.current);
+      if (explosionIntervalRef.current) clearInterval(explosionIntervalRef.current);
       if (orbIntervalRef.current) clearInterval(orbIntervalRef.current);
     };
   }, [startOrbAnim]);
@@ -511,9 +577,10 @@ export default function CookMode() {
       damageY.value = withTiming(-50, { duration: 500 });
       damageOpacity.value = withDelay(200, withTiming(0, { duration: 300 }));
       fireballOpacity.value = withTiming(0, { duration: 100 });
+      runOnJS(triggerExplosion)();
       runOnJS(onAttackDone)();
     });
-  }, [screenWidth, onAttackDone]);
+  }, [screenWidth, onAttackDone, triggerExplosion]);
 
   const runCounterattack = useCallback((dodgeSuccess: boolean) => {
     runOnJS(startOrbAnim)();
@@ -648,10 +715,10 @@ export default function CookMode() {
   const isLastStep  = battle.currentStep === totalSteps - 1;
   const isComplete  = battle.currentStep >= totalSteps;
   const charIsAttacking = battle.phase === 'PLAYER_ATTACK';
-  const wizardCol = wizardFrame % CHARACTER_SHEET_COLS;
-  const wizardRow = Math.floor(wizardFrame / CHARACTER_SHEET_COLS);
-  const bossCol = bossFrame % CHARACTER_SHEET_COLS;
-  const bossRow = Math.floor(bossFrame / CHARACTER_SHEET_COLS);
+  const heroFrameCount = charIsAttacking ? HERO_ATTACK_FRAME_COUNT : HERO_IDLE_FRAME_COUNT;
+  const heroFrame = wizardFrame % heroFrameCount;
+  const bossCol = bossFrame % BOSS_SHEET_COLS;
+  const bossRow = Math.floor(bossFrame / BOSS_SHEET_COLS);
 
   const canGoBack = battle.currentStep > 0;
 
@@ -679,7 +746,8 @@ export default function CookMode() {
       </View>
 
       {/* Section 3 — Battle arena */}
-      <View style={s.battleStage}>
+      <ImageBackground source={BATTLE_BACKGROUND} style={s.battleStage} imageStyle={s.battleStageImage} resizeMode="cover">
+        <View style={s.battleTint} />
         <PressableScale onPress={handleNextStep} style={s.heroSlot}>
           <Animated.View style={charAnimStyle}>
             <View style={s.heroFrameViewport}>
@@ -688,10 +756,9 @@ export default function CookMode() {
                 style={[
                   s.heroFrameSheet,
                   {
-                    width: HERO_FRAME_W * CHARACTER_SHEET_COLS,
-                    height: HERO_FRAME_H * CHARACTER_SHEET_ROWS,
-                    marginLeft: (80 - HERO_FRAME_W) / 2 - wizardCol * HERO_FRAME_W,
-                    marginTop: -wizardRow * HERO_FRAME_H,
+                    width: HERO_FRAME_W * heroFrameCount,
+                    height: HERO_FRAME_H,
+                    marginLeft: (92 - HERO_FRAME_W) / 2 - heroFrame * HERO_FRAME_W,
                   },
                 ]}
                 resizeMode="stretch"
@@ -702,11 +769,21 @@ export default function CookMode() {
 
         <Animated.View style={[s.fireballWrapper, fireballStyle]}>
           <Image
-            source={require('../../assets/new_fireball.png')}
-            style={[s.fireballSheet, { marginLeft: -fireballFrame * 96 }]}
+            source={FIREBALL_FRAMES[fireballFrame]}
+            style={s.fireballImage}
             resizeMode="stretch"
           />
         </Animated.View>
+
+        {explosionVisible && (
+          <View style={s.explosionWrapper} pointerEvents="none">
+            <Image
+              source={EXPLOSION_SHEET}
+              style={[s.explosionSheet, { marginLeft: -explosionFrame * EXPLOSION_FRAME_W }]}
+              resizeMode="stretch"
+            />
+          </View>
+        )}
 
         <Animated.View style={[s.ambientOrbWrapper, ambientOrbStyle]}>
           <Image
@@ -741,14 +818,14 @@ export default function CookMode() {
         <View style={s.bossSlot}>
           <Animated.View style={[s.bossBox, bossAnimStyle]}>
             <Image
-              source={TOMATO_BOSS_SHEET}
+              source={bossSheet}
               style={[
                 s.bossFrameSheet,
                 {
-                  width: BOSS_FRAME_W * CHARACTER_SHEET_COLS,
-                  height: BOSS_FRAME_H * CHARACTER_SHEET_ROWS,
-                  marginLeft: (120 - BOSS_FRAME_W) / 2 - bossCol * BOSS_FRAME_W,
-                  marginTop: -bossRow * BOSS_FRAME_H,
+                  width: BOSS_FRAME_W * BOSS_SHEET_COLS,
+                  height: BOSS_FRAME_H * BOSS_SHEET_ROWS,
+                  marginLeft: -bossCol * BOSS_FRAME_W - (BOSS_FRAME_W - BOSS_VIEW_W) / 2,
+                  marginTop: -bossRow * BOSS_FRAME_H - (BOSS_FRAME_H - BOSS_VIEW_H) / 2,
                 },
               ]}
               resizeMode="stretch"
@@ -756,7 +833,7 @@ export default function CookMode() {
             <Animated.View style={bossFlashStyle} />
           </Animated.View>
         </View>
-      </View>
+      </ImageBackground>
 
       {/* Section 4 — Player HP bar */}
       <View style={s.playerHpRow}>
@@ -853,18 +930,22 @@ const s = StyleSheet.create({
   bossHpFill:   { height: '100%', backgroundColor: '#c84b4b' },
 
   // Section 3 — Battle arena
-  battleStage:  { height: 180, flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', paddingHorizontal: 16, marginBottom: 8, position: 'relative' },
-  heroSlot:     { width: 80, height: 100 },
-  heroImage:    { width: 80, height: 100 },
-  heroFrameViewport: { width: 80, height: 100, overflow: 'hidden' },
+  battleStage:  { height: 180, flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', paddingHorizontal: 16, marginBottom: 8, position: 'relative', overflow: 'hidden' },
+  battleStageImage: { opacity: 0.9 },
+  battleTint: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(10, 12, 24, 0.28)' },
+  heroSlot:     { width: 92, height: 100 },
+  heroImage:    { width: 92, height: 92 },
+  heroFrameViewport: { width: 92, height: 92, overflow: 'hidden' },
   heroFrameSheet: { position: 'absolute', top: 0, left: 0 },
   bossSlot:     { width: 120, height: 120, alignItems: 'center', justifyContent: 'center' },
-  bossBox:      { width: 120, height: 120, backgroundColor: '#4a2a6a', borderWidth: 2, borderColor: '#c8a84b', overflow: 'hidden' },
+  bossBox:      { width: BOSS_VIEW_W, height: BOSS_VIEW_H, overflow: 'hidden', transform: [{ scaleX: -1 }] },
   bossFrameSheet: { position: 'absolute', top: 0, left: 0 },
 
   // Projectiles & FX
-  fireballWrapper: { position: 'absolute', bottom: 28, left: 76, width: 96, height: 96, overflow: 'hidden' },
-  fireballSheet:   { width: 96 * 3, height: 432, marginTop: -166 },
+  fireballWrapper: { position: 'absolute', bottom: 28, left: 76, width: 96, height: 70, overflow: 'hidden' },
+  fireballImage:   { width: 112, height: 64 },
+  explosionWrapper: { position: 'absolute', bottom: 72, right: 86, width: EXPLOSION_FRAME_W, height: EXPLOSION_FRAME_H, overflow: 'hidden', zIndex: 12 },
+  explosionSheet: { width: EXPLOSION_FRAME_W * EXPLOSION_FRAMES, height: EXPLOSION_FRAME_H },
   ambientOrbWrapper: { position: 'absolute', bottom: 46, right: 104, width: 96, height: 96, overflow: 'hidden', zIndex: 2 },
   ambientOrbTwoWrapper: { position: 'absolute', bottom: 10, right: 118, width: 96, height: 96, overflow: 'hidden', zIndex: 2 },
   orbWrapper:      { position: 'absolute', bottom: 24, right: 112, width: 96, height: 96, overflow: 'hidden' },

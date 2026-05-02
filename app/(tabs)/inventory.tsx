@@ -10,6 +10,7 @@ import { INGREDIENTS, CATEGORIES, CATEGORY_TRANSLATIONS, Ingredient } from '../.
 import { INGREDIENT_BUFFS } from '../../src/data/ingredientBuffs';
 import { StringKey } from '../../src/i18n/strings';
 import PressableScale from '../../src/components/PressableScale';
+import IngredientIcon from '../../src/components/IngredientIcon';
 import { calculateNutrition, formatNutritionValue, getAvailableUnits, getDefaultUnit } from '../../src/utils/nutrition';
 
 const { width: SW, height: SH } = Dimensions.get('window');
@@ -185,7 +186,7 @@ export default function Inventory() {
         onLongPress={() => handleRemove(item.id)}
         style={[s.card, { width: CARD_W }]}
       >
-        <Text style={s.cardEmoji}>{ing?.emoji ?? '🥄'}</Text>
+        <IngredientIcon id={ing?.id} emoji={ing?.emoji ?? '🥄'} size={32} imageStyle={s.cardIcon} textStyle={s.cardEmoji} />
         <Text style={s.cardName} numberOfLines={2}>{ingName(item.id)}</Text>
         <Text style={s.cardQty}>{item.quantity} {item.metric}</Text>
       </PressableScale>
@@ -200,7 +201,7 @@ export default function Inventory() {
         onPress={() => handleSelectIngredient(item)}
         style={[s.pickCard, { width: MODAL_CARD_W }, isLogged && s.pickCardLogged]}
       >
-        <Text style={s.pickEmoji}>{item.emoji}</Text>
+        <IngredientIcon id={item.id} emoji={item.emoji} size={30} imageStyle={s.pickIcon} textStyle={s.pickEmoji} />
         <Text style={s.pickName} numberOfLines={2}>
           {language === 'tr' ? item.name_tr : item.name}
         </Text>
@@ -257,7 +258,7 @@ export default function Inventory() {
             {language === 'tr' ? selected.name_tr : selected.name}
           </Text>
           <View style={s.ingredientArtSlot}>
-            <Text style={s.selectedEmoji}>{selected.emoji}</Text>
+            <IngredientIcon id={selected.id} emoji={selected.emoji} size={86} imageStyle={s.selectedIcon} textStyle={s.selectedEmoji} />
           </View>
           <View style={s.statPanel}>
             {NUTRITION_STATS.map(stat => {
@@ -374,7 +375,7 @@ export default function Inventory() {
                 {language === 'tr' ? detailIngredient.name_tr : detailIngredient.name}
               </Text>
               <View style={s.ingredientArtSlot}>
-                <Text style={s.selectedEmoji}>{detailIngredient.emoji}</Text>
+                <IngredientIcon id={detailIngredient.id} emoji={detailIngredient.emoji} size={86} imageStyle={s.selectedIcon} textStyle={s.selectedEmoji} />
               </View>
               <View style={s.statPanel}>
                 {NUTRITION_STATS.map(stat => {
@@ -466,6 +467,7 @@ const s = StyleSheet.create({
   mainGrid:        { paddingBottom: 24 },
   card:            { backgroundColor: '#1a1a2e', borderRadius: 4, padding: 10, alignItems: 'center', minHeight: 90 },
   cardEmoji:       { fontSize: 28, marginBottom: 4 },
+  cardIcon:        { marginBottom: 4 },
   cardName:        { fontFamily: 'PressStart2P_400Regular', color: '#c8c8e8', fontSize: 6, textAlign: 'center', marginBottom: 4 },
   cardQty:         { fontFamily: 'PressStart2P_400Regular', color: '#c8a84b', fontSize: 6 },
 
@@ -491,6 +493,7 @@ const s = StyleSheet.create({
   pickCard:        { backgroundColor: '#16213e', borderRadius: 4, borderWidth: 1, borderColor: '#2d2d4e', padding: 8, alignItems: 'center', minHeight: 80 },
   pickCardLogged:  { borderColor: '#c8a84b' },
   pickEmoji:       { fontSize: 26, marginBottom: 4 },
+  pickIcon:        { marginBottom: 4 },
   pickName:        { fontFamily: 'PressStart2P_400Regular', color: '#c8c8e8', fontSize: 6, textAlign: 'center' },
   loggedDot:       { width: 6, height: 6, borderRadius: 3, backgroundColor: '#c8a84b', position: 'absolute', top: 6, right: 6 },
 
@@ -499,6 +502,7 @@ const s = StyleSheet.create({
   backText:        { fontFamily: 'PressStart2P_400Regular', color: '#4a4a6a', fontSize: 8 },
   selectedPreview: { backgroundColor: '#16213e', borderWidth: 2, borderColor: '#c8a84b', padding: 16, marginBottom: 20 },
   selectedEmoji:   { fontSize: 62 },
+  selectedIcon:    {},
   selectedName:    { fontFamily: 'PressStart2P_400Regular', color: '#e2b96f', fontSize: 10, lineHeight: 18, textAlign: 'center', marginBottom: 12 },
   ingredientArtSlot:{ height: 124, marginBottom: 12, backgroundColor: '#1a1a2e', borderWidth: 1, borderColor: '#2d2d4e', alignItems: 'center', justifyContent: 'center' },
   statPanel:        { marginBottom: 12, gap: 6 },

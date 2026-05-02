@@ -7,6 +7,7 @@ export type Language = 'en' | 'tr';
 export const strings = {
   en: {
     // ─── Login ───────────────────────────────────────────────────────────
+    app_tagline: 'Your Recipe Spellbook',
     login_title: 'LOG IN',
     login_email: 'Email',
     login_password: 'Password',
@@ -211,6 +212,7 @@ flavor_archmage: 'A legend of the culinary arts.',
 
   tr: {
     // ─── Login ───────────────────────────────────────────────────────────
+    app_tagline: 'Tarif Buyu Kitabin',
     login_title: 'GİRİŞ YAP',
     login_email: 'E-posta',
     login_password: 'Şifre',

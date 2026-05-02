@@ -17,6 +17,7 @@ export type IngredientNutritionSeed = {
   query: string;
   preferredFdcId?: number;
   units?: Record<string, number>;
+  gramsPerUnit?: number; // grams per 1 piece/unit; used when unit is pcs/adet/none
   manualNutritionOverride?: NutritionPer100g;
 };
 
@@ -30,8 +31,8 @@ const DRY_GRAIN_UNITS = { ...BASE_UNITS, cup: 185 };
 const NUT_UNITS = { ...BASE_UNITS, cup: 120, tbsp: 9 };
 
 export const INGREDIENT_NUTRITION_SEED: IngredientNutritionSeed[] = [
-  { id: 'egg', query: 'egg whole raw fresh', units: { ...BASE_UNITS, piece: 50, cup: 243 } },
-  { id: 'chicken', query: 'chicken breast raw meat only', units: { ...BASE_UNITS, piece: 120, cup: 140 } },
+  { id: 'egg', query: 'egg whole raw fresh', units: { ...BASE_UNITS, piece: 50, cup: 243 }, gramsPerUnit: 50 },
+  { id: 'chicken', query: 'chicken breast raw meat only', units: { ...BASE_UNITS, piece: 120, cup: 140 }, gramsPerUnit: 150 },
   { id: 'beef', query: 'beef raw lean meat', units: { ...BASE_UNITS, piece: 113 } },
   { id: 'salmon', query: 'fish salmon atlantic raw', units: { ...BASE_UNITS, piece: 170 } },
   { id: 'shrimp', query: 'crustaceans shrimp raw', units: { ...BASE_UNITS, piece: 6, cup: 145 } },
@@ -51,11 +52,11 @@ export const INGREDIENT_NUTRITION_SEED: IngredientNutritionSeed[] = [
   { id: 'ground_beef', query: 'beef ground raw 85 lean 15 fat', units: { ...BASE_UNITS, piece: 113, cup: 225 } },
   { id: 'sausage', query: 'pork sausage fresh raw', units: { ...BASE_UNITS, piece: 50 } },
 
-  { id: 'onion', query: 'onions raw', units: { ...BASE_UNITS, piece: 110, cup: 160, slice: 15 } },
-  { id: 'garlic', query: 'garlic raw', units: { ...BASE_UNITS, clove: 5, piece: 5, tsp: 2.8 } },
-  { id: 'tomato', query: 'tomatoes red ripe raw', units: { ...BASE_UNITS, piece: 123, cup: 180, slice: 20 } },
-  { id: 'potato', query: 'potatoes flesh and skin raw', units: { ...BASE_UNITS, piece: 173, cup: 150 } },
-  { id: 'carrot', query: 'carrots raw', units: { ...BASE_UNITS, piece: 61, cup: 128, slice: 10 } },
+  { id: 'onion', query: 'onions raw', units: { ...BASE_UNITS, piece: 110, cup: 160, slice: 15 }, gramsPerUnit: 110 },
+  { id: 'garlic', query: 'garlic raw', units: { ...BASE_UNITS, clove: 5, piece: 5, tsp: 2.8 }, gramsPerUnit: 5 },
+  { id: 'tomato', query: 'tomatoes red ripe raw', units: { ...BASE_UNITS, piece: 123, cup: 180, slice: 20 }, gramsPerUnit: 120 },
+  { id: 'potato', query: 'potatoes flesh and skin raw', units: { ...BASE_UNITS, piece: 173, cup: 150 }, gramsPerUnit: 150 },
+  { id: 'carrot', query: 'carrots raw', units: { ...BASE_UNITS, piece: 61, cup: 128, slice: 10 }, gramsPerUnit: 80 },
   { id: 'spinach', query: 'spinach raw', units: { ...BASE_UNITS, cup: 30 } },
   { id: 'bell_pepper', query: 'peppers sweet bell raw', units: { ...BASE_UNITS, piece: 119, cup: 149, slice: 10 } },
   { id: 'mushroom', query: 'mushrooms white raw', units: { ...BASE_UNITS, piece: 18, cup: 70, slice: 6 } },
@@ -119,7 +120,7 @@ export const INGREDIENT_NUTRITION_SEED: IngredientNutritionSeed[] = [
   { id: 'sunflower_oil', query: 'oil sunflower linoleic', units: OIL_UNITS },
   { id: 'soy_sauce', query: 'soy sauce made from soy and wheat', units: { ...LIQUID_UNITS, tbsp: 16, tsp: 5.3 } },
   { id: 'honey', query: 'honey', units: { ...BASE_UNITS, tbsp: 21, tsp: 7, cup: 339 } },
-  { id: 'lemon', query: 'lemons raw without peel', units: { ...BASE_UNITS, piece: 58, cup: 212, slice: 8 } },
+  { id: 'lemon', query: 'lemons raw without peel', units: { ...BASE_UNITS, piece: 58, cup: 212, slice: 8 }, gramsPerUnit: 58 },
   { id: 'cinnamon', query: 'spices cinnamon ground', units: SPICE_UNITS },
   { id: 'turmeric', query: 'spices turmeric ground', units: SPICE_UNITS },
   { id: 'oregano', query: 'oregano fresh', units: { ...BASE_UNITS, tsp: 1, tbsp: 3, pinch: 0.2 } },
@@ -144,8 +145,8 @@ export const INGREDIENT_NUTRITION_SEED: IngredientNutritionSeed[] = [
   { id: 'nutmeg', query: 'spices nutmeg ground', units: SPICE_UNITS },
   { id: 'tahini', query: 'sesame butter tahini', units: { ...BASE_UNITS, tbsp: 15, tsp: 5, cup: 240 } },
 
-  { id: 'apple', query: 'apples raw with skin', units: { ...BASE_UNITS, piece: 182, cup: 125, slice: 20 } },
-  { id: 'banana', query: 'bananas raw', units: { ...BASE_UNITS, piece: 118, cup: 150, slice: 10 } },
+  { id: 'apple', query: 'apples raw with skin', units: { ...BASE_UNITS, piece: 182, cup: 125, slice: 20 }, gramsPerUnit: 182 },
+  { id: 'banana', query: 'bananas raw', units: { ...BASE_UNITS, piece: 118, cup: 150, slice: 10 }, gramsPerUnit: 118 },
   { id: 'strawberry', query: 'strawberries raw', units: { ...BASE_UNITS, piece: 12, cup: 152 } },
   { id: 'avocado', query: 'avocados raw all commercial varieties', units: { ...BASE_UNITS, piece: 136, cup: 146, slice: 15 } },
   { id: 'mango', query: 'mangos raw', units: { ...BASE_UNITS, piece: 336, cup: 165 } },

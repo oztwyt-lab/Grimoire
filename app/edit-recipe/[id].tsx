@@ -7,6 +7,7 @@ import { registerIngredientCallback } from '../../src/store/ingredientSelection'
 import { useLanguage } from '../../src/context/LanguageContext';
 import * as Haptics from 'expo-haptics';
 import StepBuilder, { LocalStep } from '../../src/components/StepBuilder';
+import IngredientIcon from '../../src/components/IngredientIcon';
 
 type Ingredient = { id: string; name: string; emoji: string; quantity: string };
 
@@ -122,7 +123,7 @@ export default function EditRecipe() {
             style={({ pressed }) => [erStyles.ingredientTile, pressed && { backgroundColor: '#2d2d4e' }]}
             onLongPress={() => handleRemoveIngredient(i.id)}
           >
-            <Text style={erStyles.tileEmoji}>{i.emoji}</Text>
+            <IngredientIcon id={i.id} emoji={i.emoji} size={28} imageStyle={erStyles.tileIcon} textStyle={erStyles.tileEmoji} />
             <Text style={erStyles.tileName}>{i.name}</Text>
             {i.quantity ? <Text style={erStyles.tileQty}>{i.quantity}</Text> : null}
           </Pressable>
@@ -161,6 +162,7 @@ const erStyles = {
   ingredientRow: { flexDirection: 'row' as const, flexWrap: 'wrap' as const, marginBottom: 8 },
   ingredientTile: { backgroundColor: '#16213e', borderWidth: 1, borderColor: '#2d2d4e', padding: 10, alignItems: 'center' as const, margin: 4, minWidth: 70 },
   tileEmoji: { fontSize: 24, marginBottom: 2 } as const,
+  tileIcon: { marginBottom: 2 } as const,
   tileName: { fontFamily: 'PressStart2P_400Regular', color: '#c8c8e8', fontSize: 8, textAlign: 'center' as const },
   tileQty: { fontFamily: 'PressStart2P_400Regular', color: '#e2b96f', fontSize: 8 } as const,
   addTile: { backgroundColor: '#16213e', borderWidth: 2, borderColor: '#e2b96f', padding: 10, alignItems: 'center' as const, justifyContent: 'center' as const, margin: 4, minWidth: 70, minHeight: 70 },
