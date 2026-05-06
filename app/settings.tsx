@@ -1,11 +1,14 @@
 import { useState } from 'react';
-import { Text, View, Pressable, TextInput, Alert, ScrollView } from 'react-native';
+import { Text, View, Pressable, TextInput, Alert, ScrollView, Modal } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuth } from '../src/context/AuthContext';
 import { useLanguage } from '../src/context/LanguageContext';
 import { db } from '../firebase';
 import { collection, query, where, getDocs, deleteDoc, doc } from '@firebase/firestore';
 import * as Haptics from 'expo-haptics';
+import PressableScale from '../src/components/PressableScale';
+import { submitFeedback } from '../lib/firestore';
+import { isAdminEmail } from '../src/config/admin';
 
 export default function Settings() {
   const router = useRouter();
@@ -14,6 +17,11 @@ export default function Settings() {
   const [confirming, setConfirming] = useState(false);
   const [password, setPassword] = useState('');
   const [deleting, setDeleting] = useState(false);
+  const [feedbackOpen, setFeedbackOpen] = useState(false);
+  const [feedbackMessage, setFeedbackMessage] = useState('');
+  const [feedbackSending, setFeedbackSending] = useState(false);
+  const [feedbackThanks, setFeedbackThanks] = useState(false);
+  const isAdmin = isAdminEmail(user?.email);
 
   const handleLogout = async () => {
     await logout();
@@ -37,6 +45,33 @@ export default function Settings() {
         : t('account_error_generic');
       Alert.alert(t('account_error_title'), msg);
       setDeleting(false);
+    }
+  };
+
+  const closeFeedback = () => {
+    if (feedbackSending) return;
+    setFeedbackOpen(false);
+    setFeedbackMessage('');
+    setFeedbackThanks(false);
+  };
+
+  const handleSendFeedback = async () => {
+    const message = feedbackMessage.trim();
+    if (!user || !message) return;
+    setFeedbackSending(true);
+    try {
+      await submitFeedback(user.uid, message);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      setFeedbackThanks(true);
+      setTimeout(() => {
+        setFeedbackOpen(false);
+        setFeedbackMessage('');
+        setFeedbackThanks(false);
+        setFeedbackSending(false);
+      }, 1500);
+    } catch (error) {
+      Alert.alert(t('account_error_title'), String(error));
+      setFeedbackSending(false);
     }
   };
 
@@ -83,6 +118,34 @@ export default function Settings() {
       <View style={sStyles.divider} />
 
       {/* ─── Danger Zone ──────────────────────────────────────────────────── */}
+      <PressableScale onPress={() => router.push('/subscription')} style={sStyles.subscriptionButtonWrap}>
+        <View style={sStyles.subscriptionButton}>
+          <Text style={sStyles.subscriptionButtonText}>{t('settings_subscription')}</Text>
+        </View>
+      </PressableScale>
+
+      <View style={sStyles.divider} />
+
+      <PressableScale onPress={() => setFeedbackOpen(true)} style={sStyles.feedbackButtonWrap}>
+        <View style={sStyles.feedbackButton}>
+          <Text style={sStyles.feedbackButtonText}>{t('settings_feedback')}</Text>
+        </View>
+      </PressableScale>
+
+      <View style={sStyles.divider} />
+
+      {isAdmin && (
+        <>
+          <PressableScale onPress={() => router.push('/admin-feedback')} style={sStyles.adminButtonWrap}>
+            <View style={sStyles.adminButton}>
+              <Text style={sStyles.adminButtonText}>{t('settings_feedback_inbox')}</Text>
+            </View>
+          </PressableScale>
+
+          <View style={sStyles.divider} />
+        </>
+      )}
+
       <Text style={sStyles.dangerLabel}>{t('settings_danger')}</Text>
       <Pressable
         style={({ pressed }) => [sStyles.deleteButton, pressed && { opacity: 0.8 }]}
@@ -127,6 +190,42 @@ export default function Settings() {
         </View>
       )}
 
+      <Modal visible={feedbackOpen} transparent animationType="fade" onRequestClose={closeFeedback}>
+        <View style={sStyles.modalOverlay}>
+          <View style={sStyles.modalCard}>
+            <Text style={sStyles.modalTitle}>{t('feedback_title')}</Text>
+            <TextInput
+              style={sStyles.feedbackInput}
+              placeholder={t('feedback_placeholder')}
+              placeholderTextColor="#4a4a6a"
+              value={feedbackMessage}
+              onChangeText={setFeedbackMessage}
+              multiline
+              textAlignVertical="top"
+              editable={!feedbackSending && !feedbackThanks}
+            />
+            <PressableScale
+              onPress={handleSendFeedback}
+              disabled={feedbackSending || feedbackThanks || !feedbackMessage.trim()}
+              style={sStyles.modalButtonWrap}
+            >
+              <View style={[sStyles.modalSendButton, (!feedbackMessage.trim() || feedbackSending) && sStyles.modalSendDisabled]}>
+                <Text style={sStyles.modalSendText}>
+                  {feedbackThanks ? t('feedback_thanks') : t('feedback_send')}
+                </Text>
+              </View>
+            </PressableScale>
+            <Pressable
+              style={({ pressed }) => [pressed && { opacity: 0.5 }]}
+              onPress={closeFeedback}
+              disabled={feedbackSending}
+            >
+              <Text style={sStyles.modalCancelText}>{t('account_cancel')}</Text>
+            </Pressable>
+          </View>
+        </View>
+      </Modal>
+
     </ScrollView>
   );
 }
@@ -152,6 +251,30 @@ const sStyles = {
   langButtonActive: { borderColor: '#e2b96f' } as const,
   langText: { fontFamily: 'PressStart2P_400Regular', color: '#4a4a6a', fontSize: 8 } as const,
   langTextActive: { color: '#e2b96f' } as const,
+  subscriptionButtonWrap: { width: '100%' as const },
+  subscriptionButton: {
+    borderWidth: 2,
+    borderColor: '#e2b96f',
+    padding: 16,
+    alignItems: 'center' as const,
+  },
+  subscriptionButtonText: { fontFamily: 'PressStart2P_400Regular', color: '#e2b96f', fontSize: 9, lineHeight: 15, textAlign: 'center' as const },
+  feedbackButtonWrap: { width: '100%' as const },
+  feedbackButton: {
+    borderWidth: 2,
+    borderColor: '#e2b96f',
+    padding: 16,
+    alignItems: 'center' as const,
+  },
+  feedbackButtonText: { fontFamily: 'PressStart2P_400Regular', color: '#e2b96f', fontSize: 9 } as const,
+  adminButtonWrap: { width: '100%' as const },
+  adminButton: {
+    borderWidth: 2,
+    borderColor: '#8f8fb8',
+    padding: 16,
+    alignItems: 'center' as const,
+  },
+  adminButtonText: { fontFamily: 'PressStart2P_400Regular', color: '#c8c8e8', fontSize: 9, lineHeight: 15, textAlign: 'center' as const },
   dangerLabel: { fontFamily: 'PressStart2P_400Regular', color: '#4a4a6a', fontSize: 8, marginBottom: 16 } as const,
   deleteButton: {
     borderWidth: 2,
@@ -164,4 +287,41 @@ const sStyles = {
   confirmWarning: { fontFamily: 'PressStart2P_400Regular', color: '#c8c8e8', fontSize: 8, lineHeight: 16, marginBottom: 16 } as const,
   input: { backgroundColor: '#16213e', color: '#c8c8e8', borderWidth: 1, borderColor: '#2d2d4e', padding: 14, marginBottom: 12, fontFamily: 'PressStart2P_400Regular', fontSize: 9 } as const,
   cancelText: { fontFamily: 'PressStart2P_400Regular', color: '#4a4a6a', textAlign: 'center' as const, fontSize: 8, marginTop: 4 },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.78)',
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
+    padding: 24,
+  },
+  modalCard: {
+    width: '100%' as const,
+    backgroundColor: '#1a1a2e',
+    borderWidth: 2,
+    borderColor: '#e2b96f',
+    padding: 20,
+  },
+  modalTitle: { fontFamily: 'PressStart2P_400Regular', color: '#e2b96f', fontSize: 12, textAlign: 'center' as const, marginBottom: 18 },
+  feedbackInput: {
+    minHeight: 112,
+    backgroundColor: '#16213e',
+    color: '#c8c8e8',
+    borderWidth: 1,
+    borderColor: '#2d2d4e',
+    padding: 14,
+    marginBottom: 16,
+    fontFamily: 'PressStart2P_400Regular',
+    fontSize: 8,
+    lineHeight: 18,
+  } as const,
+  modalButtonWrap: { width: '100%' as const },
+  modalSendButton: {
+    backgroundColor: '#c8a84b',
+    padding: 16,
+    alignItems: 'center' as const,
+    marginBottom: 14,
+  },
+  modalSendDisabled: { opacity: 0.45 } as const,
+  modalSendText: { fontFamily: 'PressStart2P_400Regular', color: '#1a1a2e', fontSize: 10 } as const,
+  modalCancelText: { fontFamily: 'PressStart2P_400Regular', color: '#4a4a6a', textAlign: 'center' as const, fontSize: 8 },
 };

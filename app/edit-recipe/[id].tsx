@@ -8,8 +8,18 @@ import { useLanguage } from '../../src/context/LanguageContext';
 import * as Haptics from 'expo-haptics';
 import StepBuilder, { LocalStep } from '../../src/components/StepBuilder';
 import IngredientIcon from '../../src/components/IngredientIcon';
+import RecipeIconPicker, { DEFAULT_RECIPE_ICON } from '../../src/components/RecipeIconPicker';
 
 type Ingredient = { id: string; name: string; emoji: string; quantity: string };
+
+function serializeSteps(steps: LocalStep[]) {
+  return steps.map(step => ({
+    id: step.id,
+    text: step.text,
+    duration: step.duration,
+    ...(step.emoji ? { emoji: step.emoji } : {}),
+  }));
+}
 
 function stepsFromData(data: Record<string, unknown>): LocalStep[] {
   if (Array.isArray(data.steps) && data.steps.length > 0) {
@@ -17,7 +27,7 @@ function stepsFromData(data: Record<string, unknown>): LocalStep[] {
       id: s.id ?? String(i),
       text: s.text ?? '',
       duration: s.duration ?? null,
-      emoji: s.emoji,
+      ...(s.emoji ? { emoji: s.emoji } : {}),
     }));
   }
   const raw =
@@ -39,6 +49,7 @@ export default function EditRecipe() {
   const router = useRouter();
   const { t } = useLanguage();
   const [name, setName] = useState('');
+  const [icon, setIcon] = useState(DEFAULT_RECIPE_ICON);
   const [stepsArr, setStepsArr] = useState<LocalStep[]>([]);
   const [ingredients, setIngredients] = useState<Ingredient[]>([]);
   const [loading, setLoading] = useState(true);
@@ -52,6 +63,7 @@ export default function EditRecipe() {
         if (docSnap.exists()) {
           const data = docSnap.data() as Record<string, unknown>;
           setName(typeof data.name === 'string' ? data.name : '');
+          setIcon(typeof data.icon === 'string' ? data.icon : DEFAULT_RECIPE_ICON);
           setStepsArr(stepsFromData(data));
           setIngredients(Array.isArray(data.ingredients) ? (data.ingredients as Ingredient[]) : []);
         }
@@ -88,10 +100,12 @@ export default function EditRecipe() {
     }
     setSaving(true);
     try {
+      const serializedSteps = serializeSteps(stepsArr);
       await updateDoc(doc(db, 'recipes', id), {
         name,
-        steps: stepsArr,
-        preparation: stepsArr.map(s => s.text).join('\n'),
+        icon: icon || DEFAULT_RECIPE_ICON,
+        steps: serializedSteps,
+        preparation: serializedSteps.map(s => s.text).join('\n'),
         ingredients,
       });
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -108,6 +122,7 @@ export default function EditRecipe() {
   return (
     <ScrollView style={erStyles.container} contentContainerStyle={erStyles.content}>
       <Text style={erStyles.title}>{t('edit_title')}</Text>
+      <RecipeIconPicker value={icon} onChange={setIcon} />
       <TextInput
         style={erStyles.input}
         placeholder={t('edit_name_placeholder')}

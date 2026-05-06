@@ -1,11 +1,21 @@
 import { db } from '../firebase';
-import { doc, getDoc, setDoc } from '@firebase/firestore';
+import { addDoc, collection, doc, getDoc, serverTimestamp, setDoc, Timestamp } from '@firebase/firestore';
 
 // ─── Food inventory ───────────────────────────────────────────────────────────
 export type InventoryItem = {
   id: string;
   quantity: number;
   metric: string;
+};
+
+export type RecipeRecord = {
+  id?: string;
+  userId?: string;
+  name: string;
+  icon?: string;
+  steps?: unknown;
+  preparation?: string;
+  ingredients?: unknown[];
 };
 
 export async function getUserInventory(uid: string): Promise<InventoryItem[]> {
@@ -23,7 +33,65 @@ export async function saveUserInventory(uid: string, inventory: InventoryItem[])
   await setDoc(doc(db, 'users', uid), { inventory }, { merge: true });
 }
 
+export async function submitFeedback(uid: string, message: string): Promise<void> {
+  await addDoc(collection(db, 'feedback'), {
+    uid,
+    message,
+    timestamp: serverTimestamp(),
+    appVersion: '1.0.0',
+    platform: 'android',
+  });
+}
+
 // ─── Character equipment ──────────────────────────────────────────────────────
+export type SubscriptionTier = 'free' | 'monthly' | 'supporter';
+
+export type SubscriptionFields = {
+  subscriptionTier: SubscriptionTier;
+  orbImportsThisMonth: number;
+  orbImportsResetDate: Timestamp;
+  orbDailyCount: number;
+  orbDailyResetDate: Timestamp;
+};
+
+export const MAX_RECIPES_FREE = 5;
+export const MAX_INVENTORY_FREE = 12;
+export const MAX_ORB_MONTHLY_FREE = 3;
+export const MAX_ORB_DAILY_FREE = 3;
+
+function firstDayOfNextMonth(from = new Date()) {
+  return new Date(from.getFullYear(), from.getMonth() + 1, 1, 0, 0, 0, 0);
+}
+
+function tomorrowMidnight(from = new Date()) {
+  return new Date(from.getFullYear(), from.getMonth(), from.getDate() + 1, 0, 0, 0, 0);
+}
+
+export function createDefaultSubscriptionFields(now = new Date()): SubscriptionFields {
+  return {
+    subscriptionTier: 'free',
+    orbImportsThisMonth: 0,
+    orbImportsResetDate: Timestamp.fromDate(firstDayOfNextMonth(now)),
+    orbDailyCount: 0,
+    orbDailyResetDate: Timestamp.fromDate(tomorrowMidnight(now)),
+  };
+}
+
+export async function backfillSubscriptionFields(uid: string, data: Record<string, unknown>): Promise<void> {
+  const defaults = createDefaultSubscriptionFields();
+  const missing: Partial<SubscriptionFields> = {};
+
+  if (!data.subscriptionTier) missing.subscriptionTier = defaults.subscriptionTier;
+  if (typeof data.orbImportsThisMonth !== 'number') missing.orbImportsThisMonth = defaults.orbImportsThisMonth;
+  if (!data.orbImportsResetDate) missing.orbImportsResetDate = defaults.orbImportsResetDate;
+  if (typeof data.orbDailyCount !== 'number') missing.orbDailyCount = defaults.orbDailyCount;
+  if (!data.orbDailyResetDate) missing.orbDailyResetDate = defaults.orbDailyResetDate;
+
+  if (Object.keys(missing).length > 0) {
+    await setDoc(doc(db, 'users', uid), missing, { merge: true });
+  }
+}
+
 export type EquipmentSlot = 'hat' | 'outfit' | 'cloak' | 'staff' | 'accessory1' | 'accessory2';
 
 export type Equipment = {

@@ -228,7 +228,9 @@ export default function CookMode() {
   const router = useRouter();
   const { t } = useLanguage();
   const { consumeItems } = useInventory();
-  const { width: screenWidth } = useWindowDimensions();
+  const { width: screenWidth, height: screenHeight } = useWindowDimensions();
+  const isLandscape = screenWidth > screenHeight;
+  const arenaWidth = isLandscape ? screenWidth * 0.4 : screenWidth;
   const insets = useSafeAreaInsets();
   const bossSheet = useRef(GHOST_BOSS_SHEETS[Math.floor(Math.random() * GHOST_BOSS_SHEETS.length)]).current;
 
@@ -282,6 +284,7 @@ export default function CookMode() {
     transform: [
       { translateX: bossX.value },
       { scale: bossScale.value * bossBreath.value },
+      { scaleX: -1 },
     ],
     opacity: bossOpacity.value,
   }));
@@ -371,7 +374,7 @@ export default function CookMode() {
   }, []);
 
   useEffect(() => {
-    const travel = -screenWidth * 0.62;
+    const travel = -arenaWidth * 0.62;
 
     ambientOrbX.value = 0;
     ambientOrbOpacity.value = 0;
@@ -433,7 +436,7 @@ export default function CookMode() {
       -1,
       false
     );
-  }, [screenWidth]);
+  }, [arenaWidth]);
 
   // ─── Load recipe ────────────────────────────────────────────────────────────
 
@@ -555,7 +558,7 @@ export default function CookMode() {
     runOnJS(startFireballAnim)();
     fireballX.value = 0;
     fireballOpacity.value = 1;
-    fireballX.value = withTiming(screenWidth * 0.55, { duration: 400 }, (finished) => {
+    fireballX.value = withTiming(arenaWidth * 0.55, { duration: 400 }, (finished) => {
       'worklet';
       if (!finished) return;
       bossX.value = withSequence(
@@ -580,7 +583,7 @@ export default function CookMode() {
       runOnJS(triggerExplosion)();
       runOnJS(onAttackDone)();
     });
-  }, [screenWidth, onAttackDone, triggerExplosion]);
+  }, [arenaWidth, onAttackDone, triggerExplosion]);
 
   const runCounterattack = useCallback((dodgeSuccess: boolean) => {
     runOnJS(startOrbAnim)();
@@ -590,7 +593,7 @@ export default function CookMode() {
     );
     bossProjectileX.value = 0;
     bossProjectileOpacity.value = 1;
-    bossProjectileX.value = withTiming(-screenWidth * 0.55, { duration: 400 });
+    bossProjectileX.value = withTiming(-arenaWidth * 0.55, { duration: 400 });
     bossProjectileOpacity.value = withDelay(350, withTiming(0, { duration: 100 }));
 
     if (!dodgeSuccess) {
@@ -617,7 +620,7 @@ export default function CookMode() {
       if (!finished) return;
       runOnJS(onCounterattackDone)(dodgeSuccess);
     }));
-  }, [screenWidth, onCounterattackDone]);
+  }, [arenaWidth, screenWidth, onCounterattackDone]);
 
   const runBossDefeat = useCallback(() => {
     bossHpWidth.value = withTiming(0, { duration: 300 });
@@ -722,35 +725,35 @@ export default function CookMode() {
 
   const canGoBack = battle.currentStep > 0;
 
-  return (
-    <View style={s.container}>
+  // ─── Layout nodes ────────────────────────────────────────────────────────────
 
-      {/* Section 1 — Top bar */}
-      <View style={s.topBar}>
-        <PressableScale onPress={handleExit} style={s.exitHitArea}>
-          <Text style={s.exitText}>✕</Text>
-        </PressableScale>
-        <Text style={s.topTitle} numberOfLines={1}>
-          {recipe.name.toUpperCase()}
-        </Text>
-        <Text style={s.stepCounter}>
-          {Math.min(battle.currentStep + 1, totalSteps)} / {totalSteps}
-        </Text>
-      </View>
+  const topBarNode = (
+    <View style={[s.topBar, { paddingTop: isLandscape ? Math.max(insets.top, 8) : 48 }]}>
+      <PressableScale onPress={handleExit} style={s.exitHitArea}>
+        <Text style={s.exitText}>✕</Text>
+      </PressableScale>
+      <Text style={s.topTitle} numberOfLines={1}>
+        {recipe.name.toUpperCase()}
+      </Text>
+      <Text style={s.stepCounter}>
+        {Math.min(battle.currentStep + 1, totalSteps)} / {totalSteps}
+      </Text>
+    </View>
+  );
 
-      {/* Section 2 — Boss HP bar */}
+  const battleSectionNode = (
+    <>
       <View style={s.bossHpSection}>
         <View style={s.bossHpTrack}>
           <Animated.View style={[s.bossHpFill, bossHpStyle]} />
         </View>
       </View>
 
-      {/* Section 3 — Battle arena */}
-      <ImageBackground source={BATTLE_BACKGROUND} style={s.battleStage} imageStyle={s.battleStageImage} resizeMode="cover">
+      <ImageBackground source={BATTLE_BACKGROUND} style={[s.battleStage, isLandscape && { height: undefined, flex: 1 }]} imageStyle={s.battleStageImage} resizeMode="cover">
         <View style={s.battleTint} />
         <PressableScale onPress={handleNextStep} style={s.heroSlot}>
           <Animated.View style={charAnimStyle}>
-            <View style={s.heroFrameViewport}>
+            <View style={[s.heroFrameViewport, !charIsAttacking && { transform: [{ scaleX: -1 }] }]}>
               <Image
                 source={charIsAttacking ? WIZARD_CAST_SHEET : WIZARD_IDLE_SHEET}
                 style={[
@@ -835,21 +838,25 @@ export default function CookMode() {
         </View>
       </ImageBackground>
 
-      {/* Section 4 — Player HP bar */}
       <View style={s.playerHpRow}>
         <Text style={s.playerHpLabel}>HP</Text>
         <View style={s.playerHpTrack}>
           <Animated.View style={[s.playerHpFill, playerHpStyle]} />
         </View>
       </View>
+    </>
+  );
 
-      {/* Section 5 — Step card (stable flex:1 shell, only content slides) */}
-      <View style={s.stepCard}>
+  const contentSectionNode = (
+    <>
+      <View style={[s.stepCard, isLandscape && { minHeight: 0, maxHeight: undefined, padding: 10 }]}>
         <Text style={s.stepLabel}>
           {t('cook_step')} {Math.min(battle.currentStep + 1, totalSteps)} / {totalSteps}
         </Text>
         <Text style={s.actionEmoji}>{emoji}</Text>
-        <Animated.Text style={[s.stepText, stepSlideStyle]}>{stepText}</Animated.Text>
+        <Animated.Text style={[s.stepText, stepSlideStyle, isLandscape && { fontSize: 8, lineHeight: 18 }]}>
+          {stepText}
+        </Animated.Text>
         {durationStr && (
           <View style={s.durationBadge}>
             <Text style={s.durationText}>{durationStr}</Text>
@@ -857,7 +864,6 @@ export default function CookMode() {
         )}
       </View>
 
-      {/* Section 6 — Bottom buttons (always mounted, always visible) */}
       <View style={[s.bottomArea, { paddingBottom: Math.max(insets.bottom, 16) + 16 }]}>
         <PressableScale
           onPress={handlePrevStep}
@@ -882,8 +888,32 @@ export default function CookMode() {
           </View>
         </PressableScale>
       </View>
+    </>
+  );
 
-      {/* Completion modal */}
+  return (
+    <View style={[s.container, isLandscape && { flexDirection: 'row' }]}>
+      {isLandscape ? (
+        <>
+          {/* Left column — battle arena (40%) */}
+          <View style={{ width: screenWidth * 0.4, paddingTop: insets.top, paddingLeft: insets.left }}>
+            {battleSectionNode}
+          </View>
+          {/* Right column — content (60%) */}
+          <View style={{ flex: 1, paddingRight: insets.right }}>
+            {topBarNode}
+            {contentSectionNode}
+          </View>
+        </>
+      ) : (
+        <>
+          {topBarNode}
+          {battleSectionNode}
+          {contentSectionNode}
+        </>
+      )}
+
+      {/* Completion modal — always absolute on top */}
       {battle.showCompletion && (
         <View style={s.completionOverlay}>
           <Animated.View style={[s.completionCard, modalCardStyle]}>
@@ -930,7 +960,7 @@ const s = StyleSheet.create({
   bossHpFill:   { height: '100%', backgroundColor: '#c84b4b' },
 
   // Section 3 — Battle arena
-  battleStage:  { height: 180, flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', paddingHorizontal: 16, marginBottom: 8, position: 'relative', overflow: 'hidden' },
+  battleStage:  { height: 240, flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', paddingHorizontal: 16, marginBottom: 8, position: 'relative', overflow: 'hidden' },
   battleStageImage: { opacity: 0.9 },
   battleTint: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(10, 12, 24, 0.28)' },
   heroSlot:     { width: 92, height: 100 },
@@ -938,7 +968,7 @@ const s = StyleSheet.create({
   heroFrameViewport: { width: 92, height: 92, overflow: 'hidden' },
   heroFrameSheet: { position: 'absolute', top: 0, left: 0 },
   bossSlot:     { width: 120, height: 120, alignItems: 'center', justifyContent: 'center' },
-  bossBox:      { width: BOSS_VIEW_W, height: BOSS_VIEW_H, overflow: 'hidden', transform: [{ scaleX: -1 }] },
+  bossBox:      { width: BOSS_VIEW_W, height: BOSS_VIEW_H, overflow: 'hidden' },
   bossFrameSheet: { position: 'absolute', top: 0, left: 0 },
 
   // Projectiles & FX

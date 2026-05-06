@@ -5,7 +5,7 @@ import { useAuth } from '../src/context/AuthContext';
 import { useLanguage } from '../src/context/LanguageContext';
 import { db } from '../firebase';
 import { doc, setDoc, serverTimestamp } from '@firebase/firestore';
-import { DEFAULT_EQUIPMENT } from '../lib/firestore';
+import { DEFAULT_EQUIPMENT, createDefaultSubscriptionFields } from '../lib/firestore';
 import * as Haptics from 'expo-haptics';
 import PressableScale from '../src/components/PressableScale';
 
@@ -43,6 +43,7 @@ export default function CharacterSetup() {
       await setDoc(doc(db, 'users', user!.uid), {
         equipment: DEFAULT_EQUIPMENT,
         ownedItems: ['starter_robe', 'starter_staff'],
+        ...createDefaultSubscriptionFields(),
       }, { merge: true });
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       setTimeout(() => {

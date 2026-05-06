@@ -4,8 +4,10 @@ import {
   Animated, Dimensions, ScrollView, KeyboardAvoidingView,
   Platform, StyleSheet,
 } from 'react-native';
+import { useRouter } from 'expo-router';
 import { useLanguage } from '../../src/context/LanguageContext';
 import { useInventory } from '../../src/context/InventoryContext';
+import { useSubscription } from '../../src/context/SubscriptionContext';
 import { INGREDIENTS, CATEGORIES, CATEGORY_TRANSLATIONS, Ingredient } from '../../src/data/ingredients';
 import { INGREDIENT_BUFFS } from '../../src/data/ingredientBuffs';
 import { StringKey } from '../../src/i18n/strings';
@@ -43,8 +45,10 @@ const NUTRITION_STATS = [
 const BUFF_TEXT = 'BUFFS: Effects unknown. This ingredient will later reveal what it supports, boosts, and restores.';
 
 export default function Inventory() {
+  const router = useRouter();
   const { language, t } = useLanguage();
   const { inventory, addItem, removeItem, updateItem } = useInventory();
+  const { canAddInventoryItem } = useSubscription();
 
   // ─── Main screen state ───────────────────────────────────────────────────
   const [activeCategory, setActiveCategory] = useState('All');
@@ -61,15 +65,20 @@ export default function Inventory() {
   const [detailQuantity, setDetailQuantity] = useState('1');
   const [detailMetric, setDetailMetric] = useState('g');
   const [detailQuantityEditable, setDetailQuantityEditable] = useState(false);
+  const [limitVisible, setLimitVisible] = useState(false);
 
   // ─── Slide animation ─────────────────────────────────────────────────────
   const slideY = useRef(new Animated.Value(SH)).current;
 
   const openSheet = useCallback(() => {
+    if (!canAddInventoryItem()) {
+      setLimitVisible(true);
+      return;
+    }
     setSheetVisible(true);
     slideY.setValue(SH);
     Animated.spring(slideY, { toValue: 0, useNativeDriver: true, friction: 14, tension: 90 }).start();
-  }, [slideY]);
+  }, [canAddInventoryItem, slideY]);
 
   const resetModal = useCallback(() => {
     setStep(1); setSelected(null); setQuantity('1');
@@ -442,6 +451,27 @@ export default function Inventory() {
         </View>
       </Modal>
 
+      <Modal visible={limitVisible} transparent animationType="fade" onRequestClose={() => setLimitVisible(false)}>
+        <View style={s.limitOverlay}>
+          <View style={s.limitCard}>
+            <Text style={s.limitTitle}>{t('sub_inventory_limit')}</Text>
+            <Text style={s.limitMessage}>{t('sub_limit_msg_inventory')}</Text>
+            <PressableScale
+              onPress={() => {
+                setLimitVisible(false);
+                router.push('/subscription');
+              }}
+              style={s.limitUpgradeButton}
+            >
+              <Text style={s.limitUpgradeText}>{t('sub_upgrade_cta')}</Text>
+            </PressableScale>
+            <Pressable onPress={() => setLimitVisible(false)} style={s.limitCloseButton}>
+              <Text style={s.limitCloseText}>{t('sub_close')}</Text>
+            </Pressable>
+          </View>
+        </View>
+      </Modal>
+
     </View>
   );
 }
@@ -528,4 +558,12 @@ const s = StyleSheet.create({
   qtyInput:        { backgroundColor: '#16213e', color: '#c8c8e8', borderWidth: 1, borderColor: '#2d2d4e', padding: 14, marginBottom: 16, fontFamily: 'PressStart2P_400Regular', fontSize: 14, textAlign: 'center' },
   addButton:       { borderWidth: 2, borderColor: '#c8a84b', padding: 16, alignItems: 'center', marginTop: 16 },
   addButtonText:   { fontFamily: 'PressStart2P_400Regular', color: '#c8a84b', fontSize: 9 },
+  limitOverlay:    { flex: 1, backgroundColor: 'rgba(10, 10, 20, 0.78)', alignItems: 'center', justifyContent: 'center', padding: 24 },
+  limitCard:       { width: '100%', maxWidth: 360, backgroundColor: '#1a1a2e', borderWidth: 2, borderColor: '#c8a84b', padding: 20 },
+  limitTitle:      { fontFamily: 'PressStart2P_400Regular', color: '#c8a84b', fontSize: 11, lineHeight: 18, textAlign: 'center', marginBottom: 14 },
+  limitMessage:    { fontFamily: 'PressStart2P_400Regular', color: '#c8c8e8', fontSize: 8, lineHeight: 16, textAlign: 'center', marginBottom: 20 },
+  limitUpgradeButton:{ backgroundColor: '#c8a84b', padding: 14, alignItems: 'center', marginBottom: 12 },
+  limitUpgradeText:{ fontFamily: 'PressStart2P_400Regular', color: '#1a1a2e', fontSize: 9 },
+  limitCloseButton:{ padding: 8, alignItems: 'center' },
+  limitCloseText:  { fontFamily: 'PressStart2P_400Regular', color: '#4a4a6a', fontSize: 8 },
 });

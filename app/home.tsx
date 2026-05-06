@@ -225,6 +225,7 @@ export default function Home() {
   // ─── Nav button scale animations ──────────────────────────────────────────
   const grimoireScale = useRef(new Animated.Value(1)).current;
   const inventoryScale = useRef(new Animated.Value(1)).current;
+  const shopScale = useRef(new Animated.Value(1)).current;
   const characterScale = useRef(new Animated.Value(1)).current;
 
   const pressIn = (scale: Animated.Value) => {
@@ -385,6 +386,19 @@ export default function Home() {
           <Text style={styles.navLabel}>{t('nav_inventory')}</Text>
         </Pressable>
 
+        {/* SHOP */}
+        <Pressable
+          style={[styles.navItem, styles.navItemShop]}
+          onPress={() => nav('/shop')}
+          onPressIn={() => pressIn(shopScale)}
+          onPressOut={() => pressOut(shopScale)}
+        >
+          <Animated.Text style={[styles.navEmoji, { transform: [{ scale: shopScale }] }]}>
+            🛒
+          </Animated.Text>
+          <Text style={styles.navLabel}>{t('nav_shop')}</Text>
+        </Pressable>
+
         {/* CHARACTER */}
         <Pressable
           style={styles.navItem}
@@ -479,6 +493,10 @@ const styles = StyleSheet.create({
   },
   navItemCenter: {
     borderLeftWidth: 1,
+    borderRightWidth: 1,
+    borderColor: '#2d2d4e',
+  },
+  navItemShop: {
     borderRightWidth: 1,
     borderColor: '#2d2d4e',
   },

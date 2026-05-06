@@ -4,10 +4,10 @@
     "slug": "Grimoire",
     "scheme": "grimoire",
     "version": "1.0.0",
-    "orientation": "portrait",
+    "orientation": "default",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
-    "newArchEnabled": false,
+    "newArchEnabled": true,
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
@@ -18,7 +18,7 @@
       "bundleIdentifier": "com.slingbladestudios.grimoire"
     },
     "android": {
-      "newArchEnabled": false,
+      "newArchEnabled": true,
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#1a1a2e"

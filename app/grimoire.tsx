@@ -11,6 +11,7 @@ import { collection, query, where, getDocs, orderBy } from '@firebase/firestore'
 import { getCharacterRank, getLevelProgress, CharacterRank } from '../src/data/character';
 import LevelUpModal from '../src/components/LevelUpModal';
 import IngredientIcon from '../src/components/IngredientIcon';
+import { DEFAULT_RECIPE_ICON } from '../src/components/RecipeIconPicker';
 import { StringKey } from '../src/i18n/strings';
 import { InventoryItem } from '../lib/firestore';
 
@@ -34,7 +35,7 @@ const RANK_FLAVOR_KEY: Record<string, StringKey> = {
 };
 
 type Ingredient = { id: string; name: string; emoji: string; quantity: string };
-type Recipe = { id: string; name: string; steps: string; ingredients: Ingredient[]; createdAt: any };
+type Recipe = { id: string; name: string; icon?: string; steps: string; ingredients: Ingredient[]; createdAt: any };
 
 // ─── RecipeCard ──────────────────────────────────────────────────────────────
 type RecipeCardProps = {
@@ -80,6 +81,10 @@ function RecipeCardComponent({ recipe, inventory, onPress }: RecipeCardProps) {
             <Text style={gStyles.readyText}>{t('recipe_ready')}</Text>
           </View>
         )}
+        <View style={gStyles.recipeIconBox}>
+          <Text style={gStyles.recipeIconText}>{recipe.icon || DEFAULT_RECIPE_ICON}</Text>
+        </View>
+        <View style={gStyles.cardBody}>
         <View style={gStyles.cardTop}>
           <Text style={gStyles.cardTitle} numberOfLines={1}>{recipe.name.toUpperCase()}</Text>
           <Text style={gStyles.cardArrow}>▶</Text>
@@ -98,6 +103,7 @@ function RecipeCardComponent({ recipe, inventory, onPress }: RecipeCardProps) {
             )}
           </View>
         )}
+        </View>
       </Pressable>
     </RNAnimated.View>
   );
@@ -106,6 +112,7 @@ function RecipeCardComponent({ recipe, inventory, onPress }: RecipeCardProps) {
 const RecipeCard = React.memo(RecipeCardComponent, (prev, next) =>
   prev.recipe.id === next.recipe.id &&
   prev.recipe.name === next.recipe.name &&
+  prev.recipe.icon === next.recipe.icon &&
   prev.recipe.ingredients === next.recipe.ingredients &&
   prev.inventory === next.inventory
 );
@@ -284,7 +291,7 @@ const gStyles = {
   empty: { fontFamily: 'PressStart2P_400Regular', color: '#4a4a6a', fontSize: 10, textAlign: 'center' as const, marginTop: 60, lineHeight: 24 },
   list: { flex: 1 } as const,
   cardWrapper: { marginBottom: 12 } as const,
-  card: { borderWidth: 1, borderColor: '#2d2d4e', backgroundColor: '#16213e', padding: 16, position: 'relative' as const } as const,
+  card: { borderWidth: 1, borderColor: '#2d2d4e', backgroundColor: '#16213e', padding: 16, position: 'relative' as const, flexDirection: 'row' as const, alignItems: 'center' as const, gap: 12 } as const,
   cardFull: {
     borderColor: '#c8a84b',
     shadowColor: '#c8a84b',
@@ -295,6 +302,9 @@ const gStyles = {
   } as const,
   readyBadge: { position: 'absolute' as const, top: 8, right: 8, backgroundColor: '#c8a84b', paddingHorizontal: 6, paddingVertical: 3, zIndex: 1 } as const,
   readyText: { fontFamily: 'PressStart2P_400Regular', color: '#1a1a2e', fontSize: 6 } as const,
+  recipeIconBox: { width: 52, height: 52, backgroundColor: '#1a1a2e', borderWidth: 1, borderColor: '#2d2d4e', alignItems: 'center' as const, justifyContent: 'center' as const },
+  recipeIconText: { fontSize: 32 } as const,
+  cardBody: { flex: 1 },
   cardTop: { flexDirection: 'row' as const, justifyContent: 'space-between' as const, alignItems: 'center' as const },
   cardTitle: { fontFamily: 'PressStart2P_400Regular', color: '#c8c8e8', fontSize: 10, flex: 1, marginRight: 8 } as const,
   cardArrow: { color: '#e2b96f', fontSize: 12 } as const,

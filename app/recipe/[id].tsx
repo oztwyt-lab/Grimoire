@@ -8,11 +8,12 @@ import { useInventory } from '../../src/context/InventoryContext';
 import PressableScale from '../../src/components/PressableScale';
 import IngredientIcon from '../../src/components/IngredientIcon';
 
-type Ingredient = { id: string; name: string; emoji: string; quantity: string };
+type Ingredient = { id: string; name: string; emoji: string; quantity: string; metric?: string };
 type RecipeStep = { id: string; text: string; duration: number | null };
 type Recipe = {
   id: string;
   name: string;
+  icon?: string;
   steps: RecipeStep[] | string;
   preparation?: string;
   ingredients: Ingredient[];
@@ -29,6 +30,55 @@ function parseRecipeQty(qty: string | undefined): number {
 
 function fmtQty(n: number): string {
   return Number.isInteger(n) ? String(n) : n.toFixed(1);
+}
+
+function getRecipeSteps(recipe: Recipe): RecipeStep[] {
+  if (Array.isArray(recipe.steps)) return recipe.steps;
+
+  const raw =
+    (typeof recipe.preparation === 'string' ? recipe.preparation : '') ||
+    (typeof recipe.steps === 'string' ? recipe.steps : '');
+
+  if (!raw.trim()) return [];
+
+  const lines = raw.includes('\n')
+    ? raw.split('\n').map(line => line.trim()).filter(Boolean)
+    : raw.split(/\.\s+/).map(line => line.trim()).filter(Boolean);
+
+  return lines.map((text, index) => ({
+    id: String(index),
+    text: text.replace(/^\d+[.)]\s*/, '').trim(),
+    duration: null,
+  }));
+}
+
+function formatRecipeForShare(recipe: Recipe): string {
+  const iconLine = recipe.icon ? `${recipe.icon}\n\n` : '';
+  const ingredients = (recipe.ingredients ?? [])
+    .map(ingredient => {
+      const amount = [ingredient.quantity, ingredient.metric, ingredient.name]
+        .filter(Boolean)
+        .join(' ');
+      return `- ${amount}`;
+    })
+    .join('\n');
+
+  const preparation = getRecipeSteps(recipe)
+    .map((step, index) => {
+      const duration = step.duration ? ` (${step.duration} min)` : '';
+      return `${index + 1}. ${step.text}${duration}`;
+    })
+    .join('\n');
+
+  return `${recipe.name.toUpperCase()}
+${iconLine}INGREDIENTS:
+${ingredients || '-'}
+
+PREPARATION:
+${preparation || '-'}
+
+---
+Shared from Grimor - Your Recipe Spellbook`;
 }
 
 export default function RecipeDetail() {
@@ -74,6 +124,17 @@ export default function RecipeDetail() {
     await bulkSetItems(items);
   }
 
+  async function handleShare() {
+    if (!recipe) return;
+    try {
+      const Clipboard = require('expo-clipboard') as { setStringAsync: (text: string) => Promise<void> };
+      await Clipboard.setStringAsync(formatRecipeForShare(recipe));
+      Alert.alert(t('recipe_copied'));
+    } catch {
+      Alert.alert(t('recipe_share_unavailable'));
+    }
+  }
+
   if (loading) return <ActivityIndicator style={{ flex: 1 }} color="#e2b96f" />;
   if (!recipe) return <Text style={{ color: '#c8c8e8', padding: 24, fontFamily: 'PressStart2P_400Regular', fontSize: 9 }}>{t('detail_not_found')}</Text>;
 
@@ -99,6 +160,9 @@ export default function RecipeDetail() {
           <Text style={rdStyles.back}>{t('detail_back')}</Text>
         </Pressable>
         <View style={rdStyles.headerActions}>
+          <Pressable onPress={handleShare} style={({ pressed }) => [pressed && { opacity: 0.5 }]}>
+            <Text style={rdStyles.share}>{t('recipe_share')}</Text>
+          </Pressable>
           <Pressable onPress={() => router.push(`/edit-recipe/${id}`)} style={({ pressed }) => [pressed && { opacity: 0.5 }]}>
             <Text style={rdStyles.edit}>{t('detail_edit')}</Text>
           </Pressable>
@@ -191,6 +255,7 @@ const rdStyles = {
   header: { flexDirection: 'row' as const, justifyContent: 'space-between' as const, alignItems: 'center' as const, marginBottom: 24 },
   headerActions: { flexDirection: 'row' as const, gap: 16 },
   back: { fontFamily: 'PressStart2P_400Regular', color: '#4a4a6a', fontSize: 8 } as const,
+  share: { fontFamily: 'PressStart2P_400Regular', color: '#6fcf97', fontSize: 8 } as const,
   edit: { fontFamily: 'PressStart2P_400Regular', color: '#e2b96f', fontSize: 8 } as const,
   delete: { fontFamily: 'PressStart2P_400Regular', color: '#c8c8e8', fontSize: 8 } as const,
   title: { fontFamily: 'PressStart2P_400Regular', color: '#c8c8e8', fontSize: 14, marginBottom: 24, lineHeight: 26 } as const,

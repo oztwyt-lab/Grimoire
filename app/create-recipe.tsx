@@ -1,25 +1,39 @@
 import { useState, useCallback } from 'react';
-import { Text, TextInput, View, Pressable, ScrollView, Alert } from 'react-native';
+import { Text, TextInput, View, Pressable, ScrollView, Alert, Modal } from 'react-native';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { useAuth } from '../src/context/AuthContext';
 import { useLanguage } from '../src/context/LanguageContext';
+import { useSubscription } from '../src/context/SubscriptionContext';
 import { db } from '../firebase';
 import { collection, addDoc, serverTimestamp } from '@firebase/firestore';
 import { registerIngredientCallback } from '../src/store/ingredientSelection';
 import * as Haptics from 'expo-haptics';
 import StepBuilder, { LocalStep } from '../src/components/StepBuilder';
 import IngredientIcon from '../src/components/IngredientIcon';
+import RecipeIconPicker, { DEFAULT_RECIPE_ICON } from '../src/components/RecipeIconPicker';
 
 type SelectedIngredient = { id: string; name: string; emoji: string; quantity: string };
+
+function serializeSteps(steps: LocalStep[]) {
+  return steps.map(step => ({
+    id: step.id,
+    text: step.text,
+    duration: step.duration,
+    ...(step.emoji ? { emoji: step.emoji } : {}),
+  }));
+}
 
 export default function CreateRecipe() {
   const router = useRouter();
   const { user } = useAuth();
   const { t } = useLanguage();
+  const { canAddRecipe } = useSubscription();
   const [name, setName] = useState('');
+  const [icon, setIcon] = useState(DEFAULT_RECIPE_ICON);
   const [stepsArr, setStepsArr] = useState<LocalStep[]>([]);
   const [ingredients, setIngredients] = useState<SelectedIngredient[]>([]);
   const [saving, setSaving] = useState(false);
+  const [limitVisible, setLimitVisible] = useState(false);
 
   useFocusEffect(
     useCallback(() => {
@@ -46,13 +60,19 @@ export default function CreateRecipe() {
       Alert.alert(t('create_missing_name_title'), t('create_missing_name_msg'));
       return;
     }
+    if (!canAddRecipe()) {
+      setLimitVisible(true);
+      return;
+    }
     setSaving(true);
     try {
+      const serializedSteps = serializeSteps(stepsArr);
       await addDoc(collection(db, 'recipes'), {
         userId: user?.uid,
         name,
-        steps: stepsArr,
-        preparation: stepsArr.map(s => s.text).join('\n'),
+        icon,
+        steps: serializedSteps,
+        preparation: serializedSteps.map(s => s.text).join('\n'),
         ingredients,
         createdAt: serverTimestamp(),
       });
@@ -68,6 +88,7 @@ export default function CreateRecipe() {
   return (
     <ScrollView style={crStyles.container} contentContainerStyle={crStyles.content}>
       <Text style={crStyles.title}>{t('create_title')}</Text>
+      <RecipeIconPicker value={icon} onChange={setIcon} />
       <TextInput
         style={crStyles.input}
         placeholder={t('create_name_placeholder')}
@@ -107,6 +128,29 @@ export default function CreateRecipe() {
       <Pressable style={({ pressed }) => [pressed && { opacity: 0.5 }]} onPress={() => router.back()}>
         <Text style={crStyles.link}>{t('create_cancel')}</Text>
       </Pressable>
+      <Modal visible={limitVisible} transparent animationType="fade" onRequestClose={() => setLimitVisible(false)}>
+        <View style={crStyles.limitOverlay}>
+          <View style={crStyles.limitCard}>
+            <Text style={crStyles.limitTitle}>{t('sub_recipe_limit')}</Text>
+            <Text style={crStyles.limitMessage}>{t('sub_limit_msg_recipe')}</Text>
+            <Pressable
+              style={({ pressed }) => [crStyles.limitUpgradeButton, pressed && { opacity: 0.72 }]}
+              onPress={() => {
+                setLimitVisible(false);
+                router.push('/subscription');
+              }}
+            >
+              <Text style={crStyles.limitUpgradeText}>{t('sub_upgrade_cta')}</Text>
+            </Pressable>
+            <Pressable
+              style={({ pressed }) => [crStyles.limitCloseButton, pressed && { opacity: 0.5 }]}
+              onPress={() => setLimitVisible(false)}
+            >
+              <Text style={crStyles.limitCloseText}>{t('sub_close')}</Text>
+            </Pressable>
+          </View>
+        </View>
+      </Modal>
     </ScrollView>
   );
 }
@@ -129,4 +173,12 @@ const crStyles = {
   button: { backgroundColor: '#16213e', borderWidth: 2, borderColor: '#e2b96f', padding: 16, alignItems: 'center' as const, marginTop: 24, marginBottom: 16 },
   buttonText: { fontFamily: 'PressStart2P_400Regular', color: '#e2b96f', fontSize: 10 } as const,
   link: { fontFamily: 'PressStart2P_400Regular', color: '#4a4a6a', textAlign: 'center' as const, fontSize: 8 },
+  limitOverlay: { flex: 1, backgroundColor: 'rgba(10, 10, 20, 0.78)', alignItems: 'center' as const, justifyContent: 'center' as const, padding: 24 },
+  limitCard: { width: '100%' as const, maxWidth: 360, backgroundColor: '#1a1a2e', borderWidth: 2, borderColor: '#e2b96f', padding: 20 },
+  limitTitle: { fontFamily: 'PressStart2P_400Regular', color: '#e2b96f', fontSize: 11, lineHeight: 18, textAlign: 'center' as const, marginBottom: 14 },
+  limitMessage: { fontFamily: 'PressStart2P_400Regular', color: '#c8c8e8', fontSize: 8, lineHeight: 16, textAlign: 'center' as const, marginBottom: 20 },
+  limitUpgradeButton: { backgroundColor: '#e2b96f', padding: 14, alignItems: 'center' as const, marginBottom: 12 },
+  limitUpgradeText: { fontFamily: 'PressStart2P_400Regular', color: '#1a1a2e', fontSize: 9 },
+  limitCloseButton: { padding: 8, alignItems: 'center' as const },
+  limitCloseText: { fontFamily: 'PressStart2P_400Regular', color: '#4a4a6a', fontSize: 8 },
 };

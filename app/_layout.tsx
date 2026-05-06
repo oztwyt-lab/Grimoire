@@ -1,6 +1,7 @@
 import { AuthProvider } from '../src/context/AuthContext';
 import { LanguageProvider } from '../src/context/LanguageContext';
 import { InventoryProvider } from '../src/context/InventoryContext';
+import { SubscriptionProvider } from '../src/context/SubscriptionContext';
 import { StatusBar } from 'expo-status-bar';
 import { StyleSheet, View, Text } from 'react-native';
 import { useFonts, PressStart2P_400Regular } from '@expo-google-fonts/press-start-2p';
@@ -74,26 +75,28 @@ export default function Layout() {
       <LanguageProvider>
         <AuthProvider>
           <InventoryProvider>
-            <View style={{ flex: 1, backgroundColor: '#1a1a2e' }}>
-              <Stack
-                screenOptions={{
-                  headerShown: false,
-                  animation: 'slide_from_right',
-                  contentStyle: { backgroundColor: '#1a1a2e' },
-                }}
-              >
-                <Stack.Screen
-                  name="cook"
-                  options={{ headerShown: false, contentStyle: { backgroundColor: '#16213e' } }}
-                />
-              </Stack>
-              <StatusBar style="light" />
-              {showAppSplash && (
-                <Animated.View pointerEvents="auto" style={[styles.appSplash, splashStyle]}>
-                  <Text style={styles.appSplashTitle}>GRIMOR</Text>
-                </Animated.View>
-              )}
-            </View>
+            <SubscriptionProvider>
+              <View style={{ flex: 1, backgroundColor: '#1a1a2e' }}>
+                <Stack
+                  screenOptions={{
+                    headerShown: false,
+                    animation: 'slide_from_right',
+                    contentStyle: { backgroundColor: '#1a1a2e' },
+                  }}
+                >
+                  <Stack.Screen
+                    name="cook"
+                    options={{ headerShown: false, contentStyle: { backgroundColor: '#16213e' } }}
+                  />
+                </Stack>
+                <StatusBar style="light" />
+                {showAppSplash && (
+                  <Animated.View pointerEvents="auto" style={[styles.appSplash, splashStyle]}>
+                    <Text style={styles.appSplashTitle}>GRIMOR</Text>
+                  </Animated.View>
+                )}
+              </View>
+            </SubscriptionProvider>
           </InventoryProvider>
         </AuthProvider>
       </LanguageProvider>
