@@ -81,9 +81,24 @@ export default function Layout() {
                   screenOptions={{
                     headerShown: false,
                     animation: 'slide_from_right',
-                    contentStyle: { backgroundColor: '#1a1a2e' },
+                    animationDuration: 250,
+                    gestureEnabled: true,
+                    gestureDirection: 'horizontal',
+                    contentStyle: { backgroundColor: '#16213e' },
                   }}
                 >
+                  <Stack.Screen
+                    name="ingredient-picker"
+                    options={{ animation: 'slide_from_bottom', presentation: 'modal' }}
+                  />
+                  <Stack.Screen
+                    name="settings"
+                    options={{ animation: 'slide_from_bottom', presentation: 'modal' }}
+                  />
+                  <Stack.Screen
+                    name="admin-feedback"
+                    options={{ animation: 'slide_from_bottom', presentation: 'modal' }}
+                  />
                   <Stack.Screen
                     name="cook"
                     options={{ headerShown: false, contentStyle: { backgroundColor: '#16213e' } }}

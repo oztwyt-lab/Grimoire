@@ -25,7 +25,9 @@ const { width, height } = Dimensions.get('window');
 const HUD_HEIGHT = 90;
 const NAV_HEIGHT = 96;
 // Wizard container anchor: left = width/2 - 45, so wizard right edge ≈ width/2 + 45
-const WIZARD_RIGHT_OFFSET = 45;
+const CHARACTER_DISPLAY_W = 120;
+const CHARACTER_DISPLAY_H = 160;
+const WIZARD_RIGHT_OFFSET = CHARACTER_DISPLAY_W / 2;
 const FIREBALL_SIZE = 76;
 const FIREBALL_FRAMES = [
   require('../assets/effects/fireball/Effects_Fire_0_01.png'),
@@ -267,10 +269,11 @@ export default function Home() {
   const insets = useSafeAreaInsets();
   const hudBottom = HUD_HEIGHT + 52;
   const roomHeight = height - hudBottom - NAV_HEIGHT - insets.bottom;
-  const charTop = hudBottom + roomHeight * 0.68;
+  const characterBottom = height * 0.22;
+  const charTop = height - characterBottom - CHARACTER_DISPLAY_H;
 
   return (
-    <View style={{ flex: 1, backgroundColor: '#1a1a2e' }}>
+    <View style={{ flex: 1, backgroundColor: '#1a1a2e', overflow: 'visible' }}>
 
       {/* ── Room background image ── */}
       <ImageBackground
@@ -301,7 +304,14 @@ export default function Home() {
 
       {/* ── Wizard (on top of room tap area, receives its own touches) ── */}
       <Pressable
-        style={{ position: 'absolute', left: width / 2 - 45, top: charTop }}
+        style={{
+          position: 'absolute',
+          left: width / 2 - CHARACTER_DISPLAY_W / 2,
+          bottom: characterBottom,
+          width: CHARACTER_DISPLAY_W,
+          height: CHARACTER_DISPLAY_H,
+          overflow: 'visible',
+        }}
         onPress={handleWizardPress}
       >
         <WizardSprite ref={wizardRef} />

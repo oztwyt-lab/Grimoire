@@ -6,6 +6,7 @@ import { doc, getDoc } from '@firebase/firestore';
 import { db } from '../../firebase';
 import { useLanguage } from '../../src/context/LanguageContext';
 import { useInventory } from '../../src/context/InventoryContext';
+import { useAuth } from '../../src/context/AuthContext';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -21,6 +22,23 @@ import { getActionEmoji } from '../../src/utils/actionEmoji';
 
 const WIZARD_IDLE_SHEET = require('../../assets/characters/wizard_character/mage_idle.png');
 const WIZARD_CAST_SHEET = require('../../assets/characters/wizard_character/attack_right.png');
+const WITCH_IDLE = [
+  require('../../assets/characters/witch/idle_01.png'),
+  require('../../assets/characters/witch/idle_02.png'),
+  require('../../assets/characters/witch/idle_03.png'),
+  require('../../assets/characters/witch/idle_04.png'),
+  require('../../assets/characters/witch/idle_05.png'),
+  require('../../assets/characters/witch/idle_06.png'),
+  require('../../assets/characters/witch/idle_07.png'),
+];
+const WITCH_ATTACK = [
+  require('../../assets/characters/witch/attack_01.png'),
+  require('../../assets/characters/witch/attack_02.png'),
+  require('../../assets/characters/witch/attack_03.png'),
+  require('../../assets/characters/witch/attack_04.png'),
+  require('../../assets/characters/witch/attack_05.png'),
+  require('../../assets/characters/witch/attack_06.png'),
+];
 const BATTLE_BACKGROUND = require('../../assets/battle/battleback1.png');
 const GHOST_BOSS_SHEETS = [
   require('../../assets/bosses/ghosts/ghost.png'),
@@ -226,6 +244,7 @@ function parseRecipeQty(qty: string | undefined): number {
 export default function CookMode() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
+  const { user } = useAuth();
   const { t } = useLanguage();
   const { consumeItems } = useInventory();
   const { width: screenWidth, height: screenHeight } = useWindowDimensions();
@@ -237,6 +256,7 @@ export default function CookMode() {
   const [recipe, setRecipe] = useState<RawRecipe | null>(null);
   const [steps, setSteps] = useState<CookStep[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isFemale, setIsFemale] = useState(false);
   const ingredientsConsumedRef = useRef(false);
 
   // Sprite frame cycling
@@ -361,17 +381,61 @@ export default function CookMode() {
   }, []);
 
   useEffect(() => {
-    const wizardTimer = setInterval(() => {
-      setWizardFrame(frame => (frame + 1) % HERO_MAX_FRAME_COUNT);
-    }, 140);
     const bossTimer = setInterval(() => {
       setBossFrame(frame => (frame + 1) % BOSS_FRAME_COUNT);
     }, 180);
     return () => {
-      clearInterval(wizardTimer);
       clearInterval(bossTimer);
     };
   }, []);
+
+  useEffect(() => {
+    let alive = true;
+
+    async function loadCharacter() {
+      if (!user) {
+        if (alive) setIsFemale(false);
+        return;
+      }
+
+      try {
+        const snap = await getDoc(doc(db, 'profiles', user.uid));
+        const data = snap.exists() ? snap.data() : null;
+        if (alive) setIsFemale(data?.character === 'female');
+      } catch (error) {
+        console.error(error);
+        if (alive) setIsFemale(false);
+      }
+    }
+
+    loadCharacter();
+
+    return () => {
+      alive = false;
+    };
+  }, [user]);
+
+  useEffect(() => {
+    const isAttacking = battle.phase === 'PLAYER_ATTACK';
+    const frameCount = isAttacking
+      ? (isFemale ? WITCH_ATTACK.length : HERO_ATTACK_FRAME_COUNT)
+      : (isFemale ? WITCH_IDLE.length : HERO_IDLE_FRAME_COUNT);
+    const intervalMs = isAttacking ? 120 : 200;
+
+    setWizardFrame(0);
+    const timer = setInterval(() => {
+      setWizardFrame(frame => {
+        if (isAttacking) {
+          return Math.min(frame + 1, frameCount - 1);
+        }
+        return (frame + 1) % frameCount;
+      });
+    }, intervalMs);
+
+    return () => {
+      clearInterval(timer);
+    };
+  }, [battle.phase, isFemale]);
 
   useEffect(() => {
     const travel = -arenaWidth * 0.62;
@@ -718,7 +782,9 @@ export default function CookMode() {
   const isLastStep  = battle.currentStep === totalSteps - 1;
   const isComplete  = battle.currentStep >= totalSteps;
   const charIsAttacking = battle.phase === 'PLAYER_ATTACK';
-  const heroFrameCount = charIsAttacking ? HERO_ATTACK_FRAME_COUNT : HERO_IDLE_FRAME_COUNT;
+  const heroFrameCount = charIsAttacking
+    ? (isFemale ? WITCH_ATTACK.length : HERO_ATTACK_FRAME_COUNT)
+    : (isFemale ? WITCH_IDLE.length : HERO_IDLE_FRAME_COUNT);
   const heroFrame = wizardFrame % heroFrameCount;
   const bossCol = bossFrame % BOSS_SHEET_COLS;
   const bossRow = Math.floor(bossFrame / BOSS_SHEET_COLS);
@@ -753,19 +819,27 @@ export default function CookMode() {
         <View style={s.battleTint} />
         <PressableScale onPress={handleNextStep} style={s.heroSlot}>
           <Animated.View style={charAnimStyle}>
-            <View style={[s.heroFrameViewport, !charIsAttacking && { transform: [{ scaleX: -1 }] }]}>
-              <Image
-                source={charIsAttacking ? WIZARD_CAST_SHEET : WIZARD_IDLE_SHEET}
-                style={[
-                  s.heroFrameSheet,
-                  {
-                    width: HERO_FRAME_W * heroFrameCount,
-                    height: HERO_FRAME_H,
-                    marginLeft: (92 - HERO_FRAME_W) / 2 - heroFrame * HERO_FRAME_W,
-                  },
-                ]}
-                resizeMode="stretch"
-              />
+            <View style={[s.heroFrameViewport, { transform: [{ scaleX: -1 }] }]}>
+              {isFemale ? (
+                <Image
+                  source={charIsAttacking ? WITCH_ATTACK[heroFrame] : WITCH_IDLE[heroFrame]}
+                  style={s.heroFrameImage}
+                  resizeMode="stretch"
+                />
+              ) : (
+                <Image
+                  source={charIsAttacking ? WIZARD_CAST_SHEET : WIZARD_IDLE_SHEET}
+                  style={[
+                    s.heroFrameSheet,
+                    {
+                      width: HERO_FRAME_W * heroFrameCount,
+                      height: HERO_FRAME_H,
+                      marginLeft: (92 - HERO_FRAME_W) / 2 - heroFrame * HERO_FRAME_W,
+                    },
+                  ]}
+                  resizeMode="stretch"
+                />
+              )}
             </View>
           </Animated.View>
         </PressableScale>
@@ -966,6 +1040,7 @@ const s = StyleSheet.create({
   heroSlot:     { width: 92, height: 100 },
   heroImage:    { width: 92, height: 92 },
   heroFrameViewport: { width: 92, height: 92, overflow: 'hidden' },
+  heroFrameImage: { width: 92, height: 92 },
   heroFrameSheet: { position: 'absolute', top: 0, left: 0 },
   bossSlot:     { width: 120, height: 120, alignItems: 'center', justifyContent: 'center' },
   bossBox:      { width: BOSS_VIEW_W, height: BOSS_VIEW_H, overflow: 'hidden' },
