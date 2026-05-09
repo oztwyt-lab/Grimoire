@@ -16,6 +16,8 @@ import { StringKey } from '../src/i18n/strings';
 import { InventoryItem } from '../lib/firestore';
 import { playSFX } from '../src/services/audio';
 import { getRecentRecipeIds } from '../src/services/recentRecipes';
+import { RecipeLanguageTag, normalizeRecipeLanguage, recipeLanguageLabel } from '../src/data/recipeLanguage';
+import { MEAL_TYPES, MealType } from '../src/data/mealTypes';
 
 const RANK_STORAGE_KEY = 'grimoire_rank_level';
 const MAX_PREVIEW = 5;
@@ -37,8 +39,9 @@ const RANK_FLAVOR_KEY: Record<string, StringKey> = {
 };
 
 type Ingredient = { id: string; name: string; emoji: string; quantity: string };
-type Recipe = { id: string; name: string; icon?: string; steps: string; ingredients: Ingredient[]; createdAt: any };
+type Recipe = { id: string; name: string; icon?: string; recipeLanguage?: RecipeLanguageTag; mealType?: MealType; steps: string; ingredients: Ingredient[]; createdAt: any };
 type CharacterCardTab = 'rank' | 'recent';
+type RecipeListTab = 'recent' | 'all';
 
 // ─── RecipeCard ──────────────────────────────────────────────────────────────
 type RecipeCardProps = {
@@ -47,8 +50,15 @@ type RecipeCardProps = {
   onPress: () => void;
 };
 
+function getMealTypeMeta(mealType: MealType | undefined) {
+  if (!mealType) return null;
+  return MEAL_TYPES.find(mt => mt.value === mealType) ?? null;
+}
+
 function RecipeCardComponent({ recipe, inventory, onPress }: RecipeCardProps) {
   const { t } = useLanguage();
+  const recipeLanguage = normalizeRecipeLanguage(recipe.recipeLanguage);
+  const mealTypeMeta = getMealTypeMeta(recipe.mealType);
 
   const matchState = useMemo((): 'full' | 'partial' | 'none' => {
     if (inventory.length === 0 || recipe.ingredients.length === 0) return 'partial';
@@ -92,6 +102,14 @@ function RecipeCardComponent({ recipe, inventory, onPress }: RecipeCardProps) {
           <Text style={gStyles.cardTitle} numberOfLines={1}>{recipe.name.toUpperCase()}</Text>
           <Text style={gStyles.cardArrow}>▶</Text>
         </View>
+        <View style={gStyles.tagRow}>
+          {recipeLanguage && (
+            <Text style={gStyles.languageTag}>{recipeLanguageLabel(recipeLanguage, t)}</Text>
+          )}
+          {mealTypeMeta && (
+            <Text style={gStyles.mealTypeTag}>{mealTypeMeta.icon} {t(mealTypeMeta.labelKey as StringKey)}</Text>
+          )}
+        </View>
         {recipe.ingredients.length > 0 && (
           <View style={gStyles.emojiRow}>
             {preview.map((ing, i) => (
@@ -131,6 +149,8 @@ export default function Grimoire() {
   const [refreshing, setRefreshing] = useState(false);
   const [search, setSearch] = useState('');
   const [activeCharacterTab, setActiveCharacterTab] = useState<CharacterCardTab>('rank');
+  const [recipeListTab, setRecipeListTab] = useState<RecipeListTab>('recent');
+  const [mealFilter, setMealFilter] = useState<MealType | null>(null);
   const [recentRecipeIds, setRecentRecipeIds] = useState<string[]>([]);
   const [showLevelUp, setShowLevelUp] = useState(false);
   const [levelUpRank, setLevelUpRank] = useState<CharacterRank | null>(null);
@@ -184,6 +204,16 @@ export default function Grimoire() {
   const filtered = search.trim()
     ? recipes.filter(r => r.name.toLowerCase().includes(search.toLowerCase()))
     : recipes;
+
+  const filteredByMealType = useMemo(() => {
+    if (!mealFilter) return filtered;
+    return filtered.filter(r => r.mealType === mealFilter);
+  }, [filtered, mealFilter]);
+
+  const availableMealTypes = useMemo(
+    () => MEAL_TYPES.filter(mt => recipes.some(r => r.mealType === mt.value)),
+    [recipes]
+  );
 
   const rank = getCharacterRank(recipes.length);
   const recipesUntilNext = rank.nextLevelRecipes ? rank.nextLevelRecipes - recipes.length : 0;
@@ -280,41 +310,94 @@ export default function Grimoire() {
         )}
       </View>
 
-      {/* ─── Search ───────────────────────────────────────────────────────── */}
-      <TextInput
-        style={gStyles.search}
-        placeholder={t('grimoire_search')}
-        placeholderTextColor="#4a4a6a"
-        value={search}
-        onChangeText={setSearch}
-      />
+      {/* ─── Recipe list tabs ─────────────────────────────────────────────── */}
+      <View style={gStyles.recipeTabRow}>
+        <Pressable onPress={() => setRecipeListTab('recent')} style={[gStyles.recipeTab, recipeListTab === 'recent' && gStyles.recipeTabActive]}>
+          <Text style={[gStyles.recipeTabText, recipeListTab === 'recent' && gStyles.recipeTabTextActive]}>{t('grimoire_tab_recent')}</Text>
+          {recipeListTab === 'recent' && <View style={gStyles.recipeTabUnderline} />}
+        </Pressable>
+        <Pressable onPress={() => setRecipeListTab('all')} style={[gStyles.recipeTab, recipeListTab === 'all' && gStyles.recipeTabActive]}>
+          <Text style={[gStyles.recipeTabText, recipeListTab === 'all' && gStyles.recipeTabTextActive]}>{t('allRecipes')}</Text>
+          {recipeListTab === 'all' && <View style={gStyles.recipeTabUnderline} />}
+        </Pressable>
+      </View>
 
-      {/* ─── List ─────────────────────────────────────────────────────────── */}
-      <Text style={gStyles.subtitle}>{t('grimoire_subtitle')}</Text>
       {loading ? (
         <ActivityIndicator color="#e2b96f" style={{ marginTop: 40 }} />
-      ) : filtered.length === 0 ? (
-        <Text style={gStyles.empty}>
-          {search.trim() ? t('grimoire_empty_search') : t('grimoire_empty_list')}
-        </Text>
+      ) : recipeListTab === 'recent' ? (
+        /* ─── RECENT tab ─────────────────────────────────────────────────── */
+        recentRecipes.length === 0 ? (
+          <Text style={gStyles.empty}>{t('grimoire_recent_empty')}</Text>
+        ) : (
+          <FlatList
+            data={recentRecipes}
+            keyExtractor={item => item.id}
+            style={gStyles.list}
+            renderItem={({ item }) => (
+              <RecipeCard
+                recipe={item}
+                inventory={inventory}
+                onPress={() => { playSFX('recipe_click'); router.push(`/recipe/${item.id}`); }}
+              />
+            )}
+          />
+        )
       ) : (
-        <FlatList
-          data={filtered}
-          keyExtractor={item => item.id}
-          style={gStyles.list}
-          keyboardShouldPersistTaps="handled"
-          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#e2b96f" colors={['#e2b96f']} />}
-          renderItem={({ item }) => (
-            <RecipeCard
-              recipe={item}
-              inventory={inventory}
-              onPress={() => {
-                playSFX('recipe_click');
-                router.push(`/recipe/${item.id}`);
+        /* ─── ALL RECIPES tab ────────────────────────────────────────────── */
+        <>
+          <TextInput
+            style={gStyles.search}
+            placeholder={t('grimoire_search')}
+            placeholderTextColor="#4a4a6a"
+            value={search}
+            onChangeText={setSearch}
+          />
+          <View style={gStyles.filterWrap}>
+            <FlatList
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              data={[null, ...availableMealTypes]}
+              keyExtractor={item => item ? item.value : '__all__'}
+              renderItem={({ item }) => {
+                const isActive = item === null ? mealFilter === null : mealFilter === item.value;
+                return (
+                  <Pressable
+                    onPress={() => setMealFilter(item ? item.value : null)}
+                    style={[gStyles.filterChip, isActive && gStyles.filterChipActive]}
+                  >
+                    {item && <Text style={gStyles.filterIcon}>{item.icon}</Text>}
+                    <Text style={[gStyles.filterText, isActive && gStyles.filterTextActive]}>
+                      {item ? t(item.labelKey as StringKey) : t('filterAll')}
+                    </Text>
+                  </Pressable>
+                );
               }}
+              contentContainerStyle={{ paddingRight: 8 }}
+              style={{ marginBottom: 12 }}
+            />
+          </View>
+          {filteredByMealType.length === 0 ? (
+            <View style={gStyles.emptyCategory}>
+              <Text style={gStyles.emptyCategoryTitle}>{t('noRecipesInCategory')}</Text>
+              <Text style={gStyles.emptyCategoryHint}>{t('addMealTypeHint')}</Text>
+            </View>
+          ) : (
+            <FlatList
+              data={filteredByMealType}
+              keyExtractor={item => item.id}
+              style={gStyles.list}
+              keyboardShouldPersistTaps="handled"
+              refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#e2b96f" colors={['#e2b96f']} />}
+              renderItem={({ item }) => (
+                <RecipeCard
+                  recipe={item}
+                  inventory={inventory}
+                  onPress={() => { playSFX('recipe_click'); router.push(`/recipe/${item.id}`); }}
+                />
+              )}
             />
           )}
-        />
+        </>
       )}
 
       {/* ─── New recipe button ────────────────────────────────────────────── */}
@@ -334,7 +417,6 @@ const gStyles = {
   headerSpacer: { width: 44 } as const,
   back: { fontFamily: 'PressStart2P_400Regular', color: '#c84b4b', fontSize: 8 } as const,
   title: { fontFamily: 'PressStart2P_400Regular', color: '#e2b96f', fontSize: 20 } as const,
-  subtitle: { fontFamily: 'PressStart2P_400Regular', color: '#4a4a6a', fontSize: 8, marginBottom: 16 } as const,
   characterCard: { backgroundColor: '#16213e', borderWidth: 1, borderColor: '#2d2d4e', padding: 14, marginBottom: 16 } as const,
   characterTabs: { flexDirection: 'row' as const, marginBottom: 14, backgroundColor: '#1a1a2e', borderWidth: 1, borderColor: '#2d2d4e' } as const,
   characterTab: { flex: 1, paddingVertical: 10, alignItems: 'center' as const } as const,
@@ -358,7 +440,6 @@ const gStyles = {
   recentIcon: { width: 30, fontSize: 20, textAlign: 'center' as const, marginRight: 10 } as const,
   recentName: { flex: 1, fontFamily: 'PressStart2P_400Regular', color: '#c8c8e8', fontSize: 8, marginRight: 8 } as const,
   recentArrow: { color: '#e2b96f', fontSize: 10 } as const,
-  search: { backgroundColor: '#16213e', color: '#c8c8e8', borderWidth: 1, borderColor: '#2d2d4e', padding: 14, marginBottom: 16, fontFamily: 'PressStart2P_400Regular', fontSize: 9 } as const,
   empty: { fontFamily: 'PressStart2P_400Regular', color: '#4a4a6a', fontSize: 10, textAlign: 'center' as const, marginTop: 60, lineHeight: 24 },
   list: { flex: 1 } as const,
   cardWrapper: { marginBottom: 12 } as const,
@@ -379,10 +460,29 @@ const gStyles = {
   cardTop: { flexDirection: 'row' as const, justifyContent: 'space-between' as const, alignItems: 'center' as const },
   cardTitle: { fontFamily: 'PressStart2P_400Regular', color: '#c8c8e8', fontSize: 10, flex: 1, marginRight: 8 } as const,
   cardArrow: { color: '#e2b96f', fontSize: 12 } as const,
+  tagRow: { flexDirection: 'row' as const, flexWrap: 'wrap' as const, gap: 6, marginTop: 7 },
+  languageTag: { alignSelf: 'flex-start' as const, borderWidth: 1, borderColor: '#e2b96f', color: '#e2b96f', fontFamily: 'PressStart2P_400Regular', fontSize: 6, paddingHorizontal: 6, paddingVertical: 3 },
+  mealTypeTag: { alignSelf: 'flex-start' as const, borderWidth: 1, borderColor: '#4a4a6a', color: '#4a4a6a', fontFamily: 'PressStart2P_400Regular', fontSize: 6, paddingHorizontal: 6, paddingVertical: 3 },
   emojiRow: { flexDirection: 'row' as const, flexWrap: 'wrap' as const, marginTop: 12, gap: 6 },
   emojiTile: { backgroundColor: '#1a1a2e', borderWidth: 1, borderColor: '#2d2d4e', width: 36, height: 36, alignItems: 'center' as const, justifyContent: 'center' as const },
   emojiText: { fontSize: 18 } as const,
   overflowText: { fontFamily: 'PressStart2P_400Regular', color: '#4a4a6a', fontSize: 7 } as const,
+  recipeTabRow: { flexDirection: 'row' as const, borderBottomWidth: 1, borderBottomColor: '#2d2d4e', marginBottom: 14 },
+  recipeTab: { flex: 1, alignItems: 'center' as const, paddingBottom: 10, position: 'relative' as const },
+  recipeTabActive: {} as const,
+  recipeTabText: { fontFamily: 'PressStart2P_400Regular', color: '#4a4a6a', fontSize: 7 } as const,
+  recipeTabTextActive: { color: '#e2b96f' } as const,
+  recipeTabUnderline: { position: 'absolute' as const, bottom: -1, height: 2, width: '80%' as const, backgroundColor: '#e2b96f' },
+  search: { backgroundColor: '#16213e', color: '#c8c8e8', borderWidth: 1, borderColor: '#2d2d4e', padding: 14, marginBottom: 12, fontFamily: 'PressStart2P_400Regular', fontSize: 9 } as const,
+  filterWrap: {} as const,
+  filterChip: { borderWidth: 1, borderColor: '#2d2d4e', paddingHorizontal: 10, paddingVertical: 8, marginRight: 6, flexDirection: 'row' as const, alignItems: 'center' as const, gap: 4 },
+  filterChipActive: { borderColor: '#e2b96f' },
+  filterIcon: { fontSize: 12 } as const,
+  filterText: { fontFamily: 'PressStart2P_400Regular', color: '#4a4a6a', fontSize: 7 } as const,
+  filterTextActive: { color: '#e2b96f' } as const,
+  emptyCategory: { alignItems: 'center' as const, marginTop: 48, paddingHorizontal: 16 },
+  emptyCategoryTitle: { fontFamily: 'PressStart2P_400Regular', color: '#4a4a6a', fontSize: 8, textAlign: 'center' as const, lineHeight: 20, marginBottom: 12 } as const,
+  emptyCategoryHint: { fontFamily: 'PressStart2P_400Regular', color: '#2d2d4e', fontSize: 7, textAlign: 'center' as const, lineHeight: 18 } as const,
   newButton: { borderWidth: 2, borderColor: '#e2b96f', padding: 16, alignItems: 'center' as const, marginTop: 16 },
   newButtonText: { fontFamily: 'PressStart2P_400Regular', color: '#e2b96f', fontSize: 10 } as const,
 };

@@ -20,6 +20,7 @@ import { normalizeRecipeLanguage, recipeLanguageLabel } from '../data/recipeLang
 
 type Tab = 'canCook' | 'discover';
 type DiscoverFilter = 'all' | 'meat' | 'vegetarian' | 'quick';
+type LangFilter = 'all' | 'en' | 'tr';
 
 type Translator = ReturnType<typeof useLanguage>['t'];
 
@@ -33,6 +34,12 @@ function filterLabel(filter: DiscoverFilter, t: Translator) {
   if (filter === 'meat') return t('magic_orb_meat');
   if (filter === 'vegetarian') return t('magic_orb_vegetarian');
   return t('magic_orb_quick');
+}
+
+function langFilterLabel(filter: LangFilter, t: Translator) {
+  if (filter === 'all') return t('magic_orb_all');
+  if (filter === 'en') return t('recipe_language_en');
+  return t('recipe_language_tr');
 }
 
 function categoryLabel(category: string, t: Translator) {
@@ -155,6 +162,7 @@ export default function MagicOrbScreen() {
   const { t, language } = useLanguage();
   const [activeTab, setActiveTab] = useState<Tab>('canCook');
   const [filter, setFilter] = useState<DiscoverFilter>('all');
+  const [langFilter, setLangFilter] = useState<LangFilter>('all');
   const [curatedRecipes, setCuratedRecipes] = useState<CuratedRecipe[]>([]);
   const [userRecipes, setUserRecipes] = useState<AnyMagicRecipe[]>([]);
   const [loading, setLoading] = useState(true);
@@ -185,9 +193,11 @@ export default function MagicOrbScreen() {
   const ready = matchedRecipes.filter(recipe => recipe.matchScore === 1);
   const almost = matchedRecipes.filter(recipe => recipe.matchScore >= 0.6 && recipe.matchScore < 1);
   const missing = matchedRecipes.filter(recipe => recipe.matchScore < 0.6);
-  const filteredCurated = curatedRecipes.filter(recipe => (
-    filter === 'all' || recipe.category === filter || (filter === 'quick' && recipe.estimatedMinutes < 30)
-  ));
+  const filteredCurated = curatedRecipes.filter(recipe => {
+    const categoryMatch = filter === 'all' || recipe.category === filter || (filter === 'quick' && recipe.estimatedMinutes < 30);
+    const langMatch = langFilter === 'all' || recipe.recipeLanguage === langFilter;
+    return categoryMatch && langMatch;
+  });
 
   const refresh = async () => {
     setRefreshing(true);
@@ -260,6 +270,13 @@ export default function MagicOrbScreen() {
             {(['all', 'meat', 'vegetarian', 'quick'] as DiscoverFilter[]).map(item => (
               <Pressable key={item} onPress={() => setFilter(item)} style={[styles.filterChip, filter === item && styles.filterChipActive]}>
                 <Text style={[styles.filterText, filter === item && styles.filterTextActive]}>{filterLabel(item, t)}</Text>
+              </Pressable>
+            ))}
+          </View>
+          <View style={styles.filterRow}>
+            {(['all', 'en', 'tr'] as LangFilter[]).map(item => (
+              <Pressable key={item} onPress={() => setLangFilter(item)} style={[styles.filterChip, langFilter === item && styles.filterChipActive]}>
+                <Text style={[styles.filterText, langFilter === item && styles.filterTextActive]}>{langFilterLabel(item, t)}</Text>
               </Pressable>
             ))}
           </View>

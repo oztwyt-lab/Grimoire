@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import { Text, TextInput, View, Pressable, ScrollView, Alert, Modal } from 'react-native';
 import { useRouter, useFocusEffect } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../src/context/AuthContext';
 import { useLanguage } from '../src/context/LanguageContext';
 import { useSubscription } from '../src/context/SubscriptionContext';
@@ -11,6 +12,9 @@ import * as Haptics from 'expo-haptics';
 import StepBuilder, { LocalStep } from '../src/components/StepBuilder';
 import IngredientIcon from '../src/components/IngredientIcon';
 import RecipeIconPicker, { DEFAULT_RECIPE_ICON } from '../src/components/RecipeIconPicker';
+import { RECIPE_LANGUAGE_OPTIONS, RecipeLanguageTag, recipeLanguageLabel } from '../src/data/recipeLanguage';
+import { MEAL_TYPES, MealType } from '../src/data/mealTypes';
+import MealTypePicker from '../src/components/MealTypePicker';
 
 type SelectedIngredient = { id: string; name: string; emoji: string; quantity: string };
 
@@ -25,11 +29,15 @@ function serializeSteps(steps: LocalStep[]) {
 
 export default function CreateRecipe() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { user } = useAuth();
   const { t } = useLanguage();
   const { canAddRecipe } = useSubscription();
   const [name, setName] = useState('');
   const [icon, setIcon] = useState(DEFAULT_RECIPE_ICON);
+  const [recipeLanguage, setRecipeLanguage] = useState<RecipeLanguageTag | null>(null);
+  const [mealType, setMealType] = useState<MealType | undefined>(undefined);
+  const [mealPickerVisible, setMealPickerVisible] = useState(false);
   const [stepsArr, setStepsArr] = useState<LocalStep[]>([]);
   const [ingredients, setIngredients] = useState<SelectedIngredient[]>([]);
   const [saving, setSaving] = useState(false);
@@ -60,6 +68,10 @@ export default function CreateRecipe() {
       Alert.alert(t('create_missing_name_title'), t('create_missing_name_msg'));
       return;
     }
+    if (!recipeLanguage) {
+      Alert.alert(t('create_missing_language_title'), t('create_missing_language_msg'));
+      return;
+    }
     if (!canAddRecipe()) {
       setLimitVisible(true);
       return;
@@ -71,6 +83,8 @@ export default function CreateRecipe() {
         userId: user?.uid,
         name,
         icon,
+        ...(recipeLanguage ? { recipeLanguage } : {}),
+        ...(mealType ? { mealType } : {}),
         steps: serializedSteps,
         preparation: serializedSteps.map(s => s.text).join('\n'),
         ingredients,
@@ -86,7 +100,7 @@ export default function CreateRecipe() {
   };
 
   return (
-    <ScrollView style={crStyles.container} contentContainerStyle={crStyles.content}>
+    <ScrollView style={crStyles.container} contentContainerStyle={[crStyles.content, { paddingBottom: insets.bottom + 56 }]}>
       <Text style={crStyles.title}>{t('create_title')}</Text>
       <RecipeIconPicker value={icon} onChange={setIcon} />
       <TextInput
@@ -96,6 +110,41 @@ export default function CreateRecipe() {
         value={name}
         onChangeText={setName}
       />
+      <Text style={crStyles.label}>{t('mealType')}</Text>
+      <Pressable
+        style={({ pressed }) => [crStyles.mealTypeButton, pressed && { opacity: 0.75 }]}
+        onPress={() => setMealPickerVisible(true)}
+      >
+        {mealType ? (
+          <Text style={crStyles.mealTypeValue}>
+            {MEAL_TYPES.find(mt => mt.value === mealType)?.icon} {t(MEAL_TYPES.find(mt => mt.value === mealType)?.labelKey as any)}
+          </Text>
+        ) : (
+          <Text style={crStyles.mealTypePlaceholder}>{t('selectMealType')}</Text>
+        )}
+        <Text style={crStyles.mealTypeChevron}>▼</Text>
+      </Pressable>
+      <MealTypePicker
+        visible={mealPickerVisible}
+        value={mealType}
+        onChange={setMealType}
+        onClose={() => setMealPickerVisible(false)}
+      />
+      <Text style={crStyles.label}>{t('recipe_language_label')}</Text>
+      <Text style={crStyles.optionalText}>{t('recipe_language_optional')}</Text>
+      <View style={crStyles.languageRow}>
+        {RECIPE_LANGUAGE_OPTIONS.map(option => (
+          <Pressable
+            key={option}
+            style={({ pressed }) => [crStyles.languageChip, recipeLanguage === option && crStyles.languageChipActive, pressed && { opacity: 0.72 }]}
+            onPress={() => setRecipeLanguage(option)}
+          >
+            <Text style={[crStyles.languageText, recipeLanguage === option && crStyles.languageTextActive]}>
+              {recipeLanguageLabel(option, t)}
+            </Text>
+          </Pressable>
+        ))}
+      </View>
       <Text style={[crStyles.label, crStyles.ingredientsLabel]}>{t('create_ingredients_label')}</Text>
       <View style={crStyles.ingredientRow}>
         {ingredients.map(i => (
@@ -161,6 +210,12 @@ const crStyles = {
   title: { fontFamily: 'PressStart2P_400Regular', color: '#e2b96f', fontSize: 16, marginBottom: 24 } as const,
   label: { fontFamily: 'PressStart2P_400Regular', color: '#4a4a6a', fontSize: 8, marginBottom: 8, marginTop: 16 } as const,
   ingredientsLabel: { color: '#e2b96f', textShadowColor: '#c8a84b', textShadowOffset: { width: 0, height: 0 }, textShadowRadius: 8 } as const,
+  optionalText: { fontFamily: 'PressStart2P_400Regular', color: '#4a4a6a', fontSize: 6, marginBottom: 8 } as const,
+  languageRow: { flexDirection: 'row' as const, flexWrap: 'wrap' as const, gap: 8, marginBottom: 8 },
+  languageChip: { borderWidth: 1, borderColor: '#2d2d4e', backgroundColor: '#16213e', paddingHorizontal: 10, paddingVertical: 8 },
+  languageChipActive: { borderColor: '#e2b96f', backgroundColor: '#e2b96f' },
+  languageText: { fontFamily: 'PressStart2P_400Regular', color: '#4a4a6a', fontSize: 7 },
+  languageTextActive: { color: '#1a1a2e' },
   input: { backgroundColor: '#16213e', color: '#c8c8e8', borderWidth: 1, borderColor: '#2d2d4e', padding: 16, marginBottom: 16, fontFamily: 'PressStart2P_400Regular', fontSize: 9 } as const,
   ingredientRow: { flexDirection: 'row' as const, flexWrap: 'wrap' as const, marginBottom: 16 },
   ingredientTile: { backgroundColor: '#16213e', borderWidth: 1, borderColor: '#2d2d4e', padding: 10, alignItems: 'center' as const, margin: 4, minWidth: 70 },
@@ -181,4 +236,8 @@ const crStyles = {
   limitUpgradeText: { fontFamily: 'PressStart2P_400Regular', color: '#1a1a2e', fontSize: 9 },
   limitCloseButton: { padding: 8, alignItems: 'center' as const },
   limitCloseText: { fontFamily: 'PressStart2P_400Regular', color: '#4a4a6a', fontSize: 8 },
+  mealTypeButton: { flexDirection: 'row' as const, alignItems: 'center' as const, justifyContent: 'space-between' as const, backgroundColor: '#16213e', borderWidth: 1, borderColor: '#2d2d4e', padding: 16, marginBottom: 4 },
+  mealTypeValue: { fontFamily: 'PressStart2P_400Regular', color: '#e2b96f', fontSize: 8 } as const,
+  mealTypePlaceholder: { fontFamily: 'PressStart2P_400Regular', color: '#4a4a6a', fontSize: 8 } as const,
+  mealTypeChevron: { color: '#4a4a6a', fontSize: 10 } as const,
 };
