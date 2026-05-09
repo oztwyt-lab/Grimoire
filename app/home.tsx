@@ -32,11 +32,17 @@ const CHARACTER_DISPLAY_H = 120;
 const WIZARD_RIGHT_OFFSET = CHARACTER_DISPLAY_W / 2;
 const FIREBALL_SIZE = 76;
 const NAV_ICON_SIZE = 28;
+const MAIN_BACKGROUND_PANEL_ASPECT = 859 / 1414;
 const HOME_NAV_ICONS = {
   grimoire: require('../assets/icons/ui/book.png'),
   inventory: require('../assets/icons/ui/bag.png'),
   character: require('../assets/icons/ui/hat.png'),
 };
+const MAIN_BACKGROUND_PANELS = [
+  { key: 'fireplace', source: require('../assets/ui/main_fireplace.png') },
+  { key: 'cauldron', source: require('../assets/ui/main_cauldron.png') },
+  { key: 'pantry', source: require('../assets/ui/main_pantry.png') },
+] as const;
 const FIREBALL_FRAMES = [
   require('../assets/effects/fireball/Effects_Fire_0_01.png'),
   require('../assets/effects/fireball/Effects_Fire_0_02.png'),
@@ -168,6 +174,7 @@ export default function Home() {
   const { t } = useLanguage();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [recipeCount, setRecipeCount] = useState(0);
+  const [backgroundPanelIndex, setBackgroundPanelIndex] = useState(1);
 
   // ─── Wizard ref (imperative control) ─────────────────────────────────────
   const wizardRef = useRef<WizardSpriteHandle>(null);
@@ -287,19 +294,37 @@ export default function Home() {
   const insets = useSafeAreaInsets();
   const hudBottom = HUD_HEIGHT + 52;
   const roomHeight = height - hudBottom - NAV_HEIGHT - insets.bottom;
-  const characterBottom = NAV_HEIGHT + insets.bottom + 56;
+  const backgroundHeight = width / MAIN_BACKGROUND_PANEL_ASPECT * 1.03;
+  const backgroundWidth = backgroundHeight * MAIN_BACKGROUND_PANEL_ASPECT;
+  const backgroundLeft = (width - backgroundWidth) / 2;
+  const characterBottom = NAV_HEIGHT + insets.bottom + 38;
+  const characterFeetY = height - characterBottom - hudBottom;
+  const backgroundTop = characterFeetY - backgroundHeight - 12;
   const charTop = height - characterBottom - CHARACTER_DISPLAY_H;
+  const canMoveBackgroundLeft = backgroundPanelIndex > 0;
+  const canMoveBackgroundRight = backgroundPanelIndex < MAIN_BACKGROUND_PANELS.length - 1;
+
+  function moveBackgroundPanel(direction: -1 | 1) {
+    playSFX('button_click');
+    setBackgroundPanelIndex(current => Math.min(MAIN_BACKGROUND_PANELS.length - 1, Math.max(0, current + direction)));
+  }
 
   return (
     <View style={{ flex: 1, backgroundColor: '#1a1a2e', overflow: 'visible' }}>
 
       {/* ── Room background image ── */}
       <ImageBackground
-        source={require('../assets/room-bg.jpg')}
-        style={{ position: 'absolute', top: hudBottom, left: 0, right: 0, height: roomHeight }}
-        resizeMode="cover"
+        source={MAIN_BACKGROUND_PANELS[backgroundPanelIndex].source}
+        style={{ position: 'absolute', top: hudBottom, left: 0, right: 0, height: roomHeight, backgroundColor: '#12101a' }}
+        imageStyle={{
+          width: backgroundWidth,
+          height: backgroundHeight,
+          left: backgroundLeft,
+          top: backgroundTop,
+        }}
+        resizeMode="stretch"
       >
-        <View style={{ ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(10, 12, 24, 0.35)' }} />
+        <View style={{ ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(10, 12, 24, 0.18)' }} />
         {FLOATING_PARTICLES.map((particle) => (
           <FloatingParticle
             key={particle.id}
@@ -315,6 +340,19 @@ export default function Home() {
       </ImageBackground>
 
       {/* ── Room press area — hold to walk wizard in that direction ── */}
+      <View pointerEvents="box-none" style={[styles.backgroundSwitches, { top: hudBottom, height: roomHeight }]}>
+        {canMoveBackgroundLeft && (
+          <PressableScale onPress={() => moveBackgroundPanel(-1)} style={[styles.backgroundSwitch, styles.backgroundSwitchLeft]}>
+            <Text style={styles.backgroundSwitchText}>◀</Text>
+          </PressableScale>
+        )}
+        {canMoveBackgroundRight && (
+          <PressableScale onPress={() => moveBackgroundPanel(1)} style={[styles.backgroundSwitch, styles.backgroundSwitchRight]}>
+            <Text style={styles.backgroundSwitchText}>▶</Text>
+          </PressableScale>
+        )}
+      </View>
+
       <View
         style={styles.roomTouchLayer}
         onStartShouldSetResponder={() => true}
@@ -461,6 +499,34 @@ const styles = StyleSheet.create({
     right: 0,
     bottom: NAV_HEIGHT,
     zIndex: 1,
+  },
+  backgroundSwitches: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    justifyContent: 'center',
+    zIndex: 6,
+  },
+  backgroundSwitch: {
+    position: 'absolute',
+    width: 42,
+    height: 64,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(16, 21, 38, 0.62)',
+    borderWidth: 1,
+    borderColor: 'rgba(226, 185, 111, 0.72)',
+  },
+  backgroundSwitchLeft: {
+    left: 12,
+  },
+  backgroundSwitchRight: {
+    right: 12,
+  },
+  backgroundSwitchText: {
+    fontFamily: 'PressStart2P_400Regular',
+    color: '#e2b96f',
+    fontSize: 16,
   },
   hud: {
     position: 'absolute',
