@@ -4,7 +4,10 @@ import {
   Animated, Dimensions, ScrollView, KeyboardAvoidingView,
   Platform, StyleSheet,
 } from 'react-native';
+import ShoppingListScreen from '../../src/screens/ShoppingListScreen';
 import { useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Timestamp } from '@firebase/firestore';
 import { useLanguage } from '../../src/context/LanguageContext';
 import { useInventory } from '../../src/context/InventoryContext';
 import { useSubscription } from '../../src/context/SubscriptionContext';
@@ -43,12 +46,65 @@ const NUTRITION_STATS = [
 ] as const;
 
 const BUFF_TEXT = 'BUFFS: Effects unknown. This ingredient will later reveal what it supports, boosts, and restores.';
+const EXPIRY_PRESETS = [0, 3, 7, 30] as const;
+
+function toDate(value: unknown): Date | null {
+  if (!value) return null;
+  if (value instanceof Date) return value;
+  if (value instanceof Timestamp) return value.toDate();
+  if (typeof (value as { toDate?: unknown }).toDate === 'function') {
+    return (value as { toDate: () => Date }).toDate();
+  }
+  return null;
+}
+
+function startOfDay(date: Date) {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+}
+
+function daysUntil(date: Date) {
+  const diff = startOfDay(date).getTime() - startOfDay(new Date()).getTime();
+  return Math.ceil(diff / 86400000);
+}
+
+function expiryStatus(date: Date | null) {
+  if (!date) return null;
+  const days = daysUntil(date);
+  if (days < 0) return 'expired';
+  if (days <= 3) return 'soon';
+  return null;
+}
+
+function expiryLabel(date: Date | null, t: (key: StringKey) => string) {
+  if (!date) return '';
+  const days = daysUntil(date);
+  if (days < 0) return t('expiry_expired');
+  if (days === 0) return t('expiry_today');
+  if (days === 1) return t('expiry_in_day');
+  return t('expiry_in_days').replace('{days}', String(days));
+}
+
+function formatExpiryDate(date: Date | null) {
+  if (!date) return '';
+  return date.toLocaleDateString('en-US', { day: '2-digit', month: 'short', year: 'numeric' }).toUpperCase();
+}
+
+function dateFromToday(days: number) {
+  const date = new Date();
+  date.setHours(12, 0, 0, 0);
+  date.setDate(date.getDate() + days);
+  return date;
+}
 
 export default function Inventory() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { language, t } = useLanguage();
   const { inventory, addItem, removeItem, updateItem } = useInventory();
   const { canAddInventoryItem } = useSubscription();
+
+  // ─── Tab state ───────────────────────────────────────────────────────────
+  const [activeTab, setActiveTab] = useState<'inventory' | 'provisions'>('inventory');
 
   // ─── Main screen state ───────────────────────────────────────────────────
   const [activeCategory, setActiveCategory] = useState('All');
@@ -59,11 +115,13 @@ export default function Inventory() {
   const [selected, setSelected] = useState<Ingredient | null>(null);
   const [quantity, setQuantity] = useState('1');
   const [metric, setMetric] = useState('piece');
+  const [expiryDate, setExpiryDate] = useState<Date | null>(null);
   const [search, setSearch] = useState('');
   const [modalCat, setModalCat] = useState('All');
   const [detailIngredient, setDetailIngredient] = useState<Ingredient | null>(null);
   const [detailQuantity, setDetailQuantity] = useState('1');
   const [detailMetric, setDetailMetric] = useState('g');
+  const [detailExpiryDate, setDetailExpiryDate] = useState<Date | null>(null);
   const [detailQuantityEditable, setDetailQuantityEditable] = useState(false);
   const [limitVisible, setLimitVisible] = useState(false);
 
@@ -82,7 +140,7 @@ export default function Inventory() {
 
   const resetModal = useCallback(() => {
     setStep(1); setSelected(null); setQuantity('1');
-    setMetric('piece'); setSearch(''); setModalCat('All');
+    setMetric('piece'); setExpiryDate(null); setSearch(''); setModalCat('All');
   }, []);
 
   const closeSheet = useCallback(() => {
@@ -133,6 +191,16 @@ export default function Inventory() {
     detailIngredient ? getAvailableUnits(detailIngredient.id) : []
   ), [detailIngredient]);
 
+  const useSoonItems = useMemo(() => (
+    inventory
+      .map(item => ({ item, date: toDate(item.expiresAt) }))
+      .filter(({ date }) => {
+        const status = expiryStatus(date);
+        return status === 'expired' || status === 'soon';
+      })
+      .sort((a, b) => (a.date?.getTime() ?? 0) - (b.date?.getTime() ?? 0))
+  ), [inventory]);
+
   // ─── Helpers ─────────────────────────────────────────────────────────────
   const catLabel = (cat: string) =>
     cat === 'All'
@@ -156,16 +224,19 @@ export default function Inventory() {
     setStep(2);
     setQuantity('1');
     setMetric(getDefaultUnit(ing.id));
+    setExpiryDate(null);
   }, []);
 
   const handleOpenInventoryDetail = useCallback((id: string, itemQuantity: number, itemMetric: string) => {
     const ing = INGREDIENTS.find(i => i.id === id);
     if (!ing) return;
+    const item = inventory.find(row => row.id === id);
     setDetailIngredient(ing);
     setDetailQuantity(String(itemQuantity));
     setDetailMetric(itemMetric);
+    setDetailExpiryDate(toDate(item?.expiresAt));
     setDetailQuantityEditable(false);
-  }, []);
+  }, [inventory]);
 
   const closeDetail = useCallback(() => {
     setDetailIngredient(null);
@@ -174,27 +245,46 @@ export default function Inventory() {
 
   const handleAdd = useCallback(async () => {
     if (!selected) return;
-    await addItem({ id: selected.id, quantity: parseFloat(quantity) || 1, metric });
+    await addItem({
+      id: selected.id,
+      name: selected.name,
+      emoji: selected.emoji,
+      category: getIngredientCategory(selected),
+      quantity: parseFloat(quantity) || 1,
+      metric,
+      ...(expiryDate ? { expiresAt: Timestamp.fromDate(expiryDate) } : {}),
+    });
     closeSheet();
-  }, [selected, quantity, metric, addItem, closeSheet]);
+  }, [selected, quantity, metric, expiryDate, addItem, closeSheet]);
 
   const handleSaveDetailQuantity = useCallback(async () => {
     if (!detailIngredient) return;
     const nextQuantity = parseFloat(detailQuantity) || 1;
-    await updateItem(detailIngredient.id, nextQuantity, detailMetric || getDefaultUnit(detailIngredient.id));
+    await updateItem(
+      detailIngredient.id,
+      nextQuantity,
+      detailMetric || getDefaultUnit(detailIngredient.id),
+      detailExpiryDate ? Timestamp.fromDate(detailExpiryDate) : undefined
+    );
     setDetailQuantity(String(nextQuantity));
     setDetailQuantityEditable(false);
-  }, [detailIngredient, detailQuantity, detailMetric, updateItem]);
+  }, [detailIngredient, detailExpiryDate, detailQuantity, detailMetric, updateItem]);
 
   // ─── Render: inventory card ───────────────────────────────────────────────
   const renderInventoryCard = useCallback(({ item }: { item: typeof inventory[0] }) => {
     const ing = INGREDIENTS.find(i => i.id === item.id);
+    const status = expiryStatus(toDate(item.expiresAt));
     return (
       <PressableScale
         onPress={() => handleOpenInventoryDetail(item.id, item.quantity, item.metric)}
         onLongPress={() => handleRemove(item.id)}
         style={[s.card, { width: CARD_W }]}
       >
+        {status && (
+          <Text style={[s.expiryBadge, status === 'expired' ? s.expiryBadgeExpired : s.expiryBadgeSoon]}>
+            {status === 'expired' ? t('expiry_expired') : t('expiry_soon')}
+          </Text>
+        )}
         <IngredientIcon id={ing?.id} emoji={ing?.emoji ?? '🥄'} size={32} imageStyle={s.cardIcon} textStyle={s.cardEmoji} />
         <Text style={s.cardName} numberOfLines={2}>{ingName(item.id)}</Text>
         <Text style={s.cardQty}>{item.quantity} {item.metric}</Text>
@@ -256,7 +346,7 @@ export default function Inventory() {
 
   // ─── Modal Step 2 ────────────────────────────────────────────────────────
   const renderStep2 = () => (
-    <ScrollView style={s.stepWrap} contentContainerStyle={{ paddingBottom: 32 }} keyboardShouldPersistTaps="handled">
+    <ScrollView style={s.stepWrap} contentContainerStyle={{ paddingBottom: insets.bottom + 48 }} keyboardShouldPersistTaps="handled">
       <Pressable onPress={() => setStep(1)} style={s.backRow}>
         <Text style={s.backText}>◄ {t('detail_back')}</Text>
       </Pressable>
@@ -310,6 +400,30 @@ export default function Inventory() {
         })}
       </ScrollView>
 
+      <View style={s.expiryPanel}>
+        <View style={s.expiryHeader}>
+          <View>
+            <Text style={s.expiryLabel}>{t('expiry_date')}</Text>
+            <Text style={s.expiryOptional}>{t('expiry_optional')}</Text>
+          </View>
+          {expiryDate && (
+            <Pressable onPress={() => setExpiryDate(null)} hitSlop={10}>
+              <Text style={s.clearExpiry}>{t('expiry_clear')}</Text>
+            </Pressable>
+          )}
+        </View>
+        <PressableScale onPress={() => setExpiryDate(dateFromToday(3))} style={s.expiryButton}>
+          <Text style={s.expiryButtonText}>{expiryDate ? `${t('expiry_expires')}: ${formatExpiryDate(expiryDate)}` : t('expiry_set_date')}</Text>
+        </PressableScale>
+        <View style={s.expiryPresetRow}>
+          {EXPIRY_PRESETS.map(days => (
+            <PressableScale key={days} onPress={() => setExpiryDate(dateFromToday(days))} style={s.expiryPreset}>
+              <Text style={s.expiryPresetText}>{days === 0 ? t('expiry_today_short') : `+${days}D`}</Text>
+            </PressableScale>
+          ))}
+        </View>
+      </View>
+
       <PressableScale onPress={handleAdd} style={s.addButton}>
         <Text style={s.addButtonText}>{t('inventory_add_to')}</Text>
       </PressableScale>
@@ -323,33 +437,74 @@ export default function Inventory() {
       {/* Header */}
       <View style={s.header}>
         <Text style={s.title}>{t('inventory_title')}</Text>
-        <PressableScale onPress={openSheet} style={s.logButton}>
-          <Text style={s.logButtonText}>{t('inventory_add')}</Text>
+        {activeTab === 'inventory' && (
+          <PressableScale onPress={openSheet} style={s.logButton}>
+            <Text style={s.logButtonText}>{t('inventory_add')}</Text>
+          </PressableScale>
+        )}
+      </View>
+
+      {/* Tab switcher */}
+      <View style={s.tabRow}>
+        <PressableScale onPress={() => setActiveTab('inventory')} style={[s.tabBtn, activeTab === 'inventory' && s.tabBtnActive]}>
+          <Text style={[s.tabBtnText, activeTab === 'inventory' && s.tabBtnTextActive]}>{t('nav_inventory').toUpperCase()}</Text>
+        </PressableScale>
+        <PressableScale onPress={() => setActiveTab('provisions')} style={[s.tabBtn, activeTab === 'provisions' && s.tabBtnActive]}>
+          <Text style={[s.tabBtnText, activeTab === 'provisions' && s.tabBtnTextActive]}>{t('list_title').toUpperCase()}</Text>
         </PressableScale>
       </View>
 
-      {/* Category filter */}
-      <CategoryChips active={activeCategory} onSelect={setActiveCategory} />
+      {activeTab === 'provisions' && <ShoppingListScreen embedded />}
 
-      {/* Inventory grid / empty state */}
-      {displayedItems.length === 0 ? (
-        <View style={s.emptyState}>
-          <Text style={s.emptyEmoji}>🎒</Text>
-          <Text style={s.emptyText}>{t('inventory_empty')}</Text>
-          <PressableScale onPress={openSheet} style={s.addButton}>
-            <Text style={s.addButtonText}>{t('inventory_add')}</Text>
-          </PressableScale>
+      {activeTab === 'inventory' && useSoonItems.length > 0 && (
+        <View style={s.useSoon}>
+          <Text style={s.useSoonTitle}>{t('expiry_use_soon')}</Text>
+          {useSoonItems.map(({ item, date }) => {
+            const ing = INGREDIENTS.find(i => i.id === item.id);
+            const label = expiryLabel(date, t);
+            const expired = daysUntil(date ?? new Date()) < 0;
+            return (
+              <PressableScale
+                key={item.id}
+                onPress={() => handleOpenInventoryDetail(item.id, item.quantity, item.metric)}
+                style={s.useSoonRow}
+              >
+                <Text style={s.useSoonName} numberOfLines={1}>
+                  {ing?.emoji ?? item.emoji ?? '🥄'} {ingName(item.id).toUpperCase()}
+                </Text>
+                <Text style={[s.useSoonDate, expired && s.useSoonExpired]}>{label}</Text>
+              </PressableScale>
+            );
+          })}
         </View>
-      ) : (
-        <FlatList
-          data={displayedItems}
-          keyExtractor={item => item.id}
-          numColumns={3}
-          columnWrapperStyle={s.row}
-          contentContainerStyle={s.mainGrid}
-          renderItem={renderInventoryCard}
-          showsVerticalScrollIndicator={false}
-        />
+      )}
+
+      {activeTab === 'inventory' && (
+        <>
+          {/* Category filter */}
+          <CategoryChips active={activeCategory} onSelect={setActiveCategory} />
+
+          {/* Inventory grid / empty state */}
+          {displayedItems.length === 0 ? (
+            <View style={[s.emptyState, { paddingBottom: insets.bottom + 96 }]}>
+              <Text style={s.emptyEmoji}>🎒</Text>
+              <Text style={s.emptyText}>{t('inventory_empty')}</Text>
+              <PressableScale onPress={openSheet} style={s.addButton}>
+                <Text style={s.addButtonText}>{t('inventory_add')}</Text>
+              </PressableScale>
+            </View>
+          ) : (
+            <FlatList
+              data={displayedItems}
+              keyExtractor={item => item.id}
+              numColumns={3}
+              columnWrapperStyle={s.row}
+              contentContainerStyle={[s.mainGrid, { paddingBottom: insets.bottom + 96 }]}
+              renderItem={renderInventoryCard}
+              showsVerticalScrollIndicator={false}
+            />
+          )}
+        </>
       )}
 
       {/* Bottom sheet modal */}
@@ -360,7 +515,7 @@ export default function Inventory() {
           {/* Sheet */}
           <View style={{ flex: 1, justifyContent: 'flex-end' }} pointerEvents="box-none">
             <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-              <Animated.View style={[s.sheet, { transform: [{ translateY: slideY }] }]}>
+              <Animated.View style={[s.sheet, { paddingBottom: insets.bottom + 20, transform: [{ translateY: slideY }] }]}>
                 {/* Sheet handle + close */}
                 <View style={s.sheetHeader}>
                   <View style={s.handle} />
@@ -376,7 +531,7 @@ export default function Inventory() {
       </Modal>
 
       <Modal visible={!!detailIngredient} transparent animationType="fade" onRequestClose={closeDetail}>
-        <View style={s.detailOverlay}>
+        <View style={[s.detailOverlay, { paddingBottom: insets.bottom + 16 }]}>
           <Pressable style={StyleSheet.absoluteFill} onPress={closeDetail} />
           {detailIngredient && (
             <View style={s.detailCard}>
@@ -421,8 +576,8 @@ export default function Inventory() {
                 >
                   <Text style={s.detailEditButtonText}>
                     {detailQuantityEditable
-                      ? (language === 'tr' ? 'KAYDET' : 'SAVE')
-                      : (language === 'tr' ? 'MIKTARI DUZENLE' : 'EDIT QUANTITY')}
+                      ? t('inventory_save')
+                      : t('inventory_edit_quantity')}
                   </Text>
                 </PressableScale>
               </View>
@@ -442,6 +597,33 @@ export default function Inventory() {
                   );
                 })}
               </ScrollView>
+
+              <View style={s.expiryPanel}>
+                <View style={s.expiryHeader}>
+                  <View>
+                    <Text style={s.expiryLabel}>{t('expiry_date')}</Text>
+                    <Text style={s.expiryOptional}>{t('expiry_optional')}</Text>
+                  </View>
+                  {detailExpiryDate && (
+                    <Pressable onPress={() => setDetailExpiryDate(null)} hitSlop={10}>
+                      <Text style={s.clearExpiry}>{t('expiry_clear')}</Text>
+                    </Pressable>
+                  )}
+                </View>
+                <PressableScale onPress={() => setDetailExpiryDate(dateFromToday(3))} style={s.expiryButton}>
+                  <Text style={s.expiryButtonText}>{detailExpiryDate ? `${t('expiry_expires')}: ${formatExpiryDate(detailExpiryDate)}` : t('expiry_set_date')}</Text>
+                </PressableScale>
+                <View style={s.expiryPresetRow}>
+                  {EXPIRY_PRESETS.map(days => (
+                    <PressableScale key={days} onPress={() => setDetailExpiryDate(dateFromToday(days))} style={s.expiryPreset}>
+                      <Text style={s.expiryPresetText}>{days === 0 ? t('expiry_today_short') : `+${days}D`}</Text>
+                    </PressableScale>
+                  ))}
+                </View>
+                <PressableScale onPress={handleSaveDetailQuantity} style={s.expirySaveButton}>
+                  <Text style={s.detailEditButtonText}>{t('inventory_save_details')}</Text>
+                </PressableScale>
+              </View>
 
               <PressableScale onPress={closeDetail} style={s.detailCloseButton}>
                 <Text style={s.addButtonText}>{t('account_cancel')}</Text>
@@ -479,10 +661,21 @@ export default function Inventory() {
 // ─── Styles ──────────────────────────────────────────────────────────────────
 const s = StyleSheet.create({
   container:       { flex: 1, backgroundColor: '#16213e', paddingTop: 60, paddingHorizontal: MAIN_PAD },
-  header:          { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
+  header:          { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
+  tabRow:          { flexDirection: 'row', borderWidth: 1, borderColor: '#2d2d4e', marginBottom: 14 },
+  tabBtn:          { flex: 1, paddingVertical: 10, alignItems: 'center', backgroundColor: '#1a1a2e' },
+  tabBtnActive:    { backgroundColor: '#c8a84b' },
+  tabBtnText:      { fontFamily: 'PressStart2P_400Regular', color: '#4a4a6a', fontSize: 7 },
+  tabBtnTextActive:{ color: '#1a1a2e' },
   title:           { fontFamily: 'PressStart2P_400Regular', color: '#c8a84b', fontSize: 14 },
   logButton:       { borderWidth: 1, borderColor: '#c8a84b', paddingHorizontal: 10, paddingVertical: 8 },
   logButtonText:   { fontFamily: 'PressStart2P_400Regular', color: '#c8a84b', fontSize: 7 },
+  useSoon:         { backgroundColor: '#1a1a2e', borderWidth: 1, borderColor: '#ff9800', padding: 10, marginBottom: 14 },
+  useSoonTitle:    { fontFamily: 'PressStart2P_400Regular', color: '#ff9800', fontSize: 9, marginBottom: 8 },
+  useSoonRow:      { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#16213e', borderWidth: 1, borderColor: '#2d2d4e', padding: 8, marginBottom: 6, gap: 8 },
+  useSoonName:     { flex: 1, fontFamily: 'PressStart2P_400Regular', color: '#c8c8e8', fontSize: 7 },
+  useSoonDate:     { fontFamily: 'PressStart2P_400Regular', color: '#ff9800', fontSize: 6 },
+  useSoonExpired:  { color: '#f44336' },
 
   // Category chips
   chipRow:         { flexGrow: 0, marginBottom: 16 },
@@ -495,7 +688,10 @@ const s = StyleSheet.create({
   // Inventory grid
   row:             { gap: COL_GAP, marginBottom: COL_GAP, justifyContent: 'flex-start' },
   mainGrid:        { paddingBottom: 24 },
-  card:            { backgroundColor: '#1a1a2e', borderRadius: 4, padding: 10, alignItems: 'center', minHeight: 90 },
+  card:            { position: 'relative', backgroundColor: '#1a1a2e', borderRadius: 4, padding: 10, alignItems: 'center', minHeight: 90 },
+  expiryBadge:     { position: 'absolute', top: 4, right: 4, fontFamily: 'PressStart2P_400Regular', color: '#1a1a2e', fontSize: 5, paddingHorizontal: 4, paddingVertical: 3, zIndex: 2 },
+  expiryBadgeSoon: { backgroundColor: '#ff9800' },
+  expiryBadgeExpired:{ backgroundColor: '#f44336' },
   cardEmoji:       { fontSize: 28, marginBottom: 4 },
   cardIcon:        { marginBottom: 4 },
   cardName:        { fontFamily: 'PressStart2P_400Regular', color: '#c8c8e8', fontSize: 6, textAlign: 'center', marginBottom: 4 },
@@ -554,6 +750,17 @@ const s = StyleSheet.create({
   lockedInput:      { opacity: 0.55, color: '#8f8fb8' },
   lockedChip:       { opacity: 0.55 },
   detailCloseButton:{ borderWidth: 2, borderColor: '#c8a84b', padding: 12, alignItems: 'center', marginTop: 16 },
+  expiryPanel:      { backgroundColor: '#16213e', borderWidth: 1, borderColor: '#2d2d4e', padding: 12, marginBottom: 14 },
+  expiryHeader:     { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 },
+  expiryLabel:      { fontFamily: 'PressStart2P_400Regular', color: '#4a4a6a', fontSize: 7, marginBottom: 4 },
+  expiryOptional:   { fontFamily: 'PressStart2P_400Regular', color: '#4a4a6a', fontSize: 6 },
+  expiryButton:     { borderWidth: 1, borderColor: '#c8a84b', padding: 10, alignItems: 'center' },
+  expiryButtonText: { fontFamily: 'PressStart2P_400Regular', color: '#c8a84b', fontSize: 7 },
+  expiryPresetRow:  { flexDirection: 'row', gap: 6, marginTop: 8 },
+  expiryPreset:     { flex: 1, borderWidth: 1, borderColor: '#2d2d4e', paddingVertical: 8, alignItems: 'center', backgroundColor: '#1a1a2e' },
+  expiryPresetText: { fontFamily: 'PressStart2P_400Regular', color: '#c8c8e8', fontSize: 6 },
+  clearExpiry:      { fontFamily: 'PressStart2P_400Regular', color: '#f44336', fontSize: 7 },
+  expirySaveButton: { borderWidth: 1, borderColor: '#c8a84b', padding: 10, alignItems: 'center', marginTop: 10 },
   label:           { fontFamily: 'PressStart2P_400Regular', color: '#4a4a6a', fontSize: 8, marginBottom: 8 },
   qtyInput:        { backgroundColor: '#16213e', color: '#c8c8e8', borderWidth: 1, borderColor: '#2d2d4e', padding: 14, marginBottom: 16, fontFamily: 'PressStart2P_400Regular', fontSize: 14, textAlign: 'center' },
   addButton:       { borderWidth: 2, borderColor: '#c8a84b', padding: 16, alignItems: 'center', marginTop: 16 },

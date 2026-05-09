@@ -20,7 +20,7 @@ import PressableScale from '../src/components/PressableScale';
 import * as Haptics from 'expo-haptics';
 import { useLanguage } from '../src/context/LanguageContext';
 import { RANK_TITLE_KEY } from '../src/i18n/strings';
-import { getUserProfile, UserProfile } from '../lib/firestore';
+import { ensureAdminProfile, getUserProfile, UserProfile } from '../lib/firestore';
 import { playMusic, playSFX, stopMusic } from '../src/services/audio';
 
 const { width, height } = Dimensions.get('window');
@@ -156,18 +156,6 @@ function FloatingParticle({
   );
 }
 
-function CharacterTabIcon() {
-  return (
-    <View style={styles.characterIcon}>
-      <View style={styles.characterHatTip} />
-      <View style={styles.characterHat} />
-      <View style={styles.characterHead} />
-      <View style={styles.characterRobe} />
-      <View style={styles.characterStaff} />
-    </View>
-  );
-}
-
 export default function Home() {
   const router = useRouter();
   const { user } = useAuth();
@@ -251,7 +239,7 @@ export default function Home() {
   // ─── Nav button scale animations ──────────────────────────────────────────
   const grimoireScale = useRef(new Animated.Value(1)).current;
   const inventoryScale = useRef(new Animated.Value(1)).current;
-  const shopScale = useRef(new Animated.Value(1)).current;
+  const magicOrbScale = useRef(new Animated.Value(1)).current;
   const characterScale = useRef(new Animated.Value(1)).current;
 
   const pressIn = (scale: Animated.Value) => {
@@ -265,7 +253,7 @@ export default function Home() {
   const loadData = useCallback(async () => {
     if (!user) return;
     try {
-      const userProfile = await getUserProfile(user.uid);
+      const userProfile = await getUserProfile(user.uid) ?? await ensureAdminProfile(user.uid, user.email);
       if (!userProfile) {
         router.replace('/character-setup');
         return;
@@ -404,9 +392,23 @@ export default function Home() {
       {/* ── HUD — top overlay ── */}
       <View style={styles.hud}>
         <View style={styles.hudRow}>
-          <Text style={styles.hudName} numberOfLines={1}>
-            {profile?.nickname ?? '...'}
-          </Text>
+          <View style={styles.hudIdentity}>
+            <Pressable
+              style={styles.hudCharacterButton}
+              onPress={() => nav('/character')}
+              onPressIn={() => pressIn(characterScale)}
+              onPressOut={() => pressOut(characterScale)}
+            >
+              <Animated.Image
+                source={HOME_NAV_ICONS.character}
+                style={[styles.hudCharacterIcon, { transform: [{ scale: characterScale }] }]}
+                resizeMode="contain"
+              />
+            </Pressable>
+            <Text style={styles.hudName} numberOfLines={1}>
+              {profile?.nickname ?? '...'}
+            </Text>
+          </View>
           <Text style={styles.hudRank}>
             {rank.emoji}  {RANK_TITLE_KEY[rank.title] ? t(RANK_TITLE_KEY[rank.title] as any) : rank.title}  LV.{rank.level}
           </Text>
@@ -458,33 +460,19 @@ export default function Home() {
           <Text style={styles.navLabel}>{t('nav_inventory')}</Text>
         </Pressable>
 
-        {/* SHOP */}
+        {/* MAGIC ORB */}
         <Pressable
-          style={[styles.navItem, styles.navItemShop]}
-          onPress={() => nav('/shop')}
-          onPressIn={() => pressIn(shopScale)}
-          onPressOut={() => pressOut(shopScale)}
+          style={[styles.navItem, styles.navItemMagicOrb]}
+          onPress={() => nav('/magic-orb')}
+          onPressIn={() => pressIn(magicOrbScale)}
+          onPressOut={() => pressOut(magicOrbScale)}
         >
-          <Animated.Text style={[styles.navEmoji, { transform: [{ scale: shopScale }] }]}>
-            🛒
+          <Animated.Text style={[styles.navEmoji, { transform: [{ scale: magicOrbScale }] }]}>
+            {'\uD83D\uDD2E'}
           </Animated.Text>
-          <Text style={styles.navLabel}>{t('nav_shop')}</Text>
+          <Text style={styles.navLabel}>{t('magic_orb_title')}</Text>
         </Pressable>
 
-        {/* CHARACTER */}
-        <Pressable
-          style={styles.navItem}
-          onPress={() => nav('/character')}
-          onPressIn={() => pressIn(characterScale)}
-          onPressOut={() => pressOut(characterScale)}
-        >
-          <Animated.Image
-            source={HOME_NAV_ICONS.character}
-            style={[styles.navImageIcon, { transform: [{ scale: characterScale }] }]}
-            resizeMode="contain"
-          />
-          <Text style={styles.navLabel}>{t('nav_character')}</Text>
-        </Pressable>
 
       </View>
     </View>
@@ -546,12 +534,32 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 8,
   },
+  hudIdentity: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginRight: 8,
+    minWidth: 0,
+  },
+  hudCharacterButton: {
+    width: 32,
+    height: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#e2b96f',
+    backgroundColor: '#16213e',
+    marginRight: 8,
+  },
+  hudCharacterIcon: {
+    width: 22,
+    height: 22,
+  },
   hudName: {
     fontFamily: 'PressStart2P_400Regular',
     color: '#e2b96f',
     fontSize: 12,
     flex: 1,
-    marginRight: 8,
   },
   hudRank: {
     fontFamily: 'PressStart2P_400Regular',
@@ -608,7 +616,7 @@ const styles = StyleSheet.create({
     borderRightWidth: 1,
     borderColor: '#2d2d4e',
   },
-  navItemShop: {
+  navItemMagicOrb: {
     borderRightWidth: 1,
     borderColor: '#2d2d4e',
   },
@@ -627,45 +635,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 4,
-  },
-  characterIcon: {
-    width: 24,
-    height: 24,
-    alignItems: 'center',
-  },
-  characterHatTip: {
-    width: 4,
-    height: 4,
-    backgroundColor: '#c8a84b',
-  },
-  characterHat: {
-    width: 16,
-    height: 6,
-    backgroundColor: '#c8a84b',
-    borderWidth: 1,
-    borderColor: '#2a2a4a',
-  },
-  characterHead: {
-    width: 8,
-    height: 5,
-    backgroundColor: '#c8a84b',
-    marginTop: -1,
-  },
-  characterRobe: {
-    width: 14,
-    height: 9,
-    backgroundColor: '#c8a84b',
-    borderLeftWidth: 3,
-    borderRightWidth: 3,
-    borderColor: '#2a2a4a',
-  },
-  characterStaff: {
-    position: 'absolute',
-    right: 1,
-    bottom: 0,
-    width: 3,
-    height: 15,
-    backgroundColor: '#c8a84b',
   },
   particle: {
     position: 'absolute',
