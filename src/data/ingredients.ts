@@ -239,9 +239,63 @@ export const INGREDIENTS: Ingredient[] = [
   { id: 'milk_liquid',  name: 'Milk',          name_tr: 'Süt',            category: 'Liquids', emoji: '🥛' },
 ];
 
-export const CATEGORIES = [...new Set(INGREDIENTS.map(i => i.category))];
+export const CATEGORIES = [
+  'Vegetables',
+  'Fruits',
+  'Dairy & Milk',
+  'Bakery & Oats',
+  'Drinks',
+  'Spices',
+  'Meat',
+  'Misc',
+] as const;
+
+export type IngredientCategory = typeof CATEGORIES[number];
+
+export const CATEGORY_ICONS: Record<IngredientCategory, string> = {
+  Vegetables: '🥕',
+  Fruits: '🍎',
+  'Dairy & Milk': '🥛',
+  'Bakery & Oats': '🍞',
+  Drinks: '🥤',
+  Spices: '🧂',
+  Meat: '🥩',
+  Misc: '🍽️',
+};
+
+const MEAT_IDS = new Set([
+  'chicken', 'beef', 'salmon', 'shrimp', 'tuna', 'lamb', 'turkey', 'pork',
+  'bacon', 'sucuk', 'pastirma', 'crab', 'cod', 'sardine', 'scallop',
+  'octopus', 'mussel', 'duck', 'ground_beef', 'sausage',
+]);
+
+const DAIRY_IDS = new Set([
+  'butter', 'milk', 'cheese', 'yogurt', 'cream', 'sour_cream',
+  'cream_cheese', 'mozzarella', 'cheddar', 'parmesan', 'heavy_cream',
+  'buttermilk', 'feta', 'ricotta', 'goat_cheese', 'halloumi', 'kaymak',
+  'ayran', 'beyaz_peynir', 'kashar', 'milk_liquid',
+]);
+
+const VEGETABLE_IDS = new Set(['eggplant_large', 'grape_leaves']);
+const SPICE_IDS = new Set(['biber_salcasi', 'domates_salcasi_tr', 'sumac', 'nigella_seeds', 'pomegranate_molasses']);
+
+export function getIngredientCategory(ingredient: Ingredient): IngredientCategory {
+  if (VEGETABLE_IDS.has(ingredient.id) || ingredient.category === 'Vegetables') return 'Vegetables';
+  if (ingredient.category === 'Fruits') return 'Fruits';
+  if (DAIRY_IDS.has(ingredient.id) || ingredient.category === 'Dairy') return 'Dairy & Milk';
+  if (['Grains', 'Baking', 'bread', 'pasta'].includes(ingredient.category)) return 'Bakery & Oats';
+  if (ingredient.category === 'Liquids') return 'Drinks';
+  if (SPICE_IDS.has(ingredient.id) || ingredient.category === 'Spices') return 'Spices';
+  if (MEAT_IDS.has(ingredient.id)) return 'Meat';
+  return 'Misc';
+}
 
 export const CATEGORY_TRANSLATIONS: Record<string, string> = {
+  'Dairy & Milk': 'Süt ve Süt Ürünleri',
+  'Bakery & Oats': 'Fırın ve Yulaf',
+  Drinks: 'İçecekler',
+  Meat: 'Et',
+  Misc: 'Diğer',
   Proteins:   'Proteinler',
   Vegetables: 'Sebzeler',
   Dairy:      'Süt Ürünleri',

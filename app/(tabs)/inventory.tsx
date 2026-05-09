@@ -8,7 +8,7 @@ import { useRouter } from 'expo-router';
 import { useLanguage } from '../../src/context/LanguageContext';
 import { useInventory } from '../../src/context/InventoryContext';
 import { useSubscription } from '../../src/context/SubscriptionContext';
-import { INGREDIENTS, CATEGORIES, CATEGORY_TRANSLATIONS, Ingredient } from '../../src/data/ingredients';
+import { INGREDIENTS, CATEGORIES, CATEGORY_ICONS, CATEGORY_TRANSLATIONS, Ingredient, getIngredientCategory } from '../../src/data/ingredients';
 import { INGREDIENT_BUFFS } from '../../src/data/ingredientBuffs';
 import { StringKey } from '../../src/i18n/strings';
 import PressableScale from '../../src/components/PressableScale';
@@ -97,13 +97,13 @@ export default function Inventory() {
     if (activeCategory === 'All') return inventory;
     return inventory.filter(item => {
       const ing = INGREDIENTS.find(i => i.id === item.id);
-      return ing?.category === activeCategory;
+      return ing ? getIngredientCategory(ing) === activeCategory : activeCategory === 'Misc';
     });
   }, [inventory, activeCategory]);
 
   const modalIngredients = useMemo(() => {
     let list: Ingredient[] = INGREDIENTS;
-    if (modalCat !== 'All') list = list.filter(i => i.category === modalCat);
+    if (modalCat !== 'All') list = list.filter(i => getIngredientCategory(i) === modalCat);
     if (search.trim()) {
       const q = search.toLowerCase();
       list = list.filter(i =>
@@ -137,7 +137,7 @@ export default function Inventory() {
   const catLabel = (cat: string) =>
     cat === 'All'
       ? t('picker_all')
-      : language === 'tr' ? (CATEGORY_TRANSLATIONS[cat] ?? cat) : cat;
+      : `${CATEGORY_ICONS[cat as keyof typeof CATEGORY_ICONS]} ${language === 'tr' ? (CATEGORY_TRANSLATIONS[cat] ?? cat) : cat}`;
 
   const ingName = (id: string) => {
     const ing = INGREDIENTS.find(i => i.id === id);

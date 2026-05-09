@@ -14,6 +14,8 @@ import IngredientIcon from '../src/components/IngredientIcon';
 import { DEFAULT_RECIPE_ICON } from '../src/components/RecipeIconPicker';
 import { StringKey } from '../src/i18n/strings';
 import { InventoryItem } from '../lib/firestore';
+import { playSFX } from '../src/services/audio';
+import { getRecentRecipeIds } from '../src/services/recentRecipes';
 
 const RANK_STORAGE_KEY = 'grimoire_rank_level';
 const MAX_PREVIEW = 5;
@@ -36,6 +38,7 @@ const RANK_FLAVOR_KEY: Record<string, StringKey> = {
 
 type Ingredient = { id: string; name: string; emoji: string; quantity: string };
 type Recipe = { id: string; name: string; icon?: string; steps: string; ingredients: Ingredient[]; createdAt: any };
+type CharacterCardTab = 'rank' | 'recent';
 
 // ─── RecipeCard ──────────────────────────────────────────────────────────────
 type RecipeCardProps = {
@@ -127,6 +130,8 @@ export default function Grimoire() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [search, setSearch] = useState('');
+  const [activeCharacterTab, setActiveCharacterTab] = useState<CharacterCardTab>('rank');
+  const [recentRecipeIds, setRecentRecipeIds] = useState<string[]>([]);
   const [showLevelUp, setShowLevelUp] = useState(false);
   const [levelUpRank, setLevelUpRank] = useState<CharacterRank | null>(null);
 
@@ -144,6 +149,7 @@ export default function Grimoire() {
       })) as Recipe[];
 
       setRecipes(data);
+      setRecentRecipeIds(await getRecentRecipeIds(user.uid));
 
       const newRank = getCharacterRank(data.length);
       const storedLevel = await AsyncStorage.getItem(RANK_STORAGE_KEY);
@@ -181,6 +187,10 @@ export default function Grimoire() {
 
   const rank = getCharacterRank(recipes.length);
   const recipesUntilNext = rank.nextLevelRecipes ? rank.nextLevelRecipes - recipes.length : 0;
+  const recentRecipes = recentRecipeIds
+    .map(recentId => recipes.find(recipe => recipe.id === recentId))
+    .filter((recipe): recipe is Recipe => Boolean(recipe))
+    .slice(0, 5);
 
   return (
     <View style={gStyles.container}>
@@ -199,29 +209,75 @@ export default function Grimoire() {
 
       {/* ─── Character card ───────────────────────────────────────────────── */}
       <View style={gStyles.characterCard}>
-        <View style={gStyles.characterTop}>
-          <Text style={gStyles.characterEmoji}>{rank.emoji}</Text>
-          <View style={gStyles.characterInfo}>
-            <Text style={gStyles.characterTitle}>
-              {t(RANK_TITLE_KEY[rank.title])}
+        <View style={gStyles.characterTabs}>
+          <Pressable
+            onPress={() => setActiveCharacterTab('rank')}
+            style={[gStyles.characterTab, activeCharacterTab === 'rank' && gStyles.characterTabActive]}
+          >
+            <Text style={[gStyles.characterTabText, activeCharacterTab === 'rank' && gStyles.characterTabTextActive]}>
+              {t('grimoire_tab_rank')}
             </Text>
-            <Text style={gStyles.characterFlavor}>
-              {t(RANK_FLAVOR_KEY[rank.title])}
+          </Pressable>
+          <Pressable
+            onPress={() => setActiveCharacterTab('recent')}
+            style={[gStyles.characterTab, activeCharacterTab === 'recent' && gStyles.characterTabActive]}
+          >
+            <Text style={[gStyles.characterTabText, activeCharacterTab === 'recent' && gStyles.characterTabTextActive]}>
+              {t('grimoire_tab_recent')}
             </Text>
+          </Pressable>
+        </View>
+
+        {activeCharacterTab === 'rank' ? (
+          <>
+            <View style={gStyles.characterTop}>
+              <Text style={gStyles.characterEmoji}>{rank.emoji}</Text>
+              <View style={gStyles.characterInfo}>
+                <Text style={gStyles.characterTitle}>
+                  {t(RANK_TITLE_KEY[rank.title])}
+                </Text>
+                <Text style={gStyles.characterFlavor}>
+                  {t(RANK_FLAVOR_KEY[rank.title])}
+                </Text>
+              </View>
+              <Text style={gStyles.characterLevel}>LV.{rank.level}</Text>
+            </View>
+            <View style={gStyles.progressTrack}>
+              <RNAnimated.View style={[gStyles.progressFill, { width: progressAnim.interpolate({ inputRange: [0, 1], outputRange: ['0%', '100%'] }) }]} />
+            </View>
+            <View style={gStyles.progressMeta}>
+              <Text style={gStyles.progressLabel}>{recipes.length} {t('grimoire_recipes')}</Text>
+              {rank.nextTitle && (
+                <Text style={gStyles.progressLabel}>
+                  {recipesUntilNext} {t('grimoire_to')} {t(RANK_TITLE_KEY[rank.nextTitle])}
+                </Text>
+              )}
+            </View>
+          </>
+        ) : (
+          <View style={gStyles.recentList}>
+            {recentRecipes.length === 0 ? (
+              <Text style={gStyles.recentEmpty}>{t('grimoire_recent_empty')}</Text>
+            ) : recentRecipes.map((recentRecipe, index) => (
+              <Pressable
+                key={recentRecipe.id}
+                style={({ pressed }) => [
+                  gStyles.recentRow,
+                  index === 0 && gStyles.recentRowFirst,
+                  pressed && { opacity: 0.65 },
+                ]}
+                onPress={() => {
+                  playSFX('recipe_click');
+                  router.push(`/recipe/${recentRecipe.id}`);
+                }}
+              >
+                <Text style={gStyles.recentIcon}>{recentRecipe.icon || DEFAULT_RECIPE_ICON}</Text>
+                <Text style={gStyles.recentName} numberOfLines={1}>{recentRecipe.name.toUpperCase()}</Text>
+                <Text style={gStyles.recentArrow}>▶</Text>
+              </Pressable>
+            ))}
           </View>
-          <Text style={gStyles.characterLevel}>LV.{rank.level}</Text>
-        </View>
-        <View style={gStyles.progressTrack}>
-          <RNAnimated.View style={[gStyles.progressFill, { width: progressAnim.interpolate({ inputRange: [0, 1], outputRange: ['0%', '100%'] }) }]} />
-        </View>
-        <View style={gStyles.progressMeta}>
-          <Text style={gStyles.progressLabel}>{recipes.length} {t('grimoire_recipes')}</Text>
-          {rank.nextTitle && (
-            <Text style={gStyles.progressLabel}>
-              {recipesUntilNext} {t('grimoire_to')} {t(RANK_TITLE_KEY[rank.nextTitle])}
-            </Text>
-          )}
-        </View>
+        )}
       </View>
 
       {/* ─── Search ───────────────────────────────────────────────────────── */}
@@ -252,7 +308,10 @@ export default function Grimoire() {
             <RecipeCard
               recipe={item}
               inventory={inventory}
-              onPress={() => router.push(`/recipe/${item.id}`)}
+              onPress={() => {
+                playSFX('recipe_click');
+                router.push(`/recipe/${item.id}`);
+              }}
             />
           )}
         />
@@ -277,6 +336,11 @@ const gStyles = {
   title: { fontFamily: 'PressStart2P_400Regular', color: '#e2b96f', fontSize: 20 } as const,
   subtitle: { fontFamily: 'PressStart2P_400Regular', color: '#4a4a6a', fontSize: 8, marginBottom: 16 } as const,
   characterCard: { backgroundColor: '#16213e', borderWidth: 1, borderColor: '#2d2d4e', padding: 14, marginBottom: 16 } as const,
+  characterTabs: { flexDirection: 'row' as const, marginBottom: 14, backgroundColor: '#1a1a2e', borderWidth: 1, borderColor: '#2d2d4e' } as const,
+  characterTab: { flex: 1, paddingVertical: 10, alignItems: 'center' as const } as const,
+  characterTabActive: { backgroundColor: '#2d2d4e' } as const,
+  characterTabText: { fontFamily: 'PressStart2P_400Regular', color: '#4a4a6a', fontSize: 7 } as const,
+  characterTabTextActive: { color: '#e2b96f' } as const,
   characterTop: { flexDirection: 'row' as const, alignItems: 'center' as const, marginBottom: 12 },
   characterEmoji: { fontSize: 28, marginRight: 12 } as const,
   characterInfo: { flex: 1 } as const,
@@ -287,6 +351,13 @@ const gStyles = {
   progressFill: { height: '100%' as const, backgroundColor: '#e2b96f' },
   progressMeta: { flexDirection: 'row' as const, justifyContent: 'space-between' as const },
   progressLabel: { fontFamily: 'PressStart2P_400Regular', color: '#4a4a6a', fontSize: 7 } as const,
+  recentList: { minHeight: 72 } as const,
+  recentEmpty: { fontFamily: 'PressStart2P_400Regular', color: '#4a4a6a', fontSize: 8, lineHeight: 18, textAlign: 'center' as const, paddingVertical: 18 } as const,
+  recentRow: { flexDirection: 'row' as const, alignItems: 'center' as const, borderTopWidth: 1, borderTopColor: '#2d2d4e', paddingVertical: 9 } as const,
+  recentRowFirst: { borderTopWidth: 0 } as const,
+  recentIcon: { width: 30, fontSize: 20, textAlign: 'center' as const, marginRight: 10 } as const,
+  recentName: { flex: 1, fontFamily: 'PressStart2P_400Regular', color: '#c8c8e8', fontSize: 8, marginRight: 8 } as const,
+  recentArrow: { color: '#e2b96f', fontSize: 10 } as const,
   search: { backgroundColor: '#16213e', color: '#c8c8e8', borderWidth: 1, borderColor: '#2d2d4e', padding: 14, marginBottom: 16, fontFamily: 'PressStart2P_400Regular', fontSize: 9 } as const,
   empty: { fontFamily: 'PressStart2P_400Regular', color: '#4a4a6a', fontSize: 10, textAlign: 'center' as const, marginTop: 60, lineHeight: 24 },
   list: { flex: 1 } as const,

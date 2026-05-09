@@ -3,7 +3,7 @@ import { LanguageProvider } from '../src/context/LanguageContext';
 import { InventoryProvider } from '../src/context/InventoryContext';
 import { SubscriptionProvider } from '../src/context/SubscriptionContext';
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, View, Text } from 'react-native';
+import { ImageBackground, StyleSheet, View, Text } from 'react-native';
 import { useFonts, PressStart2P_400Regular } from '@expo-google-fonts/press-start-2p';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect, useState, Component, ReactNode } from 'react';
@@ -16,6 +16,8 @@ import Animated, {
   withSequence,
   withTiming,
 } from 'react-native-reanimated';
+
+const SPLASH_IMAGE = require('../assets/ui/splash_screen.png');
 
 class ErrorBoundary extends Component<{ children: ReactNode }, { error: string | null }> {
   state = { error: null };
@@ -107,7 +109,15 @@ export default function Layout() {
                 <StatusBar style="light" />
                 {showAppSplash && (
                   <Animated.View pointerEvents="auto" style={[styles.appSplash, splashStyle]}>
-                    <Text style={styles.appSplashTitle}>GRIMOR</Text>
+                    {SPLASH_IMAGE ? (
+                      <ImageBackground
+                        source={SPLASH_IMAGE}
+                        style={styles.appSplashImage}
+                        resizeMode="cover"
+                      />
+                    ) : (
+                      <Text style={styles.appSplashTitle}>GRIMOR</Text>
+                    )}
                   </Animated.View>
                 )}
               </View>
@@ -125,6 +135,9 @@ const styles = StyleSheet.create({
     backgroundColor: '#16213e',
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  appSplashImage: {
+    ...StyleSheet.absoluteFillObject,
   },
   appSplashTitle: {
     fontFamily: 'PressStart2P_400Regular',

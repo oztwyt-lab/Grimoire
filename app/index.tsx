@@ -5,6 +5,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuth } from '../src/context/AuthContext';
 import { useLanguage } from '../src/context/LanguageContext';
 import PressableScale from '../src/components/PressableScale';
+import { getUserProfile } from '../lib/firestore';
 
 export default function Home() {
   const router = useRouter();
@@ -26,9 +27,28 @@ export default function Home() {
   }, [loading]);
 
   useEffect(() => {
-    if (onboardingChecked && !loading && user) {
-      router.replace('/home');
+    let alive = true;
+
+    async function routeAuthenticatedUser() {
+      if (!user) return;
+
+      try {
+        const profile = await getUserProfile(user.uid);
+        if (!alive) return;
+        router.replace(profile ? '/home' : '/character-setup');
+      } catch (error) {
+        console.error(error);
+        if (alive) router.replace('/character-setup');
+      }
     }
+
+    if (onboardingChecked && !loading && user) {
+      routeAuthenticatedUser();
+    }
+
+    return () => {
+      alive = false;
+    };
   }, [onboardingChecked, loading, user]);
 
   // Show nothing until both auth and onboarding checks resolve

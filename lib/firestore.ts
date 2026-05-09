@@ -1,5 +1,5 @@
 import { db } from '../firebase';
-import { addDoc, collection, doc, getDoc, serverTimestamp, setDoc, Timestamp } from '@firebase/firestore';
+import { addDoc, arrayUnion, collection, doc, getDoc, serverTimestamp, setDoc, Timestamp } from '@firebase/firestore';
 
 // ─── Food inventory ───────────────────────────────────────────────────────────
 export type InventoryItem = {
@@ -92,7 +92,7 @@ export async function backfillSubscriptionFields(uid: string, data: Record<strin
   }
 }
 
-export type EquipmentSlot = 'hat' | 'outfit' | 'cloak' | 'staff' | 'accessory1' | 'accessory2';
+export type EquipmentSlot = 'hat' | 'outfit' | 'cloak' | 'staff' | 'accessory1' | 'accessory2' | 'pet';
 
 export type Equipment = {
   hat: string | null;
@@ -101,6 +101,12 @@ export type Equipment = {
   staff: string | null;
   accessory1: string | null;
   accessory2: string | null;
+  pet: string | null;
+};
+
+export type UserProfile = {
+  nickname: string;
+  character: 'male' | 'female';
 };
 
 export type EquipmentItem = {
@@ -109,6 +115,7 @@ export type EquipmentItem = {
   nameEn: string;
   slot: EquipmentSlot;
   icon: string;
+  image?: unknown;
   description: string;
   descriptionEn: string;
   isStarter: boolean;
@@ -135,6 +142,83 @@ export const STARTER_ITEMS: EquipmentItem[] = [
     descriptionEn: "Every wizard's first staff.",
     isStarter: true,
   },
+  {
+    id: 'crimson_hat',
+    name: 'Kizil Sapka',
+    nameEn: 'Crimson Hat',
+    slot: 'hat',
+    icon: '🎩',
+    image: require('../assets/shop/C_Hat01.png'),
+    description: 'Kizil kenarli kozmetik sapka.',
+    descriptionEn: 'A crimson-trimmed cosmetic hat.',
+    isStarter: false,
+  },
+  {
+    id: 'ember_hat',
+    name: 'Kor Sapka',
+    nameEn: 'Ember Hat',
+    slot: 'hat',
+    icon: '🎩',
+    image: require('../assets/shop/C_Hat02.png'),
+    description: 'Buyu calisirken parlayan ikinci sapka.',
+    descriptionEn: 'A second hat that glows with quiet ember energy.',
+    isStarter: false,
+  },
+  {
+    id: 'staff_04',
+    name: 'Asa IV',
+    nameEn: 'Staff IV',
+    slot: 'staff',
+    icon: '🪄',
+    image: require('../assets/shop/W_Staff04.png'),
+    description: 'Koleksiyonluk asa kozmetigi.',
+    descriptionEn: 'A collectible staff cosmetic.',
+    isStarter: false,
+  },
+  {
+    id: 'staff_05',
+    name: 'Asa V',
+    nameEn: 'Staff V',
+    slot: 'staff',
+    icon: '🪄',
+    image: require('../assets/shop/W_Staff05.png'),
+    description: 'Koleksiyonluk asa kozmetigi.',
+    descriptionEn: 'A collectible staff cosmetic.',
+    isStarter: false,
+  },
+  {
+    id: 'staff_06',
+    name: 'Asa VI',
+    nameEn: 'Staff VI',
+    slot: 'staff',
+    icon: '🪄',
+    image: require('../assets/shop/W_Staff06.png'),
+    description: 'Koleksiyonluk asa kozmetigi.',
+    descriptionEn: 'A collectible staff cosmetic.',
+    isStarter: false,
+  },
+  {
+    id: 'staff_07',
+    name: 'Asa VII',
+    nameEn: 'Staff VII',
+    slot: 'staff',
+    icon: '🪄',
+    image: require('../assets/shop/W_Staff07.png'),
+    description: 'Koleksiyonluk asa kozmetigi.',
+    descriptionEn: 'A collectible staff cosmetic.',
+    isStarter: false,
+  },
+  {
+    id: 'turtle_pet',
+    name: 'Kaplumbaga Yoldas',
+    nameEn: 'Turtle Companion',
+    slot: 'pet',
+    icon: '🐢',
+    image: require('../assets/shop/turtle.png'),
+    description: 'Sakin, sadik bir mutfak yoldasi.',
+    descriptionEn: 'A calm, loyal kitchen companion.',
+    isStarter: false,
+  },
 ];
 
 export const DEFAULT_EQUIPMENT: Equipment = {
@@ -144,7 +228,36 @@ export const DEFAULT_EQUIPMENT: Equipment = {
   staff: 'starter_staff',
   accessory1: null,
   accessory2: null,
+  pet: null,
 };
+
+function isUserProfile(data: Record<string, unknown>): data is UserProfile {
+  return typeof data.nickname === 'string' && (data.character === 'male' || data.character === 'female');
+}
+
+export async function getUserProfile(uid: string): Promise<UserProfile | null> {
+  try {
+    const userSnap = await getDoc(doc(db, 'users', uid));
+    if (userSnap.exists()) {
+      const data = userSnap.data();
+      if (isUserProfile(data)) return { nickname: data.nickname, character: data.character };
+    }
+  } catch (error) {
+    console.warn('Unable to read user profile from users collection', error);
+  }
+  return null;
+}
+
+export async function createUserProfile(uid: string, profile: UserProfile): Promise<void> {
+  await setDoc(doc(db, 'users', uid), {
+    ...profile,
+    equipment: DEFAULT_EQUIPMENT,
+    ownedItems: ['starter_robe', 'starter_staff'],
+    ...createDefaultSubscriptionFields(),
+    createdAt: serverTimestamp(),
+  }, { merge: true });
+
+}
 
 export async function getUserEquipment(uid: string): Promise<Equipment> {
   try {
@@ -172,4 +285,8 @@ export async function getUserOwnedItems(uid: string): Promise<string[]> {
   } catch {
     return ['starter_robe', 'starter_staff'];
   }
+}
+
+export async function addUserOwnedItem(uid: string, itemId: string): Promise<void> {
+  await setDoc(doc(db, 'users', uid), { ownedItems: arrayUnion(itemId) }, { merge: true });
 }

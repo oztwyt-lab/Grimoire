@@ -1,19 +1,17 @@
 import { useState } from 'react';
-import { Text, View, TextInput, ScrollView, Alert } from 'react-native';
+import { Text, View, TextInput, ScrollView, Alert, Image, ImageSourcePropType } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuth } from '../src/context/AuthContext';
 import { useLanguage } from '../src/context/LanguageContext';
-import { db } from '../firebase';
-import { doc, setDoc, serverTimestamp } from '@firebase/firestore';
-import { DEFAULT_EQUIPMENT, createDefaultSubscriptionFields } from '../lib/firestore';
+import { createUserProfile } from '../lib/firestore';
 import * as Haptics from 'expo-haptics';
 import PressableScale from '../src/components/PressableScale';
 
-type CharacterOption = { id: 'male' | 'female'; emoji: string; labelKey: 'setup_wizard' | 'setup_witch' };
+type CharacterOption = { id: 'male' | 'female'; image: ImageSourcePropType; labelKey: 'setup_wizard' | 'setup_witch' };
 
 const CHARACTERS: CharacterOption[] = [
-  { id: 'male',   emoji: '🧙',    labelKey: 'setup_wizard' },
-  { id: 'female', emoji: '🧙‍♀️', labelKey: 'setup_witch'  },
+  { id: 'male', image: require('../assets/characters/wizardicon.png'), labelKey: 'setup_wizard' },
+  { id: 'female', image: require('../assets/characters/witchicon.png'), labelKey: 'setup_witch' },
 ];
 
 export default function CharacterSetup() {
@@ -35,16 +33,10 @@ export default function CharacterSetup() {
     }
     setSaving(true);
     try {
-      await setDoc(doc(db, 'profiles', user!.uid), {
+      await createUserProfile(user!.uid, {
         nickname: nickname.trim(),
         character: selectedChar,
-        createdAt: serverTimestamp(),
       });
-      await setDoc(doc(db, 'users', user!.uid), {
-        equipment: DEFAULT_EQUIPMENT,
-        ownedItems: ['starter_robe', 'starter_staff'],
-        ...createDefaultSubscriptionFields(),
-      }, { merge: true });
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       setTimeout(() => {
         router.replace('/home');
@@ -91,7 +83,7 @@ export default function CharacterSetup() {
               styles.characterCard,
               selectedChar === ch.id && styles.characterCardSelected,
             ]}>
-              <Text style={styles.charEmoji}>{ch.emoji}</Text>
+              <Image source={ch.image} style={styles.characterImage} resizeMode="contain" />
               <Text style={[
                 styles.characterLabel,
                 selectedChar === ch.id && styles.characterLabelSelected,
@@ -144,7 +136,7 @@ const styles = {
     borderWidth: 2,
     backgroundColor: '#1c1c2e',
   },
-  charEmoji: { fontSize: 48, marginBottom: 12 } as const,
+  characterImage: { width: 80, height: 80, marginBottom: 12 } as const,
   characterLabel: { fontFamily: 'PressStart2P_400Regular', color: '#4a4a6a', fontSize: 7, textAlign: 'center' as const },
   characterLabelSelected: { color: '#c8a84b' } as const,
   selectedBadge: { fontFamily: 'PressStart2P_400Regular', color: '#c8a84b', fontSize: 10, marginTop: 8 } as const,

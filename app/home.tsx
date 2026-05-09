@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
-import { View, Text, Pressable, Animated, Dimensions, ImageBackground, StyleSheet, Image } from 'react-native';
+import { View, Text, Pressable, Animated, Dimensions, ImageBackground, StyleSheet, Image, GestureResponderEvent } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Reanimated, {
   Easing,
@@ -13,22 +13,30 @@ import Reanimated, {
 import { useRouter } from 'expo-router';
 import { useAuth } from '../src/context/AuthContext';
 import { db } from '../firebase';
-import { doc, getDoc, collection, query, where, getCountFromServer } from '@firebase/firestore';
+import { collection, query, where, getCountFromServer } from '@firebase/firestore';
 import { getCharacterRank, getLevelProgress } from '../src/data/character';
 import WizardSprite, { WizardSpriteHandle } from '../src/components/WizardSprite';
 import PressableScale from '../src/components/PressableScale';
 import * as Haptics from 'expo-haptics';
 import { useLanguage } from '../src/context/LanguageContext';
 import { RANK_TITLE_KEY } from '../src/i18n/strings';
+import { getUserProfile, UserProfile } from '../lib/firestore';
+import { playMusic, playSFX, stopMusic } from '../src/services/audio';
 
 const { width, height } = Dimensions.get('window');
 const HUD_HEIGHT = 90;
 const NAV_HEIGHT = 96;
-// Wizard container anchor: left = width/2 - 45, so wizard right edge ≈ width/2 + 45
-const CHARACTER_DISPLAY_W = 120;
-const CHARACTER_DISPLAY_H = 160;
+// Wizard container anchor: left = width/2 - 48, so wizard right edge stays near center + 48.
+const CHARACTER_DISPLAY_W = 96;
+const CHARACTER_DISPLAY_H = 120;
 const WIZARD_RIGHT_OFFSET = CHARACTER_DISPLAY_W / 2;
 const FIREBALL_SIZE = 76;
+const NAV_ICON_SIZE = 28;
+const HOME_NAV_ICONS = {
+  grimoire: require('../assets/icons/ui/book.png'),
+  inventory: require('../assets/icons/ui/bag.png'),
+  character: require('../assets/icons/ui/hat.png'),
+};
 const FIREBALL_FRAMES = [
   require('../assets/effects/fireball/Effects_Fire_0_01.png'),
   require('../assets/effects/fireball/Effects_Fire_0_02.png'),
@@ -69,7 +77,7 @@ const FLOATING_PARTICLES = Array.from({ length: 8 }, (_, index) => ({
   tint: index % 3 === 0 ? '#c8a84b' : '#ffffff',
 }));
 
-type Profile = { nickname: string; character: string };
+type Profile = UserProfile;
 
 function FloatingParticle({
   left,
@@ -180,6 +188,13 @@ export default function Home() {
     };
   }, []);
 
+  useEffect(() => {
+    playMusic('main_music', true);
+    return () => {
+      stopMusic();
+    };
+  }, []);
+
   function shootFireball() {
     if (fireballVisible) return;
     const wizX = wizardRef.current?.getX() ?? 0;
@@ -189,6 +204,7 @@ export default function Home() {
     fireballFrameRef.current = 0;
     setFireballFrame(0);
     setFireballVisible(true);
+    playSFX('fireball_shoot');
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
     fireballIntervalRef.current = setInterval(() => {
@@ -217,10 +233,11 @@ export default function Home() {
     }
   }
 
-  function handleRoomPressIn(e: { nativeEvent: { locationX: number } }) {
+  function handleRoomPressIn(e: GestureResponderEvent) {
     const tapX = e.nativeEvent.locationX;
     const wizScreenX = width / 2 + (wizardRef.current?.getX() ?? 0);
     const direction = tapX >= wizScreenX ? 'right' : 'left';
+    playSFX('footstep');
     wizardRef.current?.startWalking(direction, tapX);
   }
 
@@ -241,12 +258,12 @@ export default function Home() {
   const loadData = useCallback(async () => {
     if (!user) return;
     try {
-      const profileSnap = await getDoc(doc(db, 'profiles', user.uid));
-      if (!profileSnap.exists()) {
+      const userProfile = await getUserProfile(user.uid);
+      if (!userProfile) {
         router.replace('/character-setup');
         return;
       }
-      setProfile(profileSnap.data() as Profile);
+      setProfile(userProfile);
       const countSnap = await getCountFromServer(
         query(collection(db, 'recipes'), where('userId', '==', user.uid))
       );
@@ -263,13 +280,14 @@ export default function Home() {
 
   const nav = (route: string) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    playSFX(route === '/grimoire' ? 'grimor_click' : 'button_click');
     router.push(route as any);
   };
 
   const insets = useSafeAreaInsets();
   const hudBottom = HUD_HEIGHT + 52;
   const roomHeight = height - hudBottom - NAV_HEIGHT - insets.bottom;
-  const characterBottom = height * 0.22;
+  const characterBottom = NAV_HEIGHT + insets.bottom + 56;
   const charTop = height - characterBottom - CHARACTER_DISPLAY_H;
 
   return (
@@ -297,9 +315,10 @@ export default function Home() {
       </ImageBackground>
 
       {/* ── Room press area — hold to walk wizard in that direction ── */}
-      <Pressable
-        style={{ position: 'absolute', top: hudBottom, left: 0, right: 0, height: roomHeight }}
-        onPressIn={handleRoomPressIn}
+      <View
+        style={styles.roomTouchLayer}
+        onStartShouldSetResponder={() => true}
+        onResponderGrant={handleRoomPressIn}
       />
 
       {/* ── Wizard (on top of room tap area, receives its own touches) ── */}
@@ -311,6 +330,7 @@ export default function Home() {
           width: CHARACTER_DISPLAY_W,
           height: CHARACTER_DISPLAY_H,
           overflow: 'visible',
+          zIndex: 2,
         }}
         onPress={handleWizardPress}
       >
@@ -377,9 +397,11 @@ export default function Home() {
           onPressIn={() => pressIn(grimoireScale)}
           onPressOut={() => pressOut(grimoireScale)}
         >
-          <Animated.Text style={[styles.navEmoji, { transform: [{ scale: grimoireScale }] }]}>
-            📖
-          </Animated.Text>
+          <Animated.Image
+            source={HOME_NAV_ICONS.grimoire}
+            style={[styles.navImageIcon, { transform: [{ scale: grimoireScale }] }]}
+            resizeMode="contain"
+          />
           <Text style={styles.navLabel}>{t('nav_grimor')}</Text>
         </Pressable>
 
@@ -390,9 +412,11 @@ export default function Home() {
           onPressIn={() => pressIn(inventoryScale)}
           onPressOut={() => pressOut(inventoryScale)}
         >
-          <Animated.Text style={[styles.navEmoji, { transform: [{ scale: inventoryScale }] }]}>
-            🎒
-          </Animated.Text>
+          <Animated.Image
+            source={HOME_NAV_ICONS.inventory}
+            style={[styles.navImageIcon, { transform: [{ scale: inventoryScale }] }]}
+            resizeMode="contain"
+          />
           <Text style={styles.navLabel}>{t('nav_inventory')}</Text>
         </Pressable>
 
@@ -416,9 +440,11 @@ export default function Home() {
           onPressIn={() => pressIn(characterScale)}
           onPressOut={() => pressOut(characterScale)}
         >
-          <Animated.View style={[styles.navIconWrap, { transform: [{ scale: characterScale }] }]}>
-            <CharacterTabIcon />
-          </Animated.View>
+          <Animated.Image
+            source={HOME_NAV_ICONS.character}
+            style={[styles.navImageIcon, { transform: [{ scale: characterScale }] }]}
+            resizeMode="contain"
+          />
           <Text style={styles.navLabel}>{t('nav_character')}</Text>
         </Pressable>
 
@@ -428,6 +454,14 @@ export default function Home() {
 }
 
 const styles = StyleSheet.create({
+  roomTouchLayer: {
+    position: 'absolute',
+    top: HUD_HEIGHT + 52,
+    left: 0,
+    right: 0,
+    bottom: NAV_HEIGHT,
+    zIndex: 1,
+  },
   hud: {
     position: 'absolute',
     top: 0, left: 0, right: 0,
@@ -438,6 +472,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#2d2d4e',
     height: HUD_HEIGHT + 52,
+    zIndex: 20,
   },
   hudRow: {
     flexDirection: 'row',
@@ -495,6 +530,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-around',
+    zIndex: 20,
   },
   navItem: {
     alignItems: 'center',
@@ -512,6 +548,11 @@ const styles = StyleSheet.create({
   },
   navEmoji: {
     fontSize: 28,
+    marginBottom: 4,
+  },
+  navImageIcon: {
+    width: NAV_ICON_SIZE,
+    height: NAV_ICON_SIZE,
     marginBottom: 4,
   },
   navIconWrap: {

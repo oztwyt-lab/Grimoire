@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Text, View, Pressable, TextInput, Alert, ScrollView, Modal } from 'react-native';
+import { useEffect, useState } from 'react';
+import { Text, View, Pressable, TextInput, Alert, ScrollView, Modal, LayoutChangeEvent, GestureResponderEvent } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuth } from '../src/context/AuthContext';
 import { useLanguage } from '../src/context/LanguageContext';
@@ -9,6 +9,41 @@ import * as Haptics from 'expo-haptics';
 import PressableScale from '../src/components/PressableScale';
 import { submitFeedback } from '../lib/firestore';
 import { isAdminEmail } from '../src/config/admin';
+import {
+  getMasterVolume,
+  getMusicVolume,
+  isMusicEnabled,
+  isSFXEnabled,
+  setMasterVolume,
+  setMusicEnabled,
+  setMusicVolume,
+  setSFXEnabled,
+  stopAllSounds,
+} from '../src/services/audio';
+
+function SoundSlider({ value, onChange }: { value: number; onChange: (value: number) => void }) {
+  const [width, setWidth] = useState(1);
+  const pct = Math.round(value * 100);
+
+  const updateFromEvent = (event: GestureResponderEvent) => {
+    onChange(Math.min(1, Math.max(0, event.nativeEvent.locationX / width)));
+  };
+
+  return (
+    <PressableScale
+      sound={false}
+      onLayout={(event: LayoutChangeEvent) => setWidth(Math.max(1, event.nativeEvent.layout.width))}
+      onPress={updateFromEvent}
+      onPressIn={updateFromEvent}
+      style={sStyles.slider}
+    >
+      <View style={sStyles.sliderTrack}>
+        <View style={[sStyles.sliderFill, { width: `${pct}%` }]} />
+        <View style={[sStyles.sliderThumb, { left: `${pct}%` }]} />
+      </View>
+    </PressableScale>
+  );
+}
 
 export default function Settings() {
   const router = useRouter();
@@ -21,7 +56,55 @@ export default function Settings() {
   const [feedbackMessage, setFeedbackMessage] = useState('');
   const [feedbackSending, setFeedbackSending] = useState(false);
   const [feedbackThanks, setFeedbackThanks] = useState(false);
+  const [sfxOn, setSfxOn] = useState(true);
+  const [musicOn, setMusicOn] = useState(true);
+  const [masterVol, setMasterVol] = useState(1);
+  const [musicVol, setMusicVolState] = useState(0.7);
   const isAdmin = isAdminEmail(user?.email);
+
+  useEffect(() => {
+    const syncAudioState = () => {
+      setSfxOn(isSFXEnabled());
+      setMusicOn(isMusicEnabled());
+      setMasterVol(getMasterVolume());
+      setMusicVolState(getMusicVolume());
+    };
+
+    syncAudioState();
+    const timer = setTimeout(syncAudioState, 300);
+    return () => clearTimeout(timer);
+  }, []);
+
+  const setSfx = (enabled: boolean) => {
+    setSfxOn(enabled);
+    setSFXEnabled(enabled);
+  };
+
+  const setMusic = (enabled: boolean) => {
+    setMusicOn(enabled);
+    setMusicEnabled(enabled);
+  };
+
+  const setAllMuted = (muted: boolean) => {
+    if (muted) {
+      setSfx(false);
+      setMusic(false);
+      stopAllSounds();
+    } else {
+      setSfx(true);
+      setMusic(true);
+    }
+  };
+
+  const setVolume = (value: number) => {
+    setMasterVol(value);
+    setMasterVolume(value);
+  };
+
+  const setMusicVol = (value: number) => {
+    setMusicVolState(value);
+    setMusicVolume(value);
+  };
 
   const handleLogout = async () => {
     await logout();
@@ -145,6 +228,37 @@ export default function Settings() {
           <View style={sStyles.divider} />
         </>
       )}
+
+      <View style={sStyles.section}>
+        <PressableScale onPress={() => setAllMuted(sfxOn || musicOn)} style={sStyles.soundRow}>
+          <View style={[sStyles.checkbox, !sfxOn && !musicOn && sStyles.checkboxActive]}>
+            <Text style={sStyles.checkboxText}>{!sfxOn && !musicOn ? '✓' : ''}</Text>
+          </View>
+          <Text style={sStyles.soundLabel}>{t('settings_mute')}</Text>
+        </PressableScale>
+
+        <PressableScale onPress={() => setSfx(!sfxOn)} style={sStyles.soundRow}>
+          <View style={[sStyles.checkbox, sfxOn && sStyles.checkboxActive]}>
+            <Text style={sStyles.checkboxText}>{sfxOn ? '✓' : ''}</Text>
+          </View>
+          <Text style={sStyles.soundLabel}>{t('settings_sfx')}</Text>
+        </PressableScale>
+
+        <PressableScale onPress={() => setMusic(!musicOn)} style={sStyles.soundRow}>
+          <View style={[sStyles.checkbox, musicOn && sStyles.checkboxActive]}>
+            <Text style={sStyles.checkboxText}>{musicOn ? '✓' : ''}</Text>
+          </View>
+          <Text style={sStyles.soundLabel}>{t('settings_music')}</Text>
+        </PressableScale>
+
+        <Text style={sStyles.soundLabel}>{t('settings_volume')} {Math.round(masterVol * 100)}%</Text>
+        <SoundSlider value={masterVol} onChange={setVolume} />
+
+        <Text style={sStyles.soundLabel}>{t('settings_music_volume')} {Math.round(musicVol * 100)}%</Text>
+        <SoundSlider value={musicVol} onChange={setMusicVol} />
+      </View>
+
+      <View style={sStyles.divider} />
 
       <Text style={sStyles.dangerLabel}>{t('settings_danger')}</Text>
       <Pressable
@@ -275,6 +389,38 @@ const sStyles = {
     alignItems: 'center' as const,
   },
   adminButtonText: { fontFamily: 'PressStart2P_400Regular', color: '#c8c8e8', fontSize: 9, lineHeight: 15, textAlign: 'center' as const },
+  soundRow: { flexDirection: 'row' as const, alignItems: 'center' as const, marginBottom: 16, gap: 12 },
+  checkbox: {
+    width: 22,
+    height: 22,
+    borderWidth: 1,
+    borderColor: '#2d2d4e',
+    backgroundColor: '#16213e',
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
+  },
+  checkboxActive: { borderColor: '#c8a84b' } as const,
+  checkboxText: { fontFamily: 'PressStart2P_400Regular', color: '#c8a84b', fontSize: 10 } as const,
+  soundLabel: { fontFamily: 'PressStart2P_400Regular', color: '#c8c8e8', fontSize: 8, lineHeight: 16, marginBottom: 10 } as const,
+  slider: { width: '100%' as const, marginBottom: 20 },
+  sliderTrack: {
+    height: 18,
+    backgroundColor: '#16213e',
+    borderWidth: 1,
+    borderColor: '#2d2d4e',
+    justifyContent: 'center' as const,
+  },
+  sliderFill: { position: 'absolute' as const, left: 0, top: 0, bottom: 0, backgroundColor: '#c8a84b' },
+  sliderThumb: {
+    position: 'absolute' as const,
+    top: -5,
+    width: 8,
+    height: 28,
+    marginLeft: -4,
+    backgroundColor: '#c8c8e8',
+    borderWidth: 1,
+    borderColor: '#c8a84b',
+  },
   dangerLabel: { fontFamily: 'PressStart2P_400Regular', color: '#4a4a6a', fontSize: 8, marginBottom: 16 } as const,
   deleteButton: {
     borderWidth: 2,

@@ -9,8 +9,8 @@
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "splash": {
-      "image": "./assets/splash-icon.png",
-      "resizeMode": "contain",
+      "image": "./assets/ui/splash_screen.png",
+      "resizeMode": "cover",
       "backgroundColor": "#16213e"
     },
     "ios": {
@@ -32,7 +32,8 @@
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
-      "expo-font"
+      "expo-font",
+      "expo-audio"
     ],
     "extra": {
       "eas": {

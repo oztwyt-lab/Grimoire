@@ -19,25 +19,22 @@ import Animated, {
 } from 'react-native-reanimated';
 import PressableScale from '../../src/components/PressableScale';
 import { getActionEmoji } from '../../src/utils/actionEmoji';
+import { getUserProfile } from '../../lib/firestore';
+import { playMusic, playSFX, stopMusic } from '../../src/services/audio';
+import { markRecipeRecent } from '../../src/services/recentRecipes';
 
 const WIZARD_IDLE_SHEET = require('../../assets/characters/wizard_character/mage_idle.png');
 const WIZARD_CAST_SHEET = require('../../assets/characters/wizard_character/attack_right.png');
 const WITCH_IDLE = [
+  require('../../assets/characters/witch/idle_00.png'),
   require('../../assets/characters/witch/idle_01.png'),
   require('../../assets/characters/witch/idle_02.png'),
   require('../../assets/characters/witch/idle_03.png'),
-  require('../../assets/characters/witch/idle_04.png'),
-  require('../../assets/characters/witch/idle_05.png'),
-  require('../../assets/characters/witch/idle_06.png'),
-  require('../../assets/characters/witch/idle_07.png'),
 ];
 const WITCH_ATTACK = [
+  require('../../assets/characters/witch/attack_00.png'),
   require('../../assets/characters/witch/attack_01.png'),
   require('../../assets/characters/witch/attack_02.png'),
-  require('../../assets/characters/witch/attack_03.png'),
-  require('../../assets/characters/witch/attack_04.png'),
-  require('../../assets/characters/witch/attack_05.png'),
-  require('../../assets/characters/witch/attack_06.png'),
 ];
 const BATTLE_BACKGROUND = require('../../assets/battle/battleback1.png');
 const GHOST_BOSS_SHEETS = [
@@ -399,9 +396,8 @@ export default function CookMode() {
       }
 
       try {
-        const snap = await getDoc(doc(db, 'profiles', user.uid));
-        const data = snap.exists() ? snap.data() : null;
-        if (alive) setIsFemale(data?.character === 'female');
+        const profile = await getUserProfile(user.uid);
+        if (alive) setIsFemale(profile?.character === 'female');
       } catch (error) {
         console.error(error);
         if (alive) setIsFemale(false);
@@ -505,6 +501,13 @@ export default function CookMode() {
   // ─── Load recipe ────────────────────────────────────────────────────────────
 
   useEffect(() => {
+    playMusic('boss_music', true);
+    return () => {
+      stopMusic();
+    };
+  }, []);
+
+  useEffect(() => {
     const fetchRecipe = async () => {
       try {
         const snap = await getDoc(doc(db, 'recipes', id));
@@ -512,6 +515,7 @@ export default function CookMode() {
           const r = { id: snap.id, ...snap.data() } as RawRecipe;
           const normalized = normalizeSteps(r);
           setRecipe(r);
+          if (user) markRecipeRecent(user.uid, snap.id).catch(console.warn);
           setSteps(normalized);
           dispatch({ type: 'INIT', totalSteps: normalized.length });
           bossHpWidth.value = 1;
@@ -528,7 +532,7 @@ export default function CookMode() {
       }
     };
     fetchRecipe();
-  }, [id]);
+  }, [id, user]);
 
   // ─── Completion modal ───────────────────────────────────────────────────────
 
@@ -644,6 +648,7 @@ export default function CookMode() {
       damageY.value = withTiming(-50, { duration: 500 });
       damageOpacity.value = withDelay(200, withTiming(0, { duration: 300 }));
       fireballOpacity.value = withTiming(0, { duration: 100 });
+      runOnJS(playSFX)('fireball_hit');
       runOnJS(triggerExplosion)();
       runOnJS(onAttackDone)();
     });
@@ -728,6 +733,7 @@ export default function CookMode() {
 
   function handleNextStep() {
     if (battle.phase !== 'IDLE') return;
+    playSFX('fireball_shoot');
     dispatch({ type: 'NEXT_STEP' });
   }
 
@@ -817,14 +823,20 @@ export default function CookMode() {
 
       <ImageBackground source={BATTLE_BACKGROUND} style={[s.battleStage, isLandscape && { height: undefined, flex: 1 }]} imageStyle={s.battleStageImage} resizeMode="cover">
         <View style={s.battleTint} />
-        <PressableScale onPress={handleNextStep} style={s.heroSlot}>
+        <PressableScale onPress={handleNextStep} sound={false} style={[s.heroSlot, isFemale && s.heroWitchSlot]}>
           <Animated.View style={charAnimStyle}>
-            <View style={[s.heroFrameViewport, { transform: [{ scaleX: -1 }] }]}>
+            <View
+              style={[
+                s.heroFrameViewport,
+                isFemale && s.heroWitchViewport,
+                { transform: [{ scaleX: isFemale ? 1 : charIsAttacking ? 1 : -1 }] },
+              ]}
+            >
               {isFemale ? (
                 <Image
                   source={charIsAttacking ? WITCH_ATTACK[heroFrame] : WITCH_IDLE[heroFrame]}
-                  style={s.heroFrameImage}
-                  resizeMode="stretch"
+                  style={s.heroWitchImage}
+                  resizeMode="contain"
                 />
               ) : (
                 <Image
@@ -928,7 +940,7 @@ export default function CookMode() {
           {t('cook_step')} {Math.min(battle.currentStep + 1, totalSteps)} / {totalSteps}
         </Text>
         <Text style={s.actionEmoji}>{emoji}</Text>
-        <Animated.Text style={[s.stepText, stepSlideStyle, isLandscape && { fontSize: 8, lineHeight: 18 }]}>
+        <Animated.Text style={[s.stepText, stepSlideStyle, isLandscape && s.stepTextLandscape]}>
           {stepText}
         </Animated.Text>
         {durationStr && (
@@ -951,6 +963,7 @@ export default function CookMode() {
         </PressableScale>
         <PressableScale
           onPress={handleNextStep}
+          sound={false}
           disabled={!isIdle || isComplete}
           pointerEvents={!isIdle || isComplete ? 'none' : 'auto'}
           style={[s.nextButton, (!isIdle || isComplete) && s.nextButtonDisabled]}
@@ -1038,9 +1051,12 @@ const s = StyleSheet.create({
   battleStageImage: { opacity: 0.9 },
   battleTint: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(10, 12, 24, 0.28)' },
   heroSlot:     { width: 92, height: 100 },
+  heroWitchSlot: { width: 96, height: 120 },
   heroImage:    { width: 92, height: 92 },
   heroFrameViewport: { width: 92, height: 92, overflow: 'hidden' },
+  heroWitchViewport: { width: 96, height: 120, overflow: 'visible' },
   heroFrameImage: { width: 92, height: 92 },
+  heroWitchImage: { width: 96, height: 120 },
   heroFrameSheet: { position: 'absolute', top: 0, left: 0 },
   bossSlot:     { width: 120, height: 120, alignItems: 'center', justifyContent: 'center' },
   bossBox:      { width: BOSS_VIEW_W, height: BOSS_VIEW_H, overflow: 'hidden' },
@@ -1064,10 +1080,11 @@ const s = StyleSheet.create({
   playerHpFill:  { height: '100%', backgroundColor: '#6fcf97' },
 
   // Section 5 — Step card
-  stepCard:     { flex: 1, minHeight: 140, maxHeight: 220, marginHorizontal: 16, marginBottom: 12, backgroundColor: '#1a1a2e', borderWidth: 1, borderColor: '#2a2a4a', borderRadius: 4, padding: 18, justifyContent: 'center', alignItems: 'center' },
+  stepCard:     { flex: 1, minHeight: 160, maxHeight: 250, marginHorizontal: 16, marginBottom: 12, backgroundColor: '#1a1a2e', borderWidth: 1, borderColor: '#2a2a4a', borderRadius: 4, padding: 18, justifyContent: 'center', alignItems: 'center' },
   stepLabel:    { fontFamily: 'PressStart2P_400Regular', color: '#4a4a6a', fontSize: 7, marginBottom: 16 },
   actionEmoji:  { fontSize: 40, marginBottom: 16 },
-  stepText:     { fontFamily: 'PressStart2P_400Regular', color: '#c8c8e8', fontSize: 10, textAlign: 'center', lineHeight: 24 },
+  stepText:     { fontFamily: 'PressStart2P_400Regular', color: '#c8c8e8', fontSize: 13, textAlign: 'center', lineHeight: 30 },
+  stepTextLandscape: { fontSize: 10, lineHeight: 22 },
   durationBadge: { marginTop: 20, borderWidth: 1, borderColor: '#c8a84b', paddingHorizontal: 16, paddingVertical: 8 },
   durationText:  { fontFamily: 'PressStart2P_400Regular', color: '#4a4a6a', fontSize: 8 },
 

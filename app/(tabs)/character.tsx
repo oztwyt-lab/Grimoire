@@ -7,14 +7,14 @@ import { useFocusEffect } from 'expo-router';
 import { useAuth } from '../../src/context/AuthContext';
 import { useLanguage } from '../../src/context/LanguageContext';
 import { db } from '../../firebase';
-import { doc, getDoc, collection, query, where, getCountFromServer } from '@firebase/firestore';
+import { collection, query, where, getCountFromServer } from '@firebase/firestore';
 import { getCharacterRank, getLevelProgress, CharacterRank } from '../../src/data/character';
 import { RANK_TITLE_KEY, RANK_FLAVOR_KEY, StringKey } from '../../src/i18n/strings';
 import PressableScale from '../../src/components/PressableScale';
 import {
   Equipment, EquipmentItem, EquipmentSlot,
   DEFAULT_EQUIPMENT, STARTER_ITEMS,
-  getUserEquipment, saveUserEquipment, getUserOwnedItems,
+  getUserEquipment, saveUserEquipment, getUserOwnedItems, getUserProfile,
 } from '../../lib/firestore';
 
 const WIZARD_IDLE_SHEET = require('../../assets/characters/wizard_character/mage_idle.png');
@@ -38,6 +38,7 @@ const SLOT_PLACEHOLDER: Record<EquipmentSlot, string> = {
   staff: '🪄',
   accessory1: '💍',
   accessory2: '💍',
+  pet: '🐢',
 };
 
 const SLOT_LABEL_KEY: Record<EquipmentSlot, StringKey> = {
@@ -47,7 +48,16 @@ const SLOT_LABEL_KEY: Record<EquipmentSlot, StringKey> = {
   staff: 'slot_staff',
   accessory1: 'slot_accessory',
   accessory2: 'slot_accessory',
+  pet: 'slot_pet',
 };
+
+function EquipmentVisual({ item, imageStyle }: { item: EquipmentItem; imageStyle?: object }) {
+  return item.image ? (
+    <Image source={item.image as never} style={[cStyles.itemImage, imageStyle]} resizeMode="contain" />
+  ) : (
+    <Text style={cStyles.slotIcon}>{item.icon}</Text>
+  );
+}
 
 // ─── SlotButton ───────────────────────────────────────────────────────────────
 type SlotButtonProps = {
@@ -62,23 +72,14 @@ function SlotButton({ slotKey, equippedId, onPress }: SlotButtonProps) {
   return (
     <PressableScale onPress={onPress}>
       <View style={[cStyles.slot, item ? cStyles.slotEquipped : cStyles.slotEmpty]}>
-        <Text style={[cStyles.slotIcon, !item && cStyles.slotIconDim]}>
-          {item ? item.icon : SLOT_PLACEHOLDER[slotKey]}
-        </Text>
+        {item ? (
+          <EquipmentVisual item={item} />
+        ) : (
+          <Text style={[cStyles.slotIcon, cStyles.slotIconDim]}>{SLOT_PLACEHOLDER[slotKey]}</Text>
+        )}
         <Text style={cStyles.slotLabel}>{t(SLOT_LABEL_KEY[slotKey])}</Text>
       </View>
     </PressableScale>
-  );
-}
-
-// ─── Locked pet slot ──────────────────────────────────────────────────────────
-function PetSlot() {
-  const { t } = useLanguage();
-  return (
-    <View style={[cStyles.slot, cStyles.slotLocked]}>
-      <Text style={cStyles.slotIconDim}>🔒</Text>
-      <Text style={cStyles.slotLabel}>{t('slot_pet')}</Text>
-    </View>
   );
 }
 
@@ -101,12 +102,12 @@ export default function Character() {
       const load = async () => {
         try {
           const [profileSnap, eq, owned, countSnap] = await Promise.all([
-            getDoc(doc(db, 'profiles', user.uid)),
+            getUserProfile(user.uid),
             getUserEquipment(user.uid),
             getUserOwnedItems(user.uid),
             getCountFromServer(query(collection(db, 'recipes'), where('userId', '==', user.uid))),
           ]);
-          if (profileSnap.exists()) setProfile(profileSnap.data() as Profile);
+          if (profileSnap) setProfile(profileSnap as Profile);
           setEquipment(eq);
           setOwnedItemIds(owned);
           setRecipeCount(countSnap.data().count);
@@ -123,6 +124,9 @@ export default function Character() {
   const rank: CharacterRank = getCharacterRank(recipeCount);
   const progress = getLevelProgress(recipeCount, rank);
   const progressPct = Math.round(progress * 100);
+  const equippedHat = equipment.hat ? STARTER_ITEMS.find(i => i.id === equipment.hat) ?? null : null;
+  const equippedStaff = equipment.staff ? STARTER_ITEMS.find(i => i.id === equipment.staff) ?? null : null;
+  const equippedPet = equipment.pet ? STARTER_ITEMS.find(i => i.id === equipment.pet) ?? null : null;
 
   // Items the user owns (from catalog, filtered by ownedItemIds)
   const ownedItems = STARTER_ITEMS.filter(i => ownedItemIds.includes(i.id));
@@ -213,6 +217,12 @@ export default function Character() {
           <View style={cStyles.spriteContainer}>
             <View style={cStyles.spriteFrame}>
               <Image source={WIZARD_IDLE_SHEET} style={cStyles.spriteImage} resizeMode="stretch" />
+              {equippedHat?.image ? (
+                <Image source={equippedHat.image as never} style={cStyles.spriteHat} resizeMode="contain" />
+              ) : null}
+              {equippedStaff?.image ? (
+                <Image source={equippedStaff.image as never} style={cStyles.spriteStaff} resizeMode="contain" />
+              ) : null}
             </View>
           </View>
 
@@ -229,7 +239,12 @@ export default function Character() {
 
         {/* PET — locked, centered below */}
         <View style={cStyles.petRow}>
-          <PetSlot />
+          <SlotButton slotKey="pet" equippedId={equipment.pet} onPress={() => handleSlotPress('pet')} />
+          {equippedPet?.image ? (
+            <View style={cStyles.petPreview}>
+              <EquipmentVisual item={equippedPet} imageStyle={cStyles.petImage} />
+            </View>
+          ) : null}
         </View>
 
       </View>
@@ -247,7 +262,7 @@ export default function Character() {
             renderItem={({ item }) => (
               <PressableScale onPress={() => handleItemPress(item)}>
                 <View style={[cStyles.slot, cStyles.slotEmpty]}>
-                  <Text style={cStyles.slotIcon}>{item.icon}</Text>
+                  <EquipmentVisual item={item} />
                   <Text style={cStyles.slotLabel}>
                     {language === 'tr' ? item.name.split(' ')[0] : item.nameEn.split(' ')[0]}
                   </Text>
@@ -270,7 +285,11 @@ export default function Character() {
           <View style={cStyles.modalSheet}>
             {modalState?.item ? (
               <>
-                <Text style={cStyles.modalIcon}>{modalState.item.icon}</Text>
+                {modalState.item.image ? (
+                  <Image source={modalState.item.image as never} style={cStyles.modalImage} resizeMode="contain" />
+                ) : (
+                  <Text style={cStyles.modalIcon}>{modalState.item.icon}</Text>
+                )}
                 <Text style={cStyles.modalItemName}>
                   {language === 'tr' ? modalState.item.name : modalState.item.nameEn}
                 </Text>
@@ -337,12 +356,17 @@ const cStyles = {
     width: WIZARD_DISPLAY_W,
     height: WIZARD_DISPLAY_H,
     overflow: 'hidden' as const,
+    position: 'relative' as const,
   },
   spriteImage: {
     width: WIZARD_DISPLAY_W * WIZARD_IDLE_FRAMES,
     height: WIZARD_DISPLAY_H,
   } as const,
-  petRow: { marginTop: 8 } as const,
+  spriteHat: { position: 'absolute' as const, top: 2, left: 31, width: 28, height: 24, zIndex: 3 },
+  spriteStaff: { position: 'absolute' as const, right: 2, bottom: 13, width: 34, height: 44, zIndex: 3 },
+  petRow: { marginTop: 8, alignItems: 'center' as const, gap: 8 } as const,
+  petPreview: { width: 56, height: 36, alignItems: 'center' as const, justifyContent: 'center' as const },
+  petImage: { width: 44, height: 32 },
 
   // Slot card
   slot: {
@@ -359,6 +383,7 @@ const cStyles = {
   slotLocked: { backgroundColor: '#141428', borderColor: '#1e1e38', opacity: 0.6 } as const,
   slotIcon: { fontSize: 22, marginBottom: 2 } as const,
   slotIconDim: { opacity: 0.3 } as const,
+  itemImage: { width: 30, height: 30, marginBottom: 2 },
   slotLabel: { fontFamily: 'PressStart2P_400Regular', color: '#4a4a6a', fontSize: 5 } as const,
 
   // Owned items
@@ -382,6 +407,7 @@ const cStyles = {
     alignItems: 'center' as const,
   },
   modalIcon: { fontSize: 64, marginBottom: 12 } as const,
+  modalImage: { width: 84, height: 84, marginBottom: 12 },
   modalItemName: { fontFamily: 'PressStart2P_400Regular', color: '#c8a84b', fontSize: 11, marginBottom: 8, textAlign: 'center' as const } as const,
   modalItemDesc: { fontFamily: 'PressStart2P_400Regular', color: '#4a4a6a', fontSize: 7, marginBottom: 24, textAlign: 'center' as const, lineHeight: 14 } as const,
   equipBtn: { borderWidth: 2, borderColor: '#c8a84b', paddingVertical: 14, paddingHorizontal: 32, marginBottom: 12 } as const,

@@ -1,18 +1,26 @@
 // ─── app/login.tsx ───────────────────────────────────────────────────────────
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Text, TextInput, View, Pressable, Alert, Image, useWindowDimensions } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuth } from '../src/context/AuthContext';
 import { useLanguage } from '../src/context/LanguageContext';
+import { playMusic, stopMusic } from '../src/services/audio';
 
 export default function Login() {
   const router = useRouter();
   const { width, height } = useWindowDimensions();
-  const { login } = useAuth();
+  const { login, resetPassword } = useAuth();
   const { language, setLanguage, t } = useLanguage();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    playMusic('login_music', true);
+    return () => {
+      stopMusic();
+    };
+  }, []);
 
   const handleSubmit = async () => {
     setSubmitting(true);
@@ -23,6 +31,21 @@ export default function Login() {
       Alert.alert(t('login_failed_title'), t('login_failed_msg'));
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handleResetPassword = async () => {
+    const trimmedEmail = email.trim();
+    if (!trimmedEmail) {
+      Alert.alert(t('login_reset_missing_title'), t('login_reset_missing_msg'));
+      return;
+    }
+
+    try {
+      await resetPassword(trimmedEmail);
+      Alert.alert(t('login_reset_sent_title'), t('login_reset_sent_msg'));
+    } catch (error) {
+      Alert.alert(t('login_reset_failed_title'), t('login_reset_failed_msg'));
     }
   };
 
@@ -96,6 +119,12 @@ export default function Login() {
         >
           <Text style={styles.link}>{t('login_create_account')}</Text>
         </Pressable>
+        <Pressable
+          style={({ pressed }) => [pressed && { opacity: 0.5 }]}
+          onPress={handleResetPassword}
+        >
+          <Text style={styles.secondaryLink}>{t('login_forgot_password')}</Text>
+        </Pressable>
       </View>
 
     </View>
@@ -118,4 +147,5 @@ const styles = {
   button: { backgroundColor: '#16213e', borderWidth: 2, borderColor: '#e2b96f', padding: 16, alignItems: 'center' as const, marginBottom: 16 },
   buttonText: { fontFamily: 'PressStart2P_400Regular', color: '#e2b96f', fontSize: 10 } as const,
   link: { fontFamily: 'PressStart2P_400Regular', color: '#4a4a6a', textAlign: 'center' as const, fontSize: 8 },
+  secondaryLink: { fontFamily: 'PressStart2P_400Regular', color: '#c8a84b', textAlign: 'center' as const, fontSize: 8, marginTop: 16 },
 };

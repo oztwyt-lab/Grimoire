@@ -1,50 +1,39 @@
 import { useEffect, useRef, useState, forwardRef, useImperativeHandle, useCallback } from 'react';
 import { View, Image, StyleSheet, Dimensions, ImageSourcePropType } from 'react-native';
-import { doc, getDoc } from '@firebase/firestore';
 import Animated, {
   Easing,
   cancelAnimation,
   runOnJS,
-  useAnimatedReaction,
   useAnimatedStyle,
   useSharedValue,
   withTiming,
 } from 'react-native-reanimated';
-import { db } from '../../firebase';
 import { useAuth } from '../context/AuthContext';
+import { getUserProfile } from '../../lib/firestore';
 
-const DISPLAY_W = 120;
-const DISPLAY_H = 160;
+const DISPLAY_W = 96;
+const DISPLAY_H = 120;
 const WIZARD_IDLE = require('../../assets/characters/wizard_character/mage_idle.png');
 const WIZARD_WALK_RIGHT = require('../../assets/characters/wizard_character/walk_right.png');
 const WIZARD_WALK_LEFT = require('../../assets/characters/wizard_character/walk_left.png');
 const WIZARD_ATTACK_RIGHT = require('../../assets/characters/wizard_character/attack_right.png');
 const WIZARD_ATTACK_LEFT = require('../../assets/characters/wizard_character/attack_left.png');
 const WITCH_IDLE = [
+  require('../../assets/characters/witch/idle_00.png'),
   require('../../assets/characters/witch/idle_01.png'),
   require('../../assets/characters/witch/idle_02.png'),
   require('../../assets/characters/witch/idle_03.png'),
-  require('../../assets/characters/witch/idle_04.png'),
-  require('../../assets/characters/witch/idle_05.png'),
-  require('../../assets/characters/witch/idle_06.png'),
-  require('../../assets/characters/witch/idle_07.png'),
 ];
 const WITCH_WALK = [
+  require('../../assets/characters/witch/walk_00.png'),
   require('../../assets/characters/witch/walk_01.png'),
   require('../../assets/characters/witch/walk_02.png'),
   require('../../assets/characters/witch/walk_03.png'),
-  require('../../assets/characters/witch/walk_04.png'),
-  require('../../assets/characters/witch/walk_05.png'),
-  require('../../assets/characters/witch/walk_06.png'),
-  require('../../assets/characters/witch/walk_07.png'),
 ];
 const WITCH_ATTACK = [
+  require('../../assets/characters/witch/attack_00.png'),
   require('../../assets/characters/witch/attack_01.png'),
   require('../../assets/characters/witch/attack_02.png'),
-  require('../../assets/characters/witch/attack_03.png'),
-  require('../../assets/characters/witch/attack_04.png'),
-  require('../../assets/characters/witch/attack_05.png'),
-  require('../../assets/characters/witch/attack_06.png'),
 ];
 
 const { width: screenWidth } = Dimensions.get('window');
@@ -56,6 +45,9 @@ const MIN_IDLE_MS = 3000;
 const MAX_IDLE_MS = 6000;
 const FRAME_INTERVAL_MS = 180;
 const IDLE_FRAME_INTERVAL_MS = 200;
+const WITCH_WALK_FRAME_INTERVAL_MS = 200;
+const WITCH_IDLE_FRAME_INTERVAL_MS = 300;
+const WITCH_ATTACK_FRAME_INTERVAL_MS = 120;
 const BREW_MS = 2000;
 const CAST_MS = 520;
 
@@ -140,7 +132,6 @@ const WizardSprite = forwardRef<WizardSpriteHandle>(function WizardSprite(_, ref
   const [isFemale, setIsFemale] = useState(false);
 
   const positionX = useSharedValue(SCREEN_CENTER_X);
-  const positionXRef = useRef(SCREEN_CENTER_X);
   const manualRef = useRef(false);
   const castRef = useRef(false);
   const idleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -168,18 +159,6 @@ const WizardSprite = forwardRef<WizardSpriteHandle>(function WizardSprite(_, ref
     }
   }, []);
 
-  const updatePositionRef = useCallback((value: number) => {
-    positionXRef.current = value;
-  }, []);
-
-  useAnimatedReaction(
-    () => positionX.value,
-    (value) => {
-      runOnJS(updatePositionRef)(value);
-    },
-    [updatePositionRef]
-  );
-
   const startFrameLoop = useCallback((frameCount: number, intervalMs: number) => {
     clearFrameTimer();
     setFrame(0);
@@ -198,9 +177,8 @@ const WizardSprite = forwardRef<WizardSpriteHandle>(function WizardSprite(_, ref
       }
 
       try {
-        const snap = await getDoc(doc(db, 'profiles', user.uid));
-        const data = snap.exists() ? snap.data() : null;
-        if (alive) setIsFemale(data?.character === 'female');
+        const profile = await getUserProfile(user.uid);
+        if (alive) setIsFemale(profile?.character === 'female');
       } catch (error) {
         console.error(error);
         if (alive) setIsFemale(false);
@@ -222,14 +200,14 @@ const WizardSprite = forwardRef<WizardSpriteHandle>(function WizardSprite(_, ref
       const roll = Math.random();
       if (roll < 0.6) {
         const targetX = randomBetween(MIN_X, MAX_X);
-        const currentX = positionXRef.current;
+        const currentX = positionX.value;
         const nextDirection: Direction = targetX > currentX ? 1 : -1;
         const distance = Math.abs(targetX - currentX);
         const duration = Math.max(250, (distance / WALK_SPEED) * 1000);
 
         setDirection(nextDirection);
         setWizardState('WALKING');
-        startFrameLoop(isFemale ? WITCH_WALK.length : 5, FRAME_INTERVAL_MS);
+        startFrameLoop(isFemale ? WITCH_WALK.length : 5, isFemale ? WITCH_WALK_FRAME_INTERVAL_MS : FRAME_INTERVAL_MS);
 
         positionX.value = withTiming(
           targetX,
@@ -245,7 +223,7 @@ const WizardSprite = forwardRef<WizardSpriteHandle>(function WizardSprite(_, ref
         );
       } else if (roll < 0.85) {
         setWizardState('BREWING');
-        startFrameLoop(isFemale ? WITCH_ATTACK.length : 7, FRAME_INTERVAL_MS);
+        startFrameLoop(isFemale ? WITCH_ATTACK.length : 7, isFemale ? WITCH_ATTACK_FRAME_INTERVAL_MS : FRAME_INTERVAL_MS);
         clearActionTimer();
         actionTimerRef.current = setTimeout(() => {
           returnToIdle();
@@ -261,7 +239,7 @@ const WizardSprite = forwardRef<WizardSpriteHandle>(function WizardSprite(_, ref
     cancelAnimation(positionX);
     clearActionTimer();
     setWizardState('IDLE');
-    startFrameLoop(isFemale ? WITCH_IDLE.length : 7, IDLE_FRAME_INTERVAL_MS);
+    startFrameLoop(isFemale ? WITCH_IDLE.length : 7, isFemale ? WITCH_IDLE_FRAME_INTERVAL_MS : IDLE_FRAME_INTERVAL_MS);
     scheduleIdleDecision();
   }, [clearActionTimer, isFemale, positionX, scheduleIdleDecision, startFrameLoop]);
 
@@ -269,6 +247,16 @@ const WizardSprite = forwardRef<WizardSpriteHandle>(function WizardSprite(_, ref
     manualRef.current = false;
     returnToIdle();
   }, [returnToIdle]);
+
+  const finishManualWalk = useCallback((targetX: number, shouldResumeOnArrival: boolean) => {
+    if (shouldResumeOnArrival) {
+      finishTargetedWalk();
+      return;
+    }
+    if (!manualRef.current) return;
+    startFrameLoop(isFemale ? WITCH_IDLE.length : 7, isFemale ? WITCH_IDLE_FRAME_INTERVAL_MS : IDLE_FRAME_INTERVAL_MS);
+    setWizardState('IDLE');
+  }, [finishTargetedWalk, isFemale, startFrameLoop]);
 
   const startManualWalk = useCallback((walkDirection: 'left' | 'right', targetScreenX?: number) => {
     manualRef.current = true;
@@ -281,13 +269,13 @@ const WizardSprite = forwardRef<WizardSpriteHandle>(function WizardSprite(_, ref
       ? clampPosition(targetScreenX)
       : walkDirection === 'right' ? MAX_X : MIN_X;
     const shouldResumeOnArrival = typeof targetScreenX === 'number';
-    const currentX = positionXRef.current;
+    const currentX = positionX.value;
     const distance = Math.abs(targetX - currentX);
-    const duration = Math.max(250, (distance / WALK_SPEED) * 1000);
+    const duration = Math.max(120, (distance / WALK_SPEED) * 1000);
 
     setDirection(walkDirection === 'right' ? 1 : -1);
     setWizardState('WALKING');
-    startFrameLoop(isFemale ? WITCH_WALK.length : 5, FRAME_INTERVAL_MS);
+    startFrameLoop(isFemale ? WITCH_WALK.length : 5, isFemale ? WITCH_WALK_FRAME_INTERVAL_MS : FRAME_INTERVAL_MS);
 
     positionX.value = withTiming(
       targetX,
@@ -297,16 +285,11 @@ const WizardSprite = forwardRef<WizardSpriteHandle>(function WizardSprite(_, ref
       },
       (finished) => {
         if (finished) {
-          if (shouldResumeOnArrival) {
-            runOnJS(finishTargetedWalk)();
-          } else if (manualRef.current) {
-            runOnJS(startFrameLoop)(isFemale ? WITCH_IDLE.length : 7, IDLE_FRAME_INTERVAL_MS);
-            runOnJS(setWizardState)('IDLE');
-          }
+          runOnJS(finishManualWalk)(targetX, shouldResumeOnArrival);
         }
       }
     );
-  }, [clearActionTimer, clearIdleTimer, finishTargetedWalk, isFemale, positionX, startFrameLoop]);
+  }, [clearActionTimer, clearIdleTimer, finishManualWalk, isFemale, positionX, startFrameLoop]);
 
   const stopManualWalk = useCallback(() => {
     manualRef.current = false;
@@ -321,7 +304,7 @@ const WizardSprite = forwardRef<WizardSpriteHandle>(function WizardSprite(_, ref
     clearActionTimer();
     cancelAnimation(positionX);
     setWizardState('BREWING');
-    startFrameLoop(isFemale ? WITCH_ATTACK.length : 7, 80);
+    startFrameLoop(isFemale ? WITCH_ATTACK.length : 7, isFemale ? WITCH_ATTACK_FRAME_INTERVAL_MS : 80);
 
     actionTimerRef.current = setTimeout(() => {
       castRef.current = false;
@@ -333,12 +316,12 @@ const WizardSprite = forwardRef<WizardSpriteHandle>(function WizardSprite(_, ref
     startWalking: startManualWalk,
     stopWalking: stopManualWalk,
     castFireball,
-    getX: () => positionXRef.current - SCREEN_CENTER_X,
+    getX: () => positionX.value - SCREEN_CENTER_X,
   }), [castFireball, startManualWalk, stopManualWalk]);
 
   useEffect(() => {
     setWizardState('IDLE');
-    startFrameLoop(isFemale ? WITCH_IDLE.length : 7, IDLE_FRAME_INTERVAL_MS);
+    startFrameLoop(isFemale ? WITCH_IDLE.length : 7, isFemale ? WITCH_IDLE_FRAME_INTERVAL_MS : IDLE_FRAME_INTERVAL_MS);
     scheduleIdleDecision();
 
     return () => {
@@ -360,7 +343,13 @@ const WizardSprite = forwardRef<WizardSpriteHandle>(function WizardSprite(_, ref
 
   return (
     <Animated.View style={[styles.wrapper, wrapperStyle]}>
-      <View style={[styles.viewport, { transform: [{ scaleX: sprite.mirrored ? -1 : 1 }] }]}>
+      <View
+        style={[
+          styles.viewport,
+          !sprite.frameSources && styles.sheetViewport,
+          { transform: [{ scaleX: sprite.mirrored ? -1 : 1 }] },
+        ]}
+      >
         {sprite.frameSources ? (
           <Image
             source={sprite.frameSources[frameIndex]}
@@ -387,6 +376,7 @@ export default WizardSprite;
 const styles = StyleSheet.create({
   wrapper: { alignItems: 'center', overflow: 'visible' },
   viewport: { width: DISPLAY_W, height: DISPLAY_H, overflow: 'visible' },
+  sheetViewport: { overflow: 'hidden' },
   frame: { width: DISPLAY_W, height: DISPLAY_H },
   sheet: { height: DISPLAY_H, position: 'absolute', top: 0, left: 0 },
 });

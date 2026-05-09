@@ -7,6 +7,8 @@ import { useLanguage } from '../../src/context/LanguageContext';
 import { useInventory } from '../../src/context/InventoryContext';
 import PressableScale from '../../src/components/PressableScale';
 import IngredientIcon from '../../src/components/IngredientIcon';
+import { useAuth } from '../../src/context/AuthContext';
+import { markRecipeRecent } from '../../src/services/recentRecipes';
 
 type Ingredient = { id: string; name: string; emoji: string; quantity: string; metric?: string };
 type RecipeStep = { id: string; text: string; duration: number | null };
@@ -85,6 +87,7 @@ export default function RecipeDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const { t } = useLanguage();
+  const { user } = useAuth();
   const { inventory, bulkSetItems } = useInventory();
   const [recipe, setRecipe] = useState<Recipe | null>(null);
   const [loading, setLoading] = useState(true);
@@ -96,7 +99,10 @@ export default function RecipeDetail() {
         try {
           const docRef = doc(db, 'recipes', id);
           const docSnap = await getDoc(docRef);
-          if (docSnap.exists()) setRecipe({ id: docSnap.id, ...docSnap.data() } as Recipe);
+          if (docSnap.exists()) {
+            setRecipe({ id: docSnap.id, ...docSnap.data() } as Recipe);
+            if (user) markRecipeRecent(user.uid, docSnap.id).catch(console.warn);
+          }
         } catch (error) {
           console.error(error);
         } finally {
@@ -104,7 +110,7 @@ export default function RecipeDetail() {
         }
       };
       fetchRecipe();
-    }, [id])
+    }, [id, user])
   );
 
   const handleDelete = async () => {
@@ -114,7 +120,7 @@ export default function RecipeDetail() {
     ]);
   };
 
-  async function handleIngredientsReady() {
+  async function applyIngredientsReady() {
     if (!recipe || !recipe.ingredients?.length) return;
     const items = recipe.ingredients.map(ing => ({
       id: ing.id,
@@ -122,6 +128,14 @@ export default function RecipeDetail() {
       metric: 'adet',
     }));
     await bulkSetItems(items);
+  }
+
+  function handleIngredientsReady() {
+    if (!recipe || !recipe.ingredients?.length) return;
+    Alert.alert(t('ingredients_ready_confirm_title'), t('ingredients_ready_confirm_msg'), [
+      { text: t('ingredients_ready_cancel'), style: 'cancel' },
+      { text: t('ingredients_ready_confirm'), onPress: applyIngredientsReady },
+    ]);
   }
 
   async function handleShare() {

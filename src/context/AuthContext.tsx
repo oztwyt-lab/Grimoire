@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
-import { User, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, reauthenticateWithCredential, EmailAuthProvider, deleteUser } from '@firebase/auth';
+import { User, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, reauthenticateWithCredential, EmailAuthProvider, deleteUser, sendPasswordResetEmail } from '@firebase/auth';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { auth } from '../../firebase';
 
@@ -8,6 +8,7 @@ type AuthContextValue = {
   loading: boolean;
   register: (email: string, password: string) => Promise<void>;
   login: (email: string, password: string) => Promise<void>;
+  resetPassword: (email: string) => Promise<void>;
   logout: () => Promise<void>;
   deleteAccount: (password: string) => Promise<void>;
 };
@@ -45,6 +46,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       },
       login: async (email: string, password: string) => {
         await signInWithEmailAndPassword(auth, email, password);
+      },
+      resetPassword: async (email: string) => {
+        await sendPasswordResetEmail(auth, email);
       },
       logout: async () => {
         await AsyncStorage.removeItem(AUTH_KEY);
