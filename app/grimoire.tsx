@@ -1,6 +1,6 @@
 // ─── app/grimoire.tsx ────────────────────────────────────────────────────────
 import React, { useEffect, useState, useCallback, useRef, useMemo } from 'react';
-import { Text, View, Pressable, FlatList, ActivityIndicator, TextInput, RefreshControl, Animated as RNAnimated } from 'react-native';
+import { Text, View, Pressable, FlatList, ScrollView, ActivityIndicator, TextInput, RefreshControl, Animated as RNAnimated } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuth } from '../src/context/AuthContext';
 import { useRouter, useFocusEffect } from 'expo-router';
@@ -40,7 +40,6 @@ const RANK_FLAVOR_KEY: Record<string, StringKey> = {
 
 type Ingredient = { id: string; name: string; emoji: string; quantity: string };
 type Recipe = { id: string; name: string; icon?: string; recipeLanguage?: RecipeLanguageTag; mealType?: MealType; steps: string; ingredients: Ingredient[]; createdAt: any };
-type CharacterCardTab = 'rank' | 'recent';
 type RecipeListTab = 'recent' | 'all';
 
 // ─── RecipeCard ──────────────────────────────────────────────────────────────
@@ -148,7 +147,6 @@ export default function Grimoire() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [search, setSearch] = useState('');
-  const [activeCharacterTab, setActiveCharacterTab] = useState<CharacterCardTab>('rank');
   const [recipeListTab, setRecipeListTab] = useState<RecipeListTab>('recent');
   const [mealFilter, setMealFilter] = useState<MealType | null>(null);
   const [recentRecipeIds, setRecentRecipeIds] = useState<string[]>([]);
@@ -239,75 +237,26 @@ export default function Grimoire() {
 
       {/* ─── Character card ───────────────────────────────────────────────── */}
       <View style={gStyles.characterCard}>
-        <View style={gStyles.characterTabs}>
-          <Pressable
-            onPress={() => setActiveCharacterTab('rank')}
-            style={[gStyles.characterTab, activeCharacterTab === 'rank' && gStyles.characterTabActive]}
-          >
-            <Text style={[gStyles.characterTabText, activeCharacterTab === 'rank' && gStyles.characterTabTextActive]}>
-              {t('grimoire_tab_rank')}
-            </Text>
-          </Pressable>
-          <Pressable
-            onPress={() => setActiveCharacterTab('recent')}
-            style={[gStyles.characterTab, activeCharacterTab === 'recent' && gStyles.characterTabActive]}
-          >
-            <Text style={[gStyles.characterTabText, activeCharacterTab === 'recent' && gStyles.characterTabTextActive]}>
-              {t('grimoire_tab_recent')}
-            </Text>
-          </Pressable>
-        </View>
-
-        {activeCharacterTab === 'rank' ? (
-          <>
-            <View style={gStyles.characterTop}>
-              <Text style={gStyles.characterEmoji}>{rank.emoji}</Text>
-              <View style={gStyles.characterInfo}>
-                <Text style={gStyles.characterTitle}>
-                  {t(RANK_TITLE_KEY[rank.title])}
-                </Text>
-                <Text style={gStyles.characterFlavor}>
-                  {t(RANK_FLAVOR_KEY[rank.title])}
-                </Text>
-              </View>
-              <Text style={gStyles.characterLevel}>LV.{rank.level}</Text>
-            </View>
-            <View style={gStyles.progressTrack}>
-              <RNAnimated.View style={[gStyles.progressFill, { width: progressAnim.interpolate({ inputRange: [0, 1], outputRange: ['0%', '100%'] }) }]} />
-            </View>
-            <View style={gStyles.progressMeta}>
-              <Text style={gStyles.progressLabel}>{recipes.length} {t('grimoire_recipes')}</Text>
-              {rank.nextTitle && (
-                <Text style={gStyles.progressLabel}>
-                  {recipesUntilNext} {t('grimoire_to')} {t(RANK_TITLE_KEY[rank.nextTitle])}
-                </Text>
-              )}
-            </View>
-          </>
-        ) : (
-          <View style={gStyles.recentList}>
-            {recentRecipes.length === 0 ? (
-              <Text style={gStyles.recentEmpty}>{t('grimoire_recent_empty')}</Text>
-            ) : recentRecipes.map((recentRecipe, index) => (
-              <Pressable
-                key={recentRecipe.id}
-                style={({ pressed }) => [
-                  gStyles.recentRow,
-                  index === 0 && gStyles.recentRowFirst,
-                  pressed && { opacity: 0.65 },
-                ]}
-                onPress={() => {
-                  playSFX('recipe_click');
-                  router.push(`/recipe/${recentRecipe.id}`);
-                }}
-              >
-                <Text style={gStyles.recentIcon}>{recentRecipe.icon || DEFAULT_RECIPE_ICON}</Text>
-                <Text style={gStyles.recentName} numberOfLines={1}>{recentRecipe.name.toUpperCase()}</Text>
-                <Text style={gStyles.recentArrow}>▶</Text>
-              </Pressable>
-            ))}
+        <Text style={gStyles.characterCardLabel}>{t('grimoire_tab_rank')}</Text>
+        <View style={gStyles.characterTop}>
+          <Text style={gStyles.characterEmoji}>{rank.emoji}</Text>
+          <View style={gStyles.characterInfo}>
+            <Text style={gStyles.characterTitle}>{t(RANK_TITLE_KEY[rank.title])}</Text>
+            <Text style={gStyles.characterFlavor}>{t(RANK_FLAVOR_KEY[rank.title])}</Text>
           </View>
-        )}
+          <Text style={gStyles.characterLevel}>LV.{rank.level}</Text>
+        </View>
+        <View style={gStyles.progressTrack}>
+          <RNAnimated.View style={[gStyles.progressFill, { width: progressAnim.interpolate({ inputRange: [0, 1], outputRange: ['0%', '100%'] }) }]} />
+        </View>
+        <View style={gStyles.progressMeta}>
+          <Text style={gStyles.progressLabel}>{recipes.length} {t('grimoire_recipes')}</Text>
+          {rank.nextTitle && (
+            <Text style={gStyles.progressLabel}>
+              {recipesUntilNext} {t('grimoire_to')} {t(RANK_TITLE_KEY[rank.nextTitle])}
+            </Text>
+          )}
+        </View>
       </View>
 
       {/* ─── Recipe list tabs ─────────────────────────────────────────────── */}
@@ -352,30 +301,24 @@ export default function Grimoire() {
             value={search}
             onChangeText={setSearch}
           />
-          <View style={gStyles.filterWrap}>
-            <FlatList
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              data={[null, ...availableMealTypes]}
-              keyExtractor={item => item ? item.value : '__all__'}
-              renderItem={({ item }) => {
-                const isActive = item === null ? mealFilter === null : mealFilter === item.value;
-                return (
-                  <Pressable
-                    onPress={() => setMealFilter(item ? item.value : null)}
-                    style={[gStyles.filterChip, isActive && gStyles.filterChipActive]}
-                  >
-                    {item && <Text style={gStyles.filterIcon}>{item.icon}</Text>}
-                    <Text style={[gStyles.filterText, isActive && gStyles.filterTextActive]}>
-                      {item ? t(item.labelKey as StringKey) : t('filterAll')}
-                    </Text>
-                  </Pressable>
-                );
-              }}
-              contentContainerStyle={{ paddingRight: 8 }}
-              style={{ marginBottom: 12 }}
-            />
-          </View>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={gStyles.filterScroll} contentContainerStyle={gStyles.filterScrollContent}>
+            {([null, ...availableMealTypes] as (typeof availableMealTypes[number] | null)[]).map(item => {
+              const key = item ? item.value : '__all__';
+              const isActive = item === null ? mealFilter === null : mealFilter === item.value;
+              return (
+                <Pressable
+                  key={key}
+                  onPress={() => setMealFilter(item ? item.value : null)}
+                  style={[gStyles.filterChip, isActive && gStyles.filterChipActive]}
+                >
+                  {item && <Text style={gStyles.filterIcon}>{item.icon}</Text>}
+                  <Text style={[gStyles.filterText, isActive && gStyles.filterTextActive]}>
+                    {item ? t(item.labelKey as StringKey) : t('filterAll')}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </ScrollView>
           {filteredByMealType.length === 0 ? (
             <View style={gStyles.emptyCategory}>
               <Text style={gStyles.emptyCategoryTitle}>{t('noRecipesInCategory')}</Text>
@@ -418,11 +361,7 @@ const gStyles = {
   back: { fontFamily: 'PressStart2P_400Regular', color: '#c84b4b', fontSize: 8 } as const,
   title: { fontFamily: 'PressStart2P_400Regular', color: '#e2b96f', fontSize: 20 } as const,
   characterCard: { backgroundColor: '#16213e', borderWidth: 1, borderColor: '#2d2d4e', padding: 14, marginBottom: 16 } as const,
-  characterTabs: { flexDirection: 'row' as const, marginBottom: 14, backgroundColor: '#1a1a2e', borderWidth: 1, borderColor: '#2d2d4e' } as const,
-  characterTab: { flex: 1, paddingVertical: 10, alignItems: 'center' as const } as const,
-  characterTabActive: { backgroundColor: '#2d2d4e' } as const,
-  characterTabText: { fontFamily: 'PressStart2P_400Regular', color: '#4a4a6a', fontSize: 7 } as const,
-  characterTabTextActive: { color: '#e2b96f' } as const,
+  characterCardLabel: { fontFamily: 'PressStart2P_400Regular', color: '#4a4a6a', fontSize: 7, marginBottom: 12 } as const,
   characterTop: { flexDirection: 'row' as const, alignItems: 'center' as const, marginBottom: 12 },
   characterEmoji: { fontSize: 28, marginRight: 12 } as const,
   characterInfo: { flex: 1 } as const,
@@ -433,13 +372,6 @@ const gStyles = {
   progressFill: { height: '100%' as const, backgroundColor: '#e2b96f' },
   progressMeta: { flexDirection: 'row' as const, justifyContent: 'space-between' as const },
   progressLabel: { fontFamily: 'PressStart2P_400Regular', color: '#4a4a6a', fontSize: 7 } as const,
-  recentList: { minHeight: 72 } as const,
-  recentEmpty: { fontFamily: 'PressStart2P_400Regular', color: '#4a4a6a', fontSize: 8, lineHeight: 18, textAlign: 'center' as const, paddingVertical: 18 } as const,
-  recentRow: { flexDirection: 'row' as const, alignItems: 'center' as const, borderTopWidth: 1, borderTopColor: '#2d2d4e', paddingVertical: 9 } as const,
-  recentRowFirst: { borderTopWidth: 0 } as const,
-  recentIcon: { width: 30, fontSize: 20, textAlign: 'center' as const, marginRight: 10 } as const,
-  recentName: { flex: 1, fontFamily: 'PressStart2P_400Regular', color: '#c8c8e8', fontSize: 8, marginRight: 8 } as const,
-  recentArrow: { color: '#e2b96f', fontSize: 10 } as const,
   empty: { fontFamily: 'PressStart2P_400Regular', color: '#4a4a6a', fontSize: 10, textAlign: 'center' as const, marginTop: 60, lineHeight: 24 },
   list: { flex: 1 } as const,
   cardWrapper: { marginBottom: 12 } as const,
@@ -474,7 +406,8 @@ const gStyles = {
   recipeTabTextActive: { color: '#e2b96f' } as const,
   recipeTabUnderline: { position: 'absolute' as const, bottom: -1, height: 2, width: '80%' as const, backgroundColor: '#e2b96f' },
   search: { backgroundColor: '#16213e', color: '#c8c8e8', borderWidth: 1, borderColor: '#2d2d4e', padding: 14, marginBottom: 12, fontFamily: 'PressStart2P_400Regular', fontSize: 9 } as const,
-  filterWrap: {} as const,
+  filterScroll: { height: 38, marginBottom: 12, flexGrow: 0 } as const,
+  filterScrollContent: { paddingRight: 8 } as const,
   filterChip: { borderWidth: 1, borderColor: '#2d2d4e', paddingHorizontal: 10, paddingVertical: 8, marginRight: 6, flexDirection: 'row' as const, alignItems: 'center' as const, gap: 4 },
   filterChipActive: { borderColor: '#e2b96f' },
   filterIcon: { fontSize: 12 } as const,
