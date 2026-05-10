@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "Grimoire",
-    "slug": "Grimoire",
+    "name": "Grimor",
+    "slug": "grimor",
     "scheme": "grimoire",
     "version": "1.0.0",
     "orientation": "default",
@@ -33,7 +33,13 @@
     },
     "plugins": [
       "expo-font",
-      "expo-audio"
+      [
+        "expo-audio",
+        {
+          "recordAudioAndroid": false
+        }
+      ],
+      "expo-asset"
     ],
     "extra": {
       "eas": {
