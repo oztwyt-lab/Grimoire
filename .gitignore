@@ -25,6 +25,13 @@ expo-env.d.ts
 npm-debug.*
 yarn-debug.*
 yarn-error.*
+*.log
+.expo-metro.*.log
+.witch_debug_*.png
+.claude/*.lock
+
+# local build artifacts
+offline-builds/
 
 # macOS
 .DS_Store

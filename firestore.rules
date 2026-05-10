@@ -1,0 +1,65 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isSelf(uid) {
+      return signedIn() && request.auth.uid == uid;
+    }
+
+    function isAdmin() {
+      return signedIn()
+        && request.auth.token.email in [
+          'oztwyt@gmail.com',
+          'app.grimoire@gmail.com'
+        ];
+    }
+
+    function recipeOwner() {
+      return signedIn() && resource.data.userId == request.auth.uid;
+    }
+
+    function validRecipeOwner() {
+      return signedIn() && request.resource.data.userId == request.auth.uid;
+    }
+
+    function validFeedback() {
+      return signedIn()
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.message is string
+        && request.resource.data.message.size() > 0
+        && request.resource.data.message.size() <= 5000;
+    }
+
+    match /users/{uid} {
+      allow read: if isSelf(uid) || isAdmin();
+      allow create: if isSelf(uid);
+      allow update: if isSelf(uid);
+      allow delete: if isSelf(uid) || isAdmin();
+    }
+
+    match /recipes/{recipeId} {
+      allow create: if validRecipeOwner();
+      allow read, update, delete: if recipeOwner() || isAdmin();
+    }
+
+    match /feedback/{feedbackId} {
+      allow create: if validFeedback();
+      allow read: if isAdmin() || (signedIn() && resource.data.uid == request.auth.uid);
+      allow delete: if isAdmin() || (signedIn() && resource.data.uid == request.auth.uid);
+      allow update: if false;
+    }
+
+    match /curated_recipes/{recipeId} {
+      allow read: if signedIn();
+      allow write: if isAdmin();
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

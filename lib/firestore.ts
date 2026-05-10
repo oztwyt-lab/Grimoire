@@ -1,5 +1,5 @@
 import { db } from '../firebase';
-import { addDoc, arrayUnion, collection, doc, getDoc, serverTimestamp, setDoc, Timestamp } from '@firebase/firestore';
+import { addDoc, arrayUnion, collection, doc, getDoc, getDocs, query, serverTimestamp, setDoc, Timestamp, where, writeBatch } from '@firebase/firestore';
 import { isAdminEmail } from '../src/config/admin';
 
 // ─── Food inventory ───────────────────────────────────────────────────────────
@@ -308,4 +308,20 @@ export async function getUserOwnedItems(uid: string): Promise<string[]> {
 
 export async function addUserOwnedItem(uid: string, itemId: string): Promise<void> {
   await setDoc(doc(db, 'users', uid), { ownedItems: arrayUnion(itemId) }, { merge: true });
+}
+
+export async function deleteUserOwnedData(uid: string): Promise<void> {
+  const recipesSnap = await getDocs(query(collection(db, 'recipes'), where('userId', '==', uid)));
+  const feedbackSnap = await getDocs(query(collection(db, 'feedback'), where('uid', '==', uid)));
+  const refs = [
+    ...recipesSnap.docs.map(recipeDoc => recipeDoc.ref),
+    ...feedbackSnap.docs.map(feedbackDoc => feedbackDoc.ref),
+    doc(db, 'users', uid),
+  ];
+
+  for (let index = 0; index < refs.length; index += 450) {
+    const batch = writeBatch(db);
+    refs.slice(index, index + 450).forEach(ref => batch.delete(ref));
+    await batch.commit();
+  }
 }

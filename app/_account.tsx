@@ -4,9 +4,8 @@ import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../src/context/AuthContext';
 import { useLanguage } from '../src/context/LanguageContext';
-import { db } from '../firebase';
-import { collection, query, where, getDocs, deleteDoc, doc } from '@firebase/firestore';
 import * as Haptics from 'expo-haptics';
+import { deleteUserOwnedData } from '../lib/firestore';
  
 export default function Account() {
   const router = useRouter();
@@ -21,10 +20,7 @@ export default function Account() {
     if (!password.trim()) return;
     setDeleting(true);
     try {
-      const q = query(collection(db, 'recipes'), where('userId', '==', user?.uid));
-      const snapshot = await getDocs(q);
-      await Promise.all(snapshot.docs.map(d => deleteDoc(doc(db, 'recipes', d.id))));
-      await deleteAccount(password);
+      await deleteAccount(password, deleteUserOwnedData);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       router.replace('/');
     } catch (err: any) {
