@@ -7,210 +7,413 @@
   <meta name="description" content="Adio Co. builds imaginative software. Home of Grimor, the cooking RPG.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,700;0,9..144,900;1,9..144,700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
     :root {
-      --bg: #0d1017;
-      --panel: #151a24;
-      --line: rgba(255,255,255,0.10);
-      --text: #f4efe4;
-      --muted: #9da6b8;
-      --gold: #d7b86a;
-      --red: #d95d5d;
-      --green: #7cc49a;
+      --bg: #ffffff;
+      --surface: #f7f6f3;
+      --border: #e8e6e0;
+      --text: #111010;
+      --muted: #6e6b65;
+      --accent: #ff4d00;
     }
+
+    html { scroll-behavior: smooth; }
+
     body {
-      min-height: 100vh;
       background: var(--bg);
       color: var(--text);
-      font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      line-height: 1.5;
+      font-family: 'Inter', system-ui, sans-serif;
+      font-size: 16px;
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
     }
-    a { color: inherit; }
-    .shell { width: min(1120px, calc(100% - 32px)); margin: 0 auto; }
+
+    a { color: inherit; text-decoration: none; }
+
+    /* NAV */
     header {
-      position: sticky;
-      top: 0;
-      z-index: 10;
-      background: rgba(13,16,23,0.86);
-      border-bottom: 1px solid var(--line);
-      backdrop-filter: blur(12px);
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 100;
+      background: rgba(255,255,255,0.92);
+      backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border);
     }
+
     nav {
-      height: 72px;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 32px;
+      height: 68px;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 24px;
     }
-    .brand { display: flex; align-items: center; gap: 12px; text-decoration: none; }
-    .brand img { width: 36px; height: 36px; object-fit: contain; }
-    .brand span { font-weight: 800; letter-spacing: 0.02em; }
-    .links { display: flex; align-items: center; gap: 22px; color: var(--muted); font-size: 14px; }
-    .links a { text-decoration: none; }
-    .links a:hover { color: var(--text); }
-    .hero {
-      min-height: calc(100vh - 72px);
-      display: grid;
-      grid-template-columns: 1.1fr 0.9fr;
+
+    .brand {
+      display: flex;
       align-items: center;
-      gap: 56px;
-      padding: 72px 0;
+      gap: 10px;
+      font-family: 'Fraunces', serif;
+      font-weight: 700;
+      font-size: 19px;
+      letter-spacing: -0.01em;
     }
-    .eyebrow {
-      color: var(--gold);
-      font-size: 12px;
-      font-weight: 800;
-      letter-spacing: 0.22em;
-      text-transform: uppercase;
-      margin-bottom: 18px;
-    }
-    h1 {
-      max-width: 720px;
-      font-size: clamp(44px, 7vw, 88px);
-      line-height: 0.95;
-      letter-spacing: -0.04em;
-      margin-bottom: 26px;
-    }
-    .hero-copy {
-      max-width: 620px;
+
+    .brand svg { width: 32px; height: 32px; flex-shrink: 0; }
+    .brand img { width: 32px; height: 32px; object-fit: contain; }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 32px;
+      font-size: 14px;
+      font-weight: 500;
       color: var(--muted);
-      font-size: 18px;
-      margin-bottom: 34px;
     }
-    .actions { display: flex; flex-wrap: wrap; gap: 12px; }
-    .button {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      min-height: 44px;
-      padding: 0 18px;
-      border: 1px solid var(--line);
-      border-radius: 8px;
+
+    .nav-links a:hover { color: var(--text); }
+
+    .nav-cta {
       background: var(--text);
-      color: #10131a;
-      font-weight: 800;
-      text-decoration: none;
+      color: #fff !important;
+      padding: 9px 20px;
+      border-radius: 100px;
+      font-weight: 600;
+      font-size: 13px;
+      transition: opacity 0.15s;
     }
-    .button.secondary { background: transparent; color: var(--text); }
-    .product-card {
-      border: 1px solid var(--line);
-      background: linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.03));
-      border-radius: 14px;
-      padding: 28px;
-      box-shadow: 0 30px 90px rgba(0,0,0,0.28);
+    .nav-cta:hover { opacity: 0.8; }
+
+    /* HERO */
+    .hero {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 160px 32px 100px;
+      display: grid;
+      grid-template-columns: 1fr 460px;
+      gap: 80px;
+      align-items: center;
     }
-    .product-card img {
-      width: 82px;
-      height: 82px;
-      object-fit: contain;
-      margin-bottom: 28px;
-    }
-    .status {
+
+    .hero-tag {
       display: inline-flex;
       align-items: center;
       gap: 8px;
-      color: var(--green);
-      font-weight: 800;
+      background: #fff3ee;
+      color: var(--accent);
       font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
       text-transform: uppercase;
-      letter-spacing: 0.12em;
-      margin-bottom: 14px;
+      padding: 6px 14px;
+      border-radius: 100px;
+      margin-bottom: 28px;
     }
-    .status::before {
-      content: "";
-      width: 8px;
-      height: 8px;
-      border-radius: 999px;
-      background: var(--green);
+
+    .hero-tag::before {
+      content: '';
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--accent);
     }
-    h2 { font-size: 32px; letter-spacing: -0.03em; margin-bottom: 12px; }
-    .product-card p { color: var(--muted); }
-    .grid {
+
+    h1 {
+      font-family: 'Fraunces', serif;
+      font-weight: 900;
+      font-size: clamp(48px, 5.5vw, 74px);
+      line-height: 1.05;
+      letter-spacing: -0.02em;
+      margin-bottom: 24px;
+    }
+
+    h1 em {
+      font-style: italic;
+      color: var(--accent);
+    }
+
+    .hero-sub {
+      font-size: 18px;
+      color: var(--muted);
+      line-height: 1.7;
+      max-width: 480px;
+      margin-bottom: 40px;
+    }
+
+    .hero-actions { display: flex; gap: 14px; flex-wrap: wrap; }
+
+    .btn-primary {
+      display: inline-flex;
+      align-items: center;
+      background: var(--text);
+      color: #fff;
+      padding: 14px 28px;
+      border-radius: 100px;
+      font-weight: 600;
+      font-size: 15px;
+      transition: opacity 0.15s, transform 0.15s;
+    }
+    .btn-primary:hover { opacity: 0.85; transform: translateY(-1px); }
+
+    .btn-secondary {
+      display: inline-flex;
+      align-items: center;
+      background: transparent;
+      color: var(--muted);
+      padding: 14px 28px;
+      border-radius: 100px;
+      font-weight: 600;
+      font-size: 15px;
+      border: 1.5px solid var(--border);
+      transition: border-color 0.15s, color 0.15s;
+    }
+    .btn-secondary:hover { border-color: var(--text); color: var(--text); }
+
+    /* PRODUCT CARD */
+    .product-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      padding: 36px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .product-card::after {
+      content: '';
+      position: absolute;
+      top: -80px; right: -80px;
+      width: 240px; height: 240px;
+      background: radial-gradient(circle, rgba(255,77,0,0.07) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .card-icon {
+      width: 72px; height: 72px;
+      border-radius: 18px;
+      background: var(--text);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 24px;
+      overflow: hidden;
+    }
+
+    .card-icon { display: none; }
+
+    .card-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: #e8f5ee;
+      color: #2d8653;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      padding: 5px 12px;
+      border-radius: 100px;
+      margin-bottom: 16px;
+    }
+
+    .card-badge::before {
+      content: '';
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: #2d8653;
+    }
+
+    .card-title {
+      font-family: 'Fraunces', serif;
+      font-size: 30px;
+      font-weight: 900;
+      letter-spacing: -0.02em;
+      margin-bottom: 10px;
+    }
+
+    .card-desc {
+      color: var(--muted);
+      font-size: 15px;
+      line-height: 1.6;
+      margin-bottom: 28px;
+    }
+
+    .card-pills { display: flex; gap: 8px; flex-wrap: wrap; }
+
+    .pill {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 100px;
+      padding: 6px 14px;
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--muted);
+    }
+
+    /* PILLARS */
+    .section-wrap {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 32px 88px;
+    }
+
+    .section-label {
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--muted);
+      padding: 64px 0 40px;
+    }
+
+    .pillars-grid {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
-      gap: 18px;
-      padding: 24px 0 88px;
+      gap: 2px;
+      background: var(--border);
+      border-radius: 20px;
+      overflow: hidden;
     }
-    .tile {
-      border: 1px solid var(--line);
-      border-radius: 12px;
-      padding: 22px;
-      background: rgba(255,255,255,0.035);
+
+    .pillar { background: var(--bg); padding: 36px 32px; }
+
+    .pillar-num {
+      font-family: 'Fraunces', serif;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--accent);
+      margin-bottom: 16px;
     }
-    .tile h3 { font-size: 16px; margin-bottom: 10px; }
-    .tile p { color: var(--muted); font-size: 14px; }
+
+    .pillar h3 {
+      font-family: 'Fraunces', serif;
+      font-size: 20px;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+      margin-bottom: 10px;
+    }
+
+    .pillar p { color: var(--muted); font-size: 14px; line-height: 1.65; }
+
+    /* FOOTER */
     footer {
-      border-top: 1px solid var(--line);
-      color: var(--muted);
-      padding: 28px 0;
-      font-size: 14px;
+      border-top: 1px solid var(--border);
+      background: var(--surface);
     }
-    .foot { display: flex; justify-content: space-between; gap: 18px; flex-wrap: wrap; }
-    @media (max-width: 780px) {
-      .links { gap: 14px; font-size: 13px; }
-      .hero { grid-template-columns: 1fr; gap: 28px; padding: 48px 0; }
-      .grid { grid-template-columns: 1fr; padding-bottom: 56px; }
+
+    .foot-inner {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 28px 32px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .foot-brand {
+      font-family: 'Fraunces', serif;
+      font-weight: 700;
+      font-size: 16px;
+    }
+
+    .foot-links { display: flex; gap: 24px; font-size: 13px; color: var(--muted); }
+    .foot-links a:hover { color: var(--text); }
+    .foot-copy { font-size: 13px; color: var(--muted); }
+
+    /* RESPONSIVE */
+    @media (max-width: 900px) {
+      .hero { grid-template-columns: 1fr; padding-top: 120px; gap: 48px; }
+      .pillars-grid { grid-template-columns: 1fr; }
+      nav { padding: 0 20px; }
+    }
+
+    @media (max-width: 600px) {
+      .hero { padding: 110px 20px 60px; }
+      .section-wrap { padding: 0 20px 60px; }
+      .foot-inner { flex-direction: column; align-items: flex-start; }
+      .nav-links .hide { display: none; }
     }
   </style>
 </head>
 <body>
+
   <header>
-    <nav class="shell">
+    <nav>
       <a class="brand" href="/">
         <img src="/assets/adioco-logo.png" alt="Adio Co. logo">
-        <span>Adio Co.</span>
+        Adio Co.
       </a>
-      <div class="links">
-        <a href="#grimor">Grimor</a>
-        <a href="/privacy/">Privacy</a>
-        <a href="mailto:app.grimoire@gmail.com">Contact</a>
+      <div class="nav-links">
+        <a href="#grimor" class="hide">Games</a>
+        <a href="/privacy/" class="hide">Privacy</a>
+        <a href="mailto:app.grimoire@gmail.com" class="nav-cta">Contact</a>
       </div>
     </nav>
   </header>
 
-  <main class="shell">
+  <main>
     <section class="hero">
       <div>
-        <p class="eyebrow">Independent software studio</p>
-        <h1>Useful apps with a little myth in them.</h1>
-        <p class="hero-copy">Adio Co. builds imaginative software for everyday rituals. Our first product is Grimor, a cooking app where recipes become spells, ingredients become cards, and cooking becomes a tiny adventure.</p>
-        <div class="actions">
-          <a class="button" href="#grimor">Meet Grimor</a>
-          <a class="button secondary" href="/privacy/">Privacy Policy</a>
+        <div class="hero-tag">Independent Studio</div>
+        <h1>Apps with a little <em>myth</em> in them.</h1>
+        <p class="hero-sub">Adio Co. is an independent software studio building mobile apps that blend utility with imagination. Our debut title, Grimor, reimagines the kitchen as an RPG.</p>
+        <div class="hero-actions">
+          <a class="btn-primary" href="#grimor">See Grimor</a>
+          <a class="btn-secondary" href="/privacy/">Privacy Policy</a>
         </div>
       </div>
 
       <article class="product-card" id="grimor">
-        <img src="/assets/adioco-logo.png" alt="">
-        <div class="status">Internal testing</div>
-        <h2>Grimor</h2>
-        <p>A recipe, pantry, and cooking companion app with an RPG skin. Android-first, currently preparing for Google Play internal testing.</p>
+        <!-- App icon placeholder: Grimor icon to be added -->
+        <div class="card-badge">Internal Testing</div>
+        <div class="card-title">Grimor</div>
+        <p class="card-desc">A recipe and pantry companion with an RPG skin. Cook a recipe, fight a boss. Android-first, launching on Google Play.</p>
+        <div class="card-pills">
+          <span class="pill">Android</span>
+          <span class="pill">Cooking RPG</span>
+          <span class="pill">Google Play</span>
+        </div>
       </article>
     </section>
 
-    <section class="grid" aria-label="Company focus">
-      <article class="tile">
-        <h3>Product</h3>
-        <p>Focused mobile apps with practical utility, strong identity, and playful systems.</p>
-      </article>
-      <article class="tile">
-        <h3>Publishing</h3>
-        <p>Android-first releases through Google Play, with careful testing and privacy practices.</p>
-      </article>
-      <article class="tile">
-        <h3>Support</h3>
-        <p>Questions, privacy requests, and support can be sent to app.grimoire@gmail.com.</p>
-      </article>
-    </section>
+    <div class="section-wrap">
+      <p class="section-label">What we do</p>
+      <div class="pillars-grid">
+        <div class="pillar">
+          <div class="pillar-num">01</div>
+          <h3>Product</h3>
+          <p>Focused mobile apps with practical utility, strong identity, and playful systems that keep people coming back.</p>
+        </div>
+        <div class="pillar">
+          <div class="pillar-num">02</div>
+          <h3>Publishing</h3>
+          <p>Android-first releases through Google Play, with careful testing, privacy best practices, and clean store presence.</p>
+        </div>
+        <div class="pillar">
+          <div class="pillar-num">03</div>
+          <h3>Support</h3>
+          <p>Questions, privacy requests, and feedback welcome at app.grimoire@gmail.com. We respond to every message.</p>
+        </div>
+      </div>
+    </div>
   </main>
 
   <footer>
-    <div class="shell foot">
-      <span>© 2026 Adio Co. All rights reserved.</span>
-      <a href="/privacy/">Privacy Policy</a>
+    <div class="foot-inner">
+      <span class="foot-brand">Adio Co.</span>
+      <div class="foot-links">
+        <a href="#grimor">Grimor</a>
+        <a href="/privacy/">Privacy</a>
+        <a href="mailto:app.grimoire@gmail.com">Contact</a>
+      </div>
+      <span class="foot-copy">© 2026 Adio Co. All rights reserved.</span>
     </div>
   </footer>
+
 </body>
 </html>
