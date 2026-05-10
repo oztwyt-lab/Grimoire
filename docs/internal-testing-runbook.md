@@ -11,11 +11,18 @@ Last updated: 2026-05-10
 - Public studio name is `Adio Co.`.
 - Public domain is `https://www.adioco.com`.
 - Android package is locked as `com.adioco.grimor`.
+- Production Android App Bundle build is complete under `com.adioco.grimor`.
 - Previous production Android App Bundle build under `com.slingbladestudios.grimoire` is obsolete and should not be uploaded.
 
 ## Current Internal Testing Artifact
 
-No current uploadable artifact after the Adio Co. package rename. Rebuild production before uploading to Play Console.
+- EAS build ID: `8925d73b-2bfe-4583-bf1e-8c10934e629e`
+- Profile: `production`
+- Distribution: `STORE`
+- App version: `1.0.0`
+- Version code: `1`
+- Git commit in artifact: `c0781ff5f1c25b6d189b55045fe01ffaf0a5fa35`
+- Artifact URL: https://expo.dev/artifacts/eas/hWgmc2N4mppKGgKYzZTAxG.aab
 
 ## Before Building
 
