@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Adio Co.</title>
+  <meta name="description" content="Adio Co. builds imaginative software. Home of Grimor, the cooking RPG.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #0d1017;
+      --panel: #151a24;
+      --line: rgba(255,255,255,0.10);
+      --text: #f4efe4;
+      --muted: #9da6b8;
+      --gold: #d7b86a;
+      --red: #d95d5d;
+      --green: #7cc49a;
+    }
+    body {
+      min-height: 100vh;
+      background: var(--bg);
+      color: var(--text);
+      font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.5;
+    }
+    a { color: inherit; }
+    .shell { width: min(1120px, calc(100% - 32px)); margin: 0 auto; }
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      background: rgba(13,16,23,0.86);
+      border-bottom: 1px solid var(--line);
+      backdrop-filter: blur(12px);
+    }
+    nav {
+      height: 72px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 24px;
+    }
+    .brand { display: flex; align-items: center; gap: 12px; text-decoration: none; }
+    .brand img { width: 36px; height: 36px; object-fit: contain; }
+    .brand span { font-weight: 800; letter-spacing: 0.02em; }
+    .links { display: flex; align-items: center; gap: 22px; color: var(--muted); font-size: 14px; }
+    .links a { text-decoration: none; }
+    .links a:hover { color: var(--text); }
+    .hero {
+      min-height: calc(100vh - 72px);
+      display: grid;
+      grid-template-columns: 1.1fr 0.9fr;
+      align-items: center;
+      gap: 56px;
+      padding: 72px 0;
+    }
+    .eyebrow {
+      color: var(--gold);
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      margin-bottom: 18px;
+    }
+    h1 {
+      max-width: 720px;
+      font-size: clamp(44px, 7vw, 88px);
+      line-height: 0.95;
+      letter-spacing: -0.04em;
+      margin-bottom: 26px;
+    }
+    .hero-copy {
+      max-width: 620px;
+      color: var(--muted);
+      font-size: 18px;
+      margin-bottom: 34px;
+    }
+    .actions { display: flex; flex-wrap: wrap; gap: 12px; }
+    .button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 44px;
+      padding: 0 18px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--text);
+      color: #10131a;
+      font-weight: 800;
+      text-decoration: none;
+    }
+    .button.secondary { background: transparent; color: var(--text); }
+    .product-card {
+      border: 1px solid var(--line);
+      background: linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.03));
+      border-radius: 14px;
+      padding: 28px;
+      box-shadow: 0 30px 90px rgba(0,0,0,0.28);
+    }
+    .product-card img {
+      width: 82px;
+      height: 82px;
+      object-fit: contain;
+      margin-bottom: 28px;
+    }
+    .status {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--green);
+      font-weight: 800;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      margin-bottom: 14px;
+    }
+    .status::before {
+      content: "";
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      background: var(--green);
+    }
+    h2 { font-size: 32px; letter-spacing: -0.03em; margin-bottom: 12px; }
+    .product-card p { color: var(--muted); }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 18px;
+      padding: 24px 0 88px;
+    }
+    .tile {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 22px;
+      background: rgba(255,255,255,0.035);
+    }
+    .tile h3 { font-size: 16px; margin-bottom: 10px; }
+    .tile p { color: var(--muted); font-size: 14px; }
+    footer {
+      border-top: 1px solid var(--line);
+      color: var(--muted);
+      padding: 28px 0;
+      font-size: 14px;
+    }
+    .foot { display: flex; justify-content: space-between; gap: 18px; flex-wrap: wrap; }
+    @media (max-width: 780px) {
+      .links { gap: 14px; font-size: 13px; }
+      .hero { grid-template-columns: 1fr; gap: 28px; padding: 48px 0; }
+      .grid { grid-template-columns: 1fr; padding-bottom: 56px; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <nav class="shell">
+      <a class="brand" href="/">
+        <img src="/assets/adioco-logo.png" alt="Adio Co. logo">
+        <span>Adio Co.</span>
+      </a>
+      <div class="links">
+        <a href="#grimor">Grimor</a>
+        <a href="/privacy/">Privacy</a>
+        <a href="mailto:app.grimoire@gmail.com">Contact</a>
+      </div>
+    </nav>
+  </header>
+
+  <main class="shell">
+    <section class="hero">
+      <div>
+        <p class="eyebrow">Independent software studio</p>
+        <h1>Useful apps with a little myth in them.</h1>
+        <p class="hero-copy">Adio Co. builds imaginative software for everyday rituals. Our first product is Grimor, a cooking app where recipes become spells, ingredients become cards, and cooking becomes a tiny adventure.</p>
+        <div class="actions">
+          <a class="button" href="#grimor">Meet Grimor</a>
+          <a class="button secondary" href="/privacy/">Privacy Policy</a>
+        </div>
+      </div>
+
+      <article class="product-card" id="grimor">
+        <img src="/assets/adioco-logo.png" alt="">
+        <div class="status">Internal testing</div>
+        <h2>Grimor</h2>
+        <p>A recipe, pantry, and cooking companion app with an RPG skin. Android-first, currently preparing for Google Play internal testing.</p>
+      </article>
+    </section>
+
+    <section class="grid" aria-label="Company focus">
+      <article class="tile">
+        <h3>Product</h3>
+        <p>Focused mobile apps with practical utility, strong identity, and playful systems.</p>
+      </article>
+      <article class="tile">
+        <h3>Publishing</h3>
+        <p>Android-first releases through Google Play, with careful testing and privacy practices.</p>
+      </article>
+      <article class="tile">
+        <h3>Support</h3>
+        <p>Questions, privacy requests, and support can be sent to app.grimoire@gmail.com.</p>
+      </article>
+    </section>
+  </main>
+
+  <footer>
+    <div class="shell foot">
+      <span>© 2026 Adio Co. All rights reserved.</span>
+      <a href="/privacy/">Privacy Policy</a>
+    </div>
+  </footer>
+</body>
+</html>
