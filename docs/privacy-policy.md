@@ -2,7 +2,7 @@
 
 Last updated: 2026-05-10
 
-Grimor is a recipe, pantry, and cooking companion app by Slingblade Studios.
+Grimor is a recipe, pantry, and cooking companion app by Adio Co.
 
 This draft is intended for Play Store/internal testing preparation and should be reviewed before public launch.
 

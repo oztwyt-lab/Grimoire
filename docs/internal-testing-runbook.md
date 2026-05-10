@@ -8,24 +8,21 @@ Last updated: 2026-05-10
 - The exposed Resend waitlist key was revoked and the waitlist worker was removed.
 - Remembered login is enabled through Firebase Auth persistence.
 - Brand display name is `Grimor`.
-- Android package is locked as `com.slingbladestudios.grimoire`.
-- Production Android App Bundle build is complete.
+- Public studio name is `Adio Co.`.
+- Public domain is `https://www.adioco.com`.
+- Android package is locked as `com.adioco.grimor`.
+- Previous production Android App Bundle build under `com.slingbladestudios.grimoire` is obsolete and should not be uploaded.
 
 ## Current Internal Testing Artifact
 
-- EAS build ID: `06a677a6-7290-4071-84d4-61f20ddc829f`
-- Profile: `production`
-- Distribution: `STORE`
-- App version: `1.0.0`
-- Version code: `2`
-- Git commit in artifact: `f8181a74bb55d855c4fe02dd7e540507b7c0309b`
-- Artifact URL: https://expo.dev/artifacts/eas/PCwwNSNbyFoGGLKLeB99F.aab
+No current uploadable artifact after the Adio Co. package rename. Rebuild production before uploading to Play Console.
 
 ## Before Building
 
 - Run `npx.cmd tsc --noEmit`.
 - Confirm `app.json` keeps `newArchEnabled: true`.
 - Confirm `android.versionCode` is higher than any previously uploaded Play artifact.
+- Confirm Android package is `com.adioco.grimor`.
 - Confirm Play upload artifact uses the `production` profile, not the dev-client APK.
 
 ## Build Command
@@ -60,6 +57,7 @@ Expected artifact: Android App Bundle (`.aab`).
 - Add tester emails.
 - Add app access instructions because the app requires login.
 - Use `docs/privacy-policy.md` and `docs/play-data-safety.md` while filling the Play forms.
+- Use `Adio Co.` as the developer/studio name anywhere Play asks for public company branding.
 - Keep screenshots and feature graphic as placeholders only if Play allows them for internal testing; replace before closed testing.
 
 ## Known Risk To Track

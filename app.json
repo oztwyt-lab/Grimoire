@@ -15,7 +15,7 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.slingbladestudios.grimoire"
+      "bundleIdentifier": "com.adioco.grimor"
     },
     "android": {
       "newArchEnabled": true,
@@ -25,8 +25,8 @@
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
-      "package": "com.slingbladestudios.grimoire",
-      "versionCode": 2
+      "package": "com.adioco.grimor",
+      "versionCode": 1
     },
     "web": {
       "favicon": "./assets/favicon.png"
