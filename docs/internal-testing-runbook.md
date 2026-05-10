@@ -16,6 +16,8 @@ Last updated: 2026-05-10
 
 ## Current Internal Testing Artifact
 
+### Play Console AAB
+
 - EAS build ID: `8925d73b-2bfe-4583-bf1e-8c10934e629e`
 - Profile: `production`
 - Distribution: `STORE`
@@ -23,6 +25,15 @@ Last updated: 2026-05-10
 - Version code: `1`
 - Git commit in artifact: `c0781ff5f1c25b6d189b55045fe01ffaf0a5fa35`
 - Artifact URL: https://expo.dev/artifacts/eas/hWgmc2N4mppKGgKYzZTAxG.aab
+
+### Phone-Installable APK
+
+- EAS build ID: `c693e85b-34cb-40bc-b85f-6a29d3cbd3b7`
+- Profile: `preview`
+- App version: `1.0.0`
+- Version code: `1`
+- Git commit in artifact: `696dd7f528379142e828262ab786d5aed1baa316`
+- Artifact URL: https://expo.dev/artifacts/eas/qweq1S6Q6EXHj3s72y43PR.apk
 
 ## Before Building
 
