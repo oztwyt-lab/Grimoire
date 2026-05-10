@@ -22,16 +22,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-      if (firebaseUser) {
-        await AsyncStorage.setItem(AUTH_KEY, firebaseUser.email ?? '');
-        setUser(firebaseUser);
-      } else {
-        const savedEmail = await AsyncStorage.getItem(AUTH_KEY);
-        if (!savedEmail) {
-          setUser(null);
-        }
-      }
+    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+      setUser(firebaseUser);
       setLoading(false);
     });
     return unsubscribe;
