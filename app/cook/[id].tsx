@@ -765,7 +765,7 @@ export default function CookMode() {
     return (
       <View style={s.center}>
         <Text style={s.errorText}>
-          {!recipe ? 'Recipe not found.' : t('cook_no_steps')}
+          {!recipe ? t('detail_not_found') : t('cook_no_steps')}
         </Text>
         <PressableScale onPress={() => router.back()}>
           <View style={s.errorBackButton}>

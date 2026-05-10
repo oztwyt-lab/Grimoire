@@ -102,6 +102,18 @@ export default function Layout() {
                     options={{ animation: 'slide_from_bottom', presentation: 'modal' }}
                   />
                   <Stack.Screen
+                    name="magic-orb"
+                    options={{ headerShown: false, contentStyle: { backgroundColor: '#1a1a2e' } }}
+                  />
+                  <Stack.Screen
+                    name="magic-orb-detail"
+                    options={{ headerShown: false, contentStyle: { backgroundColor: '#1a1a2e' } }}
+                  />
+                  <Stack.Screen
+                    name="list"
+                    options={{ headerShown: false, contentStyle: { backgroundColor: '#1a1a2e' } }}
+                  />
+                  <Stack.Screen
                     name="cook"
                     options={{ headerShown: false, contentStyle: { backgroundColor: '#16213e' } }}
                   />

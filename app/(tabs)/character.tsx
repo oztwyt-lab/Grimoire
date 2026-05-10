@@ -4,6 +4,7 @@ import {
   ActivityIndicator, FlatList,
 } from 'react-native';
 import { useFocusEffect } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../../src/context/AuthContext';
 import { useLanguage } from '../../src/context/LanguageContext';
 import { db } from '../../firebase';
@@ -14,7 +15,7 @@ import PressableScale from '../../src/components/PressableScale';
 import {
   Equipment, EquipmentItem, EquipmentSlot,
   DEFAULT_EQUIPMENT, STARTER_ITEMS,
-  getUserEquipment, saveUserEquipment, getUserOwnedItems, getUserProfile,
+  addUserOwnedItem, getUserEquipment, saveUserEquipment, getUserOwnedItems, getUserProfile,
 } from '../../lib/firestore';
 
 const WIZARD_IDLE_SHEET = require('../../assets/characters/wizard_character/mage_idle.png');
@@ -24,6 +25,7 @@ const WIZARD_DISPLAY_H = 92;
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type Profile = { nickname: string; character: string };
+type CharacterTab = 'character' | 'shop';
 
 type ModalState = {
   item: EquipmentItem | null;
@@ -50,6 +52,16 @@ const SLOT_LABEL_KEY: Record<EquipmentSlot, StringKey> = {
   accessory2: 'slot_accessory',
   pet: 'slot_pet',
 };
+
+const SHOP_ITEMS = STARTER_ITEMS.filter(item => !item.isStarter);
+
+function itemName(item: EquipmentItem, language: string) {
+  return language === 'tr' ? item.name : item.nameEn;
+}
+
+function itemDescription(item: EquipmentItem, language: string) {
+  return language === 'tr' ? item.description : item.descriptionEn;
+}
 
 function EquipmentVisual({ item, imageStyle }: { item: EquipmentItem; imageStyle?: object }) {
   return item.image ? (
@@ -86,6 +98,7 @@ function SlotButton({ slotKey, equippedId, onPress }: SlotButtonProps) {
 // ─── Character screen ─────────────────────────────────────────────────────────
 export default function Character() {
   const { user } = useAuth();
+  const insets = useSafeAreaInsets();
   const { t, language } = useLanguage();
 
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -94,6 +107,8 @@ export default function Character() {
   const [ownedItemIds, setOwnedItemIds] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [modalState, setModalState] = useState<ModalState>(null);
+  const [activeTab, setActiveTab] = useState<CharacterTab>('character');
+  const [unlockingId, setUnlockingId] = useState<string | null>(null);
 
   useFocusEffect(
     useCallback(() => {
@@ -165,17 +180,169 @@ export default function Character() {
     if (user) saveUserEquipment(user.uid, next).catch(console.error);
   };
 
+  async function handleUnlock(item: EquipmentItem) {
+    if (!user || ownedItemIds.includes(item.id) || unlockingId) return;
+    setUnlockingId(item.id);
+    try {
+      await addUserOwnedItem(user.uid, item.id);
+      setOwnedItemIds(current => current.includes(item.id) ? current : [...current, item.id]);
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setUnlockingId(null);
+    }
+  }
+
   const isEquipped = modalState?.item
     ? equipment[modalState.slot] === modalState.item.id
     : false;
 
   if (loading) return <ActivityIndicator style={{ flex: 1, backgroundColor: '#16213e' }} color="#e2b96f" />;
 
+  const characterContent = (
+    <>
+      <View style={cStyles.profileCard}>
+        <Text style={cStyles.nickname}>{profile?.nickname ?? '—'}</Text>
+        <Text style={cStyles.rankLabel}>
+          {RANK_TITLE_KEY[rank.title] ? t(RANK_TITLE_KEY[rank.title] as StringKey) : rank.title}
+          {'  '}LV.{rank.level}
+        </Text>
+        <View style={cStyles.xpTrack}>
+          <View style={[cStyles.xpFill, { width: `${progressPct}%` as `${number}%` }]} />
+        </View>
+        <Text style={cStyles.xpLabel}>
+          {recipeCount} {t('home_recipes')}
+          {rank.nextTitle ? `  →  ${rank.nextLevelRecipes! - recipeCount} ${t('grimoire_to')} ${t(RANK_TITLE_KEY[rank.nextTitle] as StringKey)}` : ''}
+        </Text>
+      </View>
+
+      <View style={cStyles.equipSection}>
+        <View style={cStyles.hatRow}>
+          <SlotButton
+            slotKey="hat"
+            equippedId={equipment.hat}
+            onPress={() => handleSlotPress('hat')}
+          />
+        </View>
+
+        <View style={cStyles.midRow}>
+          <View style={cStyles.slotCol}>
+            <SlotButton slotKey="outfit" equippedId={equipment.outfit} onPress={() => handleSlotPress('outfit')} />
+            <View style={cStyles.slotGap} />
+            <SlotButton slotKey="staff" equippedId={equipment.staff} onPress={() => handleSlotPress('staff')} />
+          </View>
+
+          <View style={cStyles.spriteContainer}>
+            <View style={cStyles.spriteFrame}>
+              <Image source={WIZARD_IDLE_SHEET} style={cStyles.spriteImage} resizeMode="stretch" />
+              {equippedHat?.image ? (
+                <Image source={equippedHat.image as never} style={cStyles.spriteHat} resizeMode="contain" />
+              ) : null}
+              {equippedStaff?.image ? (
+                <Image source={equippedStaff.image as never} style={cStyles.spriteStaff} resizeMode="contain" />
+              ) : null}
+            </View>
+          </View>
+
+          <View style={cStyles.slotCol}>
+            <SlotButton slotKey="cloak" equippedId={equipment.cloak} onPress={() => handleSlotPress('cloak')} />
+            <View style={cStyles.slotGap} />
+            <SlotButton slotKey="accessory1" equippedId={equipment.accessory1} onPress={() => handleSlotPress('accessory1')} />
+            <View style={cStyles.slotGap} />
+            <SlotButton slotKey="accessory2" equippedId={equipment.accessory2} onPress={() => handleSlotPress('accessory2')} />
+          </View>
+        </View>
+
+        <View style={cStyles.petRow}>
+          <SlotButton slotKey="pet" equippedId={equipment.pet} onPress={() => handleSlotPress('pet')} />
+          {equippedPet?.image ? (
+            <View style={cStyles.petPreview}>
+              <EquipmentVisual item={equippedPet} imageStyle={cStyles.petImage} />
+            </View>
+          ) : null}
+        </View>
+      </View>
+
+      {unequippedItems.length > 0 && (
+        <View style={cStyles.ownedSection}>
+          <Text style={cStyles.ownedLabel}>{t('character_owned')}</Text>
+          <FlatList
+            horizontal
+            data={unequippedItems}
+            keyExtractor={item => item.id}
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={cStyles.ownedList}
+            renderItem={({ item }) => (
+              <PressableScale onPress={() => handleItemPress(item)}>
+                <View style={[cStyles.slot, cStyles.slotEmpty]}>
+                  <EquipmentVisual item={item} />
+                  <Text style={cStyles.slotLabel}>
+                    {language === 'tr' ? item.name.split(' ')[0] : item.nameEn.split(' ')[0]}
+                  </Text>
+                </View>
+              </PressableScale>
+            )}
+          />
+        </View>
+      )}
+    </>
+  );
+
+  const shopContent = (
+    <View style={cStyles.shopSection}>
+      <Text style={cStyles.shopTitle}>{t('shop_title')}</Text>
+      <Text style={cStyles.shopSubtitle}>{t('shop_subtitle')}</Text>
+      <View style={cStyles.shopGrid}>
+        {SHOP_ITEMS.map(item => {
+          const owned = ownedItemIds.includes(item.id);
+          const unlocking = unlockingId === item.id;
+
+          return (
+            <View key={item.id} style={[cStyles.shopCard, owned && cStyles.shopCardOwned]}>
+              <View style={cStyles.shopIconBox}>
+                {item.image ? (
+                  <Image source={item.image as never} style={cStyles.shopItemImage} resizeMode="contain" />
+                ) : (
+                  <Text style={cStyles.shopIcon}>{item.icon}</Text>
+                )}
+              </View>
+              <Text style={cStyles.shopItemTitle}>{itemName(item, language)}</Text>
+              <Text style={cStyles.shopItemDesc}>{itemDescription(item, language)}</Text>
+              <PressableScale
+                disabled={owned || unlocking}
+                onPress={() => handleUnlock(item)}
+                style={cStyles.shopButtonWrap}
+              >
+                <View style={[cStyles.shopButton, owned && cStyles.shopButtonOwned, unlocking && cStyles.shopButtonMuted]}>
+                  <Text style={[cStyles.shopButtonText, owned && cStyles.shopButtonOwnedText]}>
+                    {owned ? t('shop_owned') : unlocking ? '...' : t('shop_unlock')}
+                  </Text>
+                </View>
+              </PressableScale>
+            </View>
+          );
+        })}
+      </View>
+    </View>
+  );
+
   return (
-    <ScrollView style={cStyles.container} contentContainerStyle={cStyles.content}>
+    <ScrollView style={cStyles.container} contentContainerStyle={[cStyles.content, { paddingBottom: insets.bottom + 56 }]}>
 
       {/* ─── Player info ────────────────────────────────────────────────────── */}
       <Text style={cStyles.title}>{t('character_title')}</Text>
+      <View style={cStyles.tabs}>
+        <PressableScale onPress={() => setActiveTab('character')} style={[cStyles.tab, activeTab === 'character' && cStyles.tabActive]}>
+          <Text style={[cStyles.tabText, activeTab === 'character' && cStyles.tabTextActive]}>{t('character_title')}</Text>
+        </PressableScale>
+        <PressableScale onPress={() => setActiveTab('shop')} style={[cStyles.tab, activeTab === 'shop' && cStyles.tabActive]}>
+          <Text style={[cStyles.tabText, activeTab === 'shop' && cStyles.tabTextActive]}>{t('nav_shop')}</Text>
+        </PressableScale>
+      </View>
+
+      {activeTab === 'shop' && shopContent}
+      {activeTab === 'character' && (
+      <>
       <View style={cStyles.profileCard}>
         <Text style={cStyles.nickname}>{profile?.nickname ?? '—'}</Text>
         <Text style={cStyles.rankLabel}>
@@ -274,6 +441,9 @@ export default function Character() {
       )}
 
       {/* ─── Equip / unequip modal ────────────────────────────────────────────── */}
+      </>
+      )}
+
       <Modal
         visible={modalState !== null}
         transparent
@@ -282,7 +452,7 @@ export default function Character() {
       >
         <View style={cStyles.modalContainer}>
           <Pressable style={cStyles.modalBackdrop} onPress={() => setModalState(null)} />
-          <View style={cStyles.modalSheet}>
+          <View style={[cStyles.modalSheet, { paddingBottom: insets.bottom + 48 }]}>
             {modalState?.item ? (
               <>
                 {modalState.item.image ? (
@@ -333,6 +503,11 @@ const cStyles = {
 
   // Profile
   title: { fontFamily: 'PressStart2P_400Regular', color: '#e2b96f', fontSize: 16, marginBottom: 20 } as const,
+  tabs: { flexDirection: 'row' as const, borderWidth: 1, borderColor: '#2d2d4e', marginBottom: 18 },
+  tab: { flex: 1, alignItems: 'center' as const, paddingVertical: 11, backgroundColor: '#1a1a2e' },
+  tabActive: { backgroundColor: '#c8a84b' },
+  tabText: { fontFamily: 'PressStart2P_400Regular', color: '#4a4a6a', fontSize: 8 },
+  tabTextActive: { color: '#1a1a2e' },
   profileCard: { backgroundColor: '#1a1a2e', borderWidth: 1, borderColor: '#2d2d4e', padding: 16, marginBottom: 24 } as const,
   nickname: { fontFamily: 'PressStart2P_400Regular', color: '#c8a84b', fontSize: 12, marginBottom: 8 } as const,
   rankLabel: { fontFamily: 'PressStart2P_400Regular', color: '#4a4a6a', fontSize: 7, marginBottom: 12 } as const,
@@ -390,6 +565,25 @@ const cStyles = {
   ownedSection: { marginBottom: 16 } as const,
   ownedLabel: { fontFamily: 'PressStart2P_400Regular', color: '#4a4a6a', fontSize: 7, marginBottom: 12 } as const,
   ownedList: { gap: 10 } as const,
+
+  // Shop
+  shopSection: { marginBottom: 16 } as const,
+  shopTitle: { fontFamily: 'PressStart2P_400Regular', color: '#e2b96f', fontSize: 14, marginBottom: 12 } as const,
+  shopSubtitle: { fontFamily: 'PressStart2P_400Regular', color: '#c8c8e8', fontSize: 8, lineHeight: 17, marginBottom: 16 } as const,
+  shopGrid: { gap: 12 },
+  shopCard: { backgroundColor: '#1a1a2e', borderWidth: 1, borderColor: '#2d2d4e', padding: 16 },
+  shopCardOwned: { borderColor: '#c8a84b' },
+  shopIconBox: { height: 82, backgroundColor: '#16213e', borderWidth: 1, borderColor: '#2d2d4e', alignItems: 'center' as const, justifyContent: 'center' as const, marginBottom: 14 },
+  shopIcon: { fontSize: 42 },
+  shopItemImage: { width: 68, height: 68 },
+  shopItemTitle: { fontFamily: 'PressStart2P_400Regular', color: '#e2b96f', fontSize: 10, marginBottom: 10 },
+  shopItemDesc: { fontFamily: 'PressStart2P_400Regular', color: '#c8c8e8', fontSize: 7, lineHeight: 15, marginBottom: 14 },
+  shopButtonWrap: { width: '100%' as const },
+  shopButton: { borderWidth: 1, borderColor: '#c8a84b', padding: 13, alignItems: 'center' as const },
+  shopButtonOwned: { backgroundColor: '#c8a84b' },
+  shopButtonMuted: { opacity: 0.55 },
+  shopButtonText: { fontFamily: 'PressStart2P_400Regular', color: '#c8a84b', fontSize: 8 },
+  shopButtonOwnedText: { color: '#1a1a2e' },
 
   // Modal
   modalContainer: { flex: 1, justifyContent: 'flex-end' as const },

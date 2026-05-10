@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import { Text, View, ScrollView, Pressable, ActivityIndicator, Alert } from 'react-native';
 import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { db } from '../../firebase';
 import { doc, getDoc, deleteDoc } from '@firebase/firestore';
 import { useLanguage } from '../../src/context/LanguageContext';
@@ -9,6 +10,7 @@ import PressableScale from '../../src/components/PressableScale';
 import IngredientIcon from '../../src/components/IngredientIcon';
 import { useAuth } from '../../src/context/AuthContext';
 import { markRecipeRecent } from '../../src/services/recentRecipes';
+import { RecipeLanguageTag, normalizeRecipeLanguage, recipeLanguageLabel } from '../../src/data/recipeLanguage';
 
 type Ingredient = { id: string; name: string; emoji: string; quantity: string; metric?: string };
 type RecipeStep = { id: string; text: string; duration: number | null };
@@ -19,6 +21,7 @@ type Recipe = {
   steps: RecipeStep[] | string;
   preparation?: string;
   ingredients: Ingredient[];
+  recipeLanguage?: RecipeLanguageTag;
   createdAt: unknown;
 };
 
@@ -86,6 +89,7 @@ Shared from Grimor - Your Recipe Spellbook`;
 export default function RecipeDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { t } = useLanguage();
   const { user } = useAuth();
   const { inventory, bulkSetItems } = useInventory();
@@ -153,6 +157,7 @@ export default function RecipeDetail() {
   if (!recipe) return <Text style={{ color: '#c8c8e8', padding: 24, fontFamily: 'PressStart2P_400Regular', fontSize: 9 }}>{t('detail_not_found')}</Text>;
 
   const showMatch = inventory.length > 0;
+  const recipeLanguage = normalizeRecipeLanguage(recipe.recipeLanguage);
 
   const prepDisplay =
     typeof recipe.preparation === 'string' && recipe.preparation.trim()
@@ -168,7 +173,7 @@ export default function RecipeDetail() {
     : Boolean((recipe.steps as string)?.trim() || recipe.preparation?.trim());
 
   return (
-    <ScrollView style={rdStyles.container} contentContainerStyle={rdStyles.content}>
+    <ScrollView style={rdStyles.container} contentContainerStyle={[rdStyles.content, { paddingBottom: insets.bottom + 64 }]}>
       <View style={rdStyles.header}>
         <Pressable onPress={() => router.back()} style={({ pressed }) => [pressed && { opacity: 0.5 }]}>
           <Text style={rdStyles.back}>{t('detail_back')}</Text>
@@ -186,6 +191,9 @@ export default function RecipeDetail() {
         </View>
       </View>
       <Text style={rdStyles.title}>{recipe.name.toUpperCase()}</Text>
+      {recipeLanguage && (
+        <Text style={rdStyles.languageTag}>{t('recipe_language_tag')}: {recipeLanguageLabel(recipeLanguage, t)}</Text>
+      )}
       {recipe.ingredients?.length > 0 && (
         <>
           <Text style={rdStyles.sectionLabel}>{t('detail_ingredients')}</Text>
@@ -273,6 +281,7 @@ const rdStyles = {
   edit: { fontFamily: 'PressStart2P_400Regular', color: '#e2b96f', fontSize: 8 } as const,
   delete: { fontFamily: 'PressStart2P_400Regular', color: '#c8c8e8', fontSize: 8 } as const,
   title: { fontFamily: 'PressStart2P_400Regular', color: '#c8c8e8', fontSize: 14, marginBottom: 24, lineHeight: 26 } as const,
+  languageTag: { alignSelf: 'flex-start' as const, borderWidth: 1, borderColor: '#e2b96f', color: '#e2b96f', fontFamily: 'PressStart2P_400Regular', fontSize: 7, paddingHorizontal: 8, paddingVertical: 5, marginBottom: 18 },
   sectionLabel: { fontFamily: 'PressStart2P_400Regular', color: '#4a4a6a', fontSize: 8, marginBottom: 12, marginTop: 8 } as const,
   ingredientRow: { flexDirection: 'row' as const, flexWrap: 'wrap' as const, marginBottom: 24 },
   ingredientTile: { backgroundColor: '#16213e', borderWidth: 1, borderColor: '#2d2d4e', padding: 10, alignItems: 'center' as const, margin: 4, minWidth: 70 },

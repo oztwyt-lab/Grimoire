@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Text, View, TextInput, ScrollView, Alert, Image, ImageSourcePropType } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../src/context/AuthContext';
 import { useLanguage } from '../src/context/LanguageContext';
 import { createUserProfile } from '../lib/firestore';
@@ -16,6 +17,7 @@ const CHARACTERS: CharacterOption[] = [
 
 export default function CharacterSetup() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { user } = useAuth();
   const { t } = useLanguage();
   const [nickname, setNickname] = useState('');
@@ -42,14 +44,14 @@ export default function CharacterSetup() {
         router.replace('/home');
       }, 50);
     } catch (err) {
-      Alert.alert('Error', String(err));
+      Alert.alert(t('create_error_title'), String(err));
     } finally {
       setSaving(false);
     }
   };
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+    <ScrollView style={styles.container} contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 56 }]}>
 
       {/* ─── Title ─────────────────────────────────────────────────────────── */}
       <Text style={styles.title}>{t('setup_title')}</Text>

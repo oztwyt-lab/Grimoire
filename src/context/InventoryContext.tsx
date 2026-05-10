@@ -6,7 +6,7 @@ type InventoryContextType = {
   inventory: InventoryItem[];
   addItem: (item: InventoryItem) => Promise<void>;
   removeItem: (id: string) => Promise<void>;
-  updateItem: (id: string, quantity: number, metric: string) => Promise<void>;
+  updateItem: (id: string, quantity: number, metric: string, expiresAt?: InventoryItem['expiresAt']) => Promise<void>;
   bulkSetItems: (items: InventoryItem[]) => Promise<void>;
   consumeItems: (items: InventoryItem[]) => Promise<void>;
 };
@@ -42,7 +42,7 @@ export function InventoryProvider({ children }: { children: ReactNode }) {
   const addItem = useCallback(async (item: InventoryItem) => {
     const current = ref.current;
     const next = current.find(i => i.id === item.id)
-      ? current.map(i => i.id === item.id ? item : i)
+      ? current.map(i => i.id === item.id ? { ...i, ...item } : i)
       : [...current, item];
     persist(next);
   }, [persist]);
@@ -51,8 +51,16 @@ export function InventoryProvider({ children }: { children: ReactNode }) {
     persist(ref.current.filter(i => i.id !== id));
   }, [persist]);
 
-  const updateItem = useCallback(async (id: string, quantity: number, metric: string) => {
-    persist(ref.current.map(i => i.id === id ? { ...i, quantity, metric } : i));
+  const updateItem = useCallback(async (id: string, quantity: number, metric: string, expiresAt?: InventoryItem['expiresAt']) => {
+    persist(ref.current.map(i => {
+      if (i.id !== id) return i;
+      const next = { ...i, quantity, metric };
+      if (expiresAt) {
+        return { ...next, expiresAt };
+      }
+      const { expiresAt: _removed, ...withoutExpiry } = next;
+      return withoutExpiry;
+    }));
   }, [persist]);
 
   const bulkSetItems = useCallback(async (items: InventoryItem[]) => {

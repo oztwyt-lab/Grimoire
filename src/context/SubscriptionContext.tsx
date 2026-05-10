@@ -65,7 +65,7 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
     const isTestUnlimited = isAdminEmail(user.email);
 
     if (isTestUnlimited) {
-      setDoc(userRef, { subscriptionTier: 'supporter' }, { merge: true }).catch(console.error);
+      setDoc(userRef, { subscriptionTier: 'supporter' }, { merge: true }).catch(() => {});
     }
 
     const unsubUser = onSnapshot(userRef, (snap) => {
@@ -78,13 +78,13 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
       setOrbDailyCount(typeof data.orbDailyCount === 'number' ? data.orbDailyCount : 0);
       setOrbDailyResetDate(data.orbDailyResetDate instanceof Timestamp ? data.orbDailyResetDate : defaults.orbDailyResetDate);
 
-      backfillSubscriptionFields(user.uid, data).catch(console.error);
-    }, console.error);
+      backfillSubscriptionFields(user.uid, data).catch(() => {});
+    }, () => {});
 
     const recipesQuery = query(collection(db, 'recipes'), where('userId', '==', user.uid));
     const unsubRecipes = onSnapshot(recipesQuery, (snap) => {
       setRecipeCount(snap.size);
-    }, console.error);
+    }, () => {});
 
     return () => {
       unsubUser();

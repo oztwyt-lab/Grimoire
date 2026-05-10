@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Text, View, Pressable, TextInput, Alert, ScrollView, Modal, LayoutChangeEvent, GestureResponderEvent } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../src/context/AuthContext';
 import { useLanguage } from '../src/context/LanguageContext';
 import { db } from '../firebase';
@@ -47,6 +48,7 @@ function SoundSlider({ value, onChange }: { value: number; onChange: (value: num
 
 export default function Settings() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { user, deleteAccount, logout } = useAuth();
   const { language, setLanguage, t } = useLanguage();
   const [confirming, setConfirming] = useState(false);
@@ -159,7 +161,7 @@ export default function Settings() {
   };
 
   return (
-    <ScrollView style={sStyles.container} contentContainerStyle={sStyles.content}>
+    <ScrollView style={sStyles.container} contentContainerStyle={[sStyles.content, { paddingBottom: insets.bottom + 56 }]}>
 
       <Pressable style={({ pressed }) => [pressed && { opacity: 0.5 }]} onPress={() => router.back()}>
         <Text style={sStyles.back}>{t('settings_back')}</Text>

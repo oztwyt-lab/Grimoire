@@ -5,7 +5,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuth } from '../src/context/AuthContext';
 import { useLanguage } from '../src/context/LanguageContext';
 import PressableScale from '../src/components/PressableScale';
-import { getUserProfile } from '../lib/firestore';
+import { ensureAdminProfile, getUserProfile } from '../lib/firestore';
 
 export default function Home() {
   const router = useRouter();
@@ -33,7 +33,7 @@ export default function Home() {
       if (!user) return;
 
       try {
-        const profile = await getUserProfile(user.uid);
+        const profile = await getUserProfile(user.uid) ?? await ensureAdminProfile(user.uid, user.email);
         if (!alive) return;
         router.replace(profile ? '/home' : '/character-setup');
       } catch (error) {

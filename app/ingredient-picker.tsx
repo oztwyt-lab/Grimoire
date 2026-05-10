@@ -1,6 +1,7 @@
 import { useMemo, useState, useEffect } from 'react';
 import { Text, View, TextInput, FlatList, Pressable, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { INGREDIENTS, CATEGORIES, CATEGORY_ICONS, CATEGORY_TRANSLATIONS, Ingredient, getIngredientCategory } from '../src/data/ingredients';
 import { INGREDIENT_BUFFS } from '../src/data/ingredientBuffs';
 import { resolveIngredient } from '../src/store/ingredientSelection';
@@ -32,6 +33,7 @@ function parseQuantityString(qs: string): { amount: string; unit: string } {
 
 export default function IngredientPicker() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { t, language } = useLanguage();
   const iname = (ing: Ingredient) => language === 'tr' ? ing.name_tr : ing.name;
   const { editId, editQuantity } = useLocalSearchParams<{ editId?: string; editQuantity?: string }>();
@@ -101,7 +103,7 @@ export default function IngredientPicker() {
   };
  
   return (
-    <KeyboardAvoidingView style={ipStyles.container} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+    <KeyboardAvoidingView style={[ipStyles.container, { paddingBottom: insets.bottom + 24 }]} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
       <Text style={ipStyles.title}>{t('picker_title')}</Text>
       <TextInput style={ipStyles.search} placeholder={t('picker_search')} placeholderTextColor="#94a3b8" value={search} onChangeText={text => { setSearch(text); setSelectedCategory(null); setCustomMode(false); }} autoFocus />
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={ipStyles.categories}>
@@ -121,6 +123,7 @@ export default function IngredientPicker() {
         keyExtractor={item => item.id}
         numColumns={4}
         style={ipStyles.grid}
+        contentContainerStyle={{ paddingBottom: insets.bottom + 32 }}
         renderItem={({ item }) => (
           <Pressable style={({ pressed }) => [ipStyles.tile, selectedIngredient?.id === item.id && ipStyles.tileSelected, pressed && { opacity: 0.6 }]} onPress={() => handleSelect(item)}>
             <IngredientIcon id={item.id} emoji={item.emoji} size={32} imageStyle={ipStyles.tileIcon} textStyle={ipStyles.tileEmoji} />
@@ -134,7 +137,7 @@ export default function IngredientPicker() {
         }
       />
       {customMode && (
-        <View style={ipStyles.quantityBar}>
+        <View style={[ipStyles.quantityBar, { marginBottom: insets.bottom + 12 }]}>
           <View style={ipStyles.customRow}>
             <Pressable style={ipStyles.emojiToggle} onPress={() => setShowEmojiPicker(!showEmojiPicker)}>
               <Text style={{ fontSize: 28 }}>{customEmoji}</Text>
@@ -156,7 +159,7 @@ export default function IngredientPicker() {
           <View style={[ipStyles.quantityUnitRow, { marginTop: 8 }]}>
             <TextInput style={[ipStyles.quantityInput, ipStyles.quantityInputWithUnit]} placeholder={t('picker_quantity')} placeholderTextColor="#94a3b8" value={quantity} onChangeText={setQuantity} />
             <Pressable style={({ pressed }) => [ipStyles.unitButton, pressed && { backgroundColor: '#2d2d4e' }]} onPress={() => setShowUnitPicker(!showUnitPicker)}>
-              <Text style={ipStyles.unitButtonText}>{selectedUnit || 'UNIT'}</Text>
+              <Text style={ipStyles.unitButtonText}>{selectedUnit || t('picker_unit')}</Text>
             </Pressable>
           </View>
           {showUnitPicker && (
@@ -174,7 +177,7 @@ export default function IngredientPicker() {
         </View>
       )}
       {selectedIngredient && !customMode && (
-        <View style={ipStyles.cardOverlay}>
+        <View style={[ipStyles.cardOverlay, { paddingBottom: insets.bottom + 24 }]}>
           <Pressable style={ipStyles.cardBackdrop} onPress={() => setSelectedIngredient(null)} />
           <View style={ipStyles.quantityCard}>
             <Text style={ipStyles.quantityLabel}>{iname(selectedIngredient)}</Text>
@@ -209,7 +212,7 @@ export default function IngredientPicker() {
               <View style={ipStyles.quantityUnitRow}>
                 <TextInput style={[ipStyles.quantityInput, ipStyles.quantityInputWithUnit]} placeholder={t('picker_quantity')} placeholderTextColor="#94a3b8" value={quantity} onChangeText={setQuantity} />
                 <Pressable style={({ pressed }) => [ipStyles.unitButton, pressed && { backgroundColor: '#2d2d4e' }]} onPress={() => setShowUnitPicker(!showUnitPicker)}>
-                  <Text style={ipStyles.unitButtonText}>{selectedUnit || 'UNIT'}</Text>
+                  <Text style={ipStyles.unitButtonText}>{selectedUnit || t('picker_unit')}</Text>
                 </Pressable>
               </View>
               {showUnitPicker && (

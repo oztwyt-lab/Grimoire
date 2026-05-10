@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, FlatList, Pressable, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { collection, limit, onSnapshot, orderBy, query, Timestamp } from '@firebase/firestore';
 import { db } from '../firebase';
 import { useAuth } from '../src/context/AuthContext';
@@ -23,6 +24,7 @@ function formatTimestamp(timestamp: Timestamp | null) {
 
 export default function AdminFeedback() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { user } = useAuth();
   const { t } = useLanguage();
   const [items, setItems] = useState<FeedbackItem[]>([]);
@@ -75,7 +77,7 @@ export default function AdminFeedback() {
         <FlatList
           data={items}
           keyExtractor={item => item.id}
-          contentContainerStyle={s.listContent}
+          contentContainerStyle={[s.listContent, { paddingBottom: insets.bottom + 40 }]}
           renderItem={({ item }) => (
             <View style={s.card}>
               <View style={s.cardHeader}>

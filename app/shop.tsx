@@ -1,6 +1,7 @@
 import { useCallback, useState } from 'react';
 import { ActivityIndicator, Image, Pressable, ScrollView, Text, View } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../src/context/AuthContext';
 import { useLanguage } from '../src/context/LanguageContext';
 import PressableScale from '../src/components/PressableScale';
@@ -18,6 +19,7 @@ function itemDescription(item: EquipmentItem, language: string) {
 
 export default function Shop() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { user } = useAuth();
   const { t, language } = useLanguage();
   const [ownedItemIds, setOwnedItemIds] = useState<string[]>([]);
@@ -56,7 +58,7 @@ export default function Shop() {
   }
 
   return (
-    <ScrollView style={s.container} contentContainerStyle={s.content}>
+    <ScrollView style={s.container} contentContainerStyle={[s.content, { paddingBottom: insets.bottom + 56 }]}>
       <Pressable style={({ pressed }) => [pressed && { opacity: 0.5 }]} onPress={() => router.back()}>
         <Text style={s.back}>{t('settings_back')}</Text>
       </Pressable>

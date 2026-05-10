@@ -1,11 +1,16 @@
 import { db } from '../firebase';
 import { addDoc, arrayUnion, collection, doc, getDoc, serverTimestamp, setDoc, Timestamp } from '@firebase/firestore';
+import { isAdminEmail } from '../src/config/admin';
 
 // ─── Food inventory ───────────────────────────────────────────────────────────
 export type InventoryItem = {
   id: string;
+  name?: string;
+  emoji?: string;
+  category?: string;
   quantity: number;
   metric: string;
+  expiresAt?: Timestamp;
 };
 
 export type RecipeRecord = {
@@ -13,6 +18,7 @@ export type RecipeRecord = {
   userId?: string;
   name: string;
   icon?: string;
+  recipeLanguage?: 'en' | 'tr' | 'other';
   steps?: unknown;
   preparation?: string;
   ingredients?: unknown[];
@@ -257,6 +263,19 @@ export async function createUserProfile(uid: string, profile: UserProfile): Prom
     createdAt: serverTimestamp(),
   }, { merge: true });
 
+}
+
+export async function ensureAdminProfile(uid: string, email?: string | null): Promise<UserProfile | null> {
+  if (!isAdminEmail(email)) return null;
+  const existing = await getUserProfile(uid);
+  if (existing) return existing;
+
+  const profile: UserProfile = {
+    nickname: email?.toLowerCase() === 'oztwyt@gmail.com' ? 'Oz' : 'Admin',
+    character: 'male',
+  };
+  await createUserProfile(uid, profile);
+  return profile;
 }
 
 export async function getUserEquipment(uid: string): Promise<Equipment> {

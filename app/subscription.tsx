@@ -1,16 +1,18 @@
 import { ScrollView, Text, View, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLanguage } from '../src/context/LanguageContext';
 import { useSubscription } from '../src/context/SubscriptionContext';
 import PressableScale from '../src/components/PressableScale';
 
 export default function Subscription() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { t } = useLanguage();
   const { tier, recipeCount, inventoryCount } = useSubscription();
 
   return (
-    <ScrollView style={s.container} contentContainerStyle={s.content}>
+    <ScrollView style={s.container} contentContainerStyle={[s.content, { paddingBottom: insets.bottom + 56 }]}>
       <Pressable style={({ pressed }) => [pressed && { opacity: 0.5 }]} onPress={() => router.back()}>
         <Text style={s.back}>{t('settings_back')}</Text>
       </Pressable>
