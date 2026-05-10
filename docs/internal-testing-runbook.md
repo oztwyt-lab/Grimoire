@@ -9,6 +9,17 @@ Last updated: 2026-05-10
 - Remembered login is enabled through Firebase Auth persistence.
 - Brand display name is `Grimor`.
 - Android package is locked as `com.slingbladestudios.grimoire`.
+- Production Android App Bundle build is complete.
+
+## Current Internal Testing Artifact
+
+- EAS build ID: `06a677a6-7290-4071-84d4-61f20ddc829f`
+- Profile: `production`
+- Distribution: `STORE`
+- App version: `1.0.0`
+- Version code: `2`
+- Git commit in artifact: `f8181a74bb55d855c4fe02dd7e540507b7c0309b`
+- Artifact URL: https://expo.dev/artifacts/eas/PCwwNSNbyFoGGLKLeB99F.aab
 
 ## Before Building
 
