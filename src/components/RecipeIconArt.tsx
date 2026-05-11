@@ -3,67 +3,62 @@ import { RECIPE_ICON_MAP } from './recipeIconMap';
 
 const DEFAULT_RECIPE_SOURCE = require('../../assets/candidates/openart/rpg-icons-selected/I_C_Bread.png');
 
-const f = (name: string): ImageSourcePropType =>
-  require(`../../assets/candidates/openart/food-icons-license-check/${name}.png`);
-const r = (name: string): ImageSourcePropType =>
-  require(`../../assets/candidates/openart/rpg-icons-selected/${name}.png`);
-
 const RECIPE_ICON_SOURCES: Record<string, ImageSourcePropType> = {
   // ── pasta & grains ──────────────────────────────────────────────────────────
-  '🍝': f('macaroni'),
-  '🍚': f('rice_ball'),
-  '🌾': f('rice_cracker'),       // Bulgur Pilavı
+  '🍝': require('../../assets/candidates/openart/food-icons-license-check/macaroni.png'),
+  '🍚': require('../../assets/candidates/openart/food-icons-license-check/rice_ball.png'),
+  '🌾': require('../../assets/candidates/openart/food-icons-license-check/rice_cracker.png'),
   // ── meat ────────────────────────────────────────────────────────────────────
-  '🥩': f('steak_grilled'),
-  '🍢': f('steak_grilled'),      // Lamb Kofta / İzmir Köfte
-  '🍡': f('dango'),              // Adana Kebabı (skewer)
-  '🍖': r('I_C_Meat'),          // Pilav Üstü Tavuk
+  '🥩': require('../../assets/candidates/openart/food-icons-license-check/steak_grilled.png'),
+  '🍢': require('../../assets/candidates/openart/food-icons-license-check/steak_grilled.png'),
+  '🍡': require('../../assets/candidates/openart/food-icons-license-check/dango.png'),
+  '🍖': require('../../assets/candidates/openart/rpg-icons-selected/I_C_Meat.png'),
   // ── poultry ─────────────────────────────────────────────────────────────────
-  '🍗': f('chicken_drumstick_cooked'),  // Chicken Stir Fry
-  '🥘': f('chicken_nuggets'),    // Tavuk Sote
+  '🍗': require('../../assets/candidates/openart/food-icons-license-check/chicken_drumstick_cooked.png'),
+  '🥘': require('../../assets/candidates/openart/food-icons-license-check/chicken_nuggets.png'),
   // ── fish & seafood ──────────────────────────────────────────────────────────
-  '🐟': f('fish_fillet'),        // Pan Seared Salmon
-  '🐠': f('fish_sticks'),        // Hamsi Tava (fried fish)
-  '🍤': f('shrimp'),
+  '🐟': require('../../assets/candidates/openart/food-icons-license-check/fish_fillet.png'),
+  '🐠': require('../../assets/candidates/openart/food-icons-license-check/fish_sticks.png'),
+  '🍤': require('../../assets/candidates/openart/food-icons-license-check/shrimp.png'),
   // ── soups ───────────────────────────────────────────────────────────────────
-  '🍲': f('soup_pea'),           // Chicken Soup
-  '🥣': f('soup_mushroom'),      // Mercimek Çorbası
-  '🍵': f('soup_pea'),           // Lentil Soup
-  '🫖': f('soup_beet'),          // Tarhana Çorbası
+  '🍲': require('../../assets/candidates/openart/food-icons-license-check/soup_pea.png'),
+  '🥣': require('../../assets/candidates/openart/food-icons-license-check/soup_mushroom.png'),
+  '🍵': require('../../assets/candidates/openart/food-icons-license-check/soup_pea.png'),
+  '🫖': require('../../assets/candidates/openart/food-icons-license-check/soup_beet.png'),
   // ── eggs & breakfast ────────────────────────────────────────────────────────
-  '🍳': f('egg_whole_brown'),    // Classic Omelette
-  '🥚': f('egg_fried'),          // Menemen
-  '🥞': f('pancakes'),
+  '🍳': require('../../assets/candidates/openart/food-icons-license-check/egg_whole_brown.png'),
+  '🥚': require('../../assets/candidates/openart/food-icons-license-check/egg_fried.png'),
+  '🥞': require('../../assets/candidates/openart/food-icons-license-check/pancakes.png'),
   // ── vegetables ──────────────────────────────────────────────────────────────
-  '🥗': f('lettuce'),
-  '🍅': f('tomato'),
-  '🌽': f('corn'),
-  '🥒': f('cucumber'),
-  '🍆': f('eggplant'),           // Patlıcan Musakka
-  '🥑': f('avocado_whole'),
-  '🌿': f('broccoli'),           // Zeytinyağlı Enginar
-  '🌶️': f('chili_pepper_red'), // Çiğ Köfte
-  '🍛': f('bell_pepper_red'),    // Vegetable Curry
-  '🍄': f('mushroom'),           // Mushroom Risotto
-  '🧅': f('onion_brown'),        // French Onion Soup
-  '🥔': f('potato'),             // Baked Potato
-  '🧄': f('garlic'),             // Garlic Butter Pasta
+  '🥗': require('../../assets/candidates/openart/food-icons-license-check/lettuce.png'),
+  '🍅': require('../../assets/candidates/openart/food-icons-license-check/tomato.png'),
+  '🌽': require('../../assets/candidates/openart/food-icons-license-check/corn.png'),
+  '🥒': require('../../assets/candidates/openart/food-icons-license-check/cucumber.png'),
+  '🍆': require('../../assets/candidates/openart/food-icons-license-check/eggplant.png'),
+  '🥑': require('../../assets/candidates/openart/food-icons-license-check/avocado_whole.png'),
+  '🌿': require('../../assets/candidates/openart/food-icons-license-check/broccoli.png'),
+  '🌶️': require('../../assets/candidates/openart/food-icons-license-check/chili_pepper_red.png'),
+  '🍛': require('../../assets/candidates/openart/food-icons-license-check/bell_pepper_red.png'),
+  '🍄': require('../../assets/candidates/openart/food-icons-license-check/mushroom.png'),
+  '🧅': require('../../assets/candidates/openart/food-icons-license-check/onion_brown.png'),
+  '🥔': require('../../assets/candidates/openart/food-icons-license-check/potato.png'),
+  '🧄': require('../../assets/candidates/openart/food-icons-license-check/garlic.png'),
   // ── legumes ─────────────────────────────────────────────────────────────────
-  '🫘': f('garbanzo_beans'),     // Kuru Fasulye
-  '🫛': f('pea_pod'),            // Zeytinyağlı Barbunya
+  '🫘': require('../../assets/candidates/openart/food-icons-license-check/garbanzo_beans.png'),
+  '🫛': require('../../assets/candidates/openart/food-icons-license-check/pea_pod.png'),
   // ── bread & flatbread ───────────────────────────────────────────────────────
-  '🍞': f('bread_loaf_brown'),
-  '🫓': f('flatbread'),          // Lahmacun
-  '🌮': f('taco'),               // Beef Tacos
+  '🍞': require('../../assets/candidates/openart/food-icons-license-check/bread_loaf_brown.png'),
+  '🫓': require('../../assets/candidates/openart/food-icons-license-check/flatbread.png'),
+  '🌮': require('../../assets/candidates/openart/food-icons-license-check/taco.png'),
   // ── dairy & cheese ──────────────────────────────────────────────────────────
-  '🧀': f('cheese'),             // Mıhlama
+  '🧀': require('../../assets/candidates/openart/food-icons-license-check/cheese.png'),
   // ── olives ──────────────────────────────────────────────────────────────────
-  '🫒': f('olives_green'),       // Caprese Salad
+  '🫒': require('../../assets/candidates/openart/food-icons-license-check/olives_green.png'),
   // ── sweets & dessert ────────────────────────────────────────────────────────
-  '🍮': f('flan'),               // Sütlaç
-  '🍯': f('honey_pot'),          // Kadayıf
+  '🍮': require('../../assets/candidates/openart/food-icons-license-check/flan.png'),
+  '🍯': require('../../assets/candidates/openart/food-icons-license-check/honey_pot.png'),
   // ── fruit & drinks ──────────────────────────────────────────────────────────
-  '🍌': f('banana'),             // Banana Smoothie
+  '🍌': require('../../assets/candidates/openart/food-icons-license-check/banana.png'),
 };
 
 type Props = {
