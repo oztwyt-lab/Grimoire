@@ -19,10 +19,10 @@ export default function Register() {
     setSubmitting(true);
     try {
       await register(email, password);
-      router.replace('/character-setup');
+      // Navigation is handled by the auth listener in index.tsx.
+      // Don't navigate here — doing so causes a double navigation and transition twitch.
     } catch (error) {
       Alert.alert(t('register_failed_title'), String(error));
-    } finally {
       setSubmitting(false);
     }
   };

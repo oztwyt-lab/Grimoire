@@ -32,7 +32,7 @@ const CHARACTER_DISPLAY_W = 96;
 const CHARACTER_DISPLAY_H = 120;
 const WIZARD_RIGHT_OFFSET = CHARACTER_DISPLAY_W / 2;
 const FIREBALL_SIZE = 76;
-const NAV_ICON_SIZE = 30;
+const NAV_ICON_SIZE = 38;
 const MAIN_BACKGROUND_PANEL_ASPECT = 859 / 1414;
 const HOME_NAV_ICONS = {
   grimoire: require('../assets/icons/ui/book.png'),
@@ -641,8 +641,8 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   navIconWrap: {
-    width: 32,
-    height: 32,
+    width: 40,
+    height: 40,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 4,
