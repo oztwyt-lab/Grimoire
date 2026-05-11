@@ -1,37 +1,45 @@
 {
   "expo": {
-    "name": "Grimoire",
+    "name": "Grimor",
     "slug": "Grimoire",
     "scheme": "grimoire",
     "version": "1.0.0",
-    "orientation": "portrait",
+    "orientation": "default",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "splash": {
-      "image": "./assets/splash-icon.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#1a1a2e"
+      "image": "./assets/ui/splash_screen.png",
+      "resizeMode": "cover",
+      "backgroundColor": "#16213e"
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.slingbladestudios.grimoire"
+      "bundleIdentifier": "com.adioco.grimor"
     },
     "android": {
+      "newArchEnabled": true,
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#1a1a2e"
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
-      "package": "com.slingbladestudios.grimoire",
+      "package": "com.adioco.grimor",
       "versionCode": 1
     },
     "web": {
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
-      "expo-font"
+      "expo-font",
+      [
+        "expo-audio",
+        {
+          "recordAudioAndroid": false
+        }
+      ],
+      "expo-asset"
     ],
     "extra": {
       "eas": {

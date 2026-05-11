@@ -1,21 +1,162 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
-import { View, Text, Pressable, Animated, Dimensions, ImageBackground, StyleSheet } from 'react-native';
+import { View, Text, Pressable, Animated, Dimensions, ImageBackground, StyleSheet, Image, GestureResponderEvent } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import Reanimated, {
+  Easing,
+  useAnimatedStyle,
+  useSharedValue,
+  withDelay,
+  withRepeat,
+  withSequence,
+  withTiming,
+} from 'react-native-reanimated';
 import { useRouter } from 'expo-router';
 import { useAuth } from '../src/context/AuthContext';
 import { db } from '../firebase';
-import { doc, getDoc, collection, query, where, getCountFromServer } from '@firebase/firestore';
+import { collection, query, where, getCountFromServer } from '@firebase/firestore';
 import { getCharacterRank, getLevelProgress } from '../src/data/character';
-import WizardSprite from '../src/components/WizardSprite';
+import WizardSprite, { WizardSpriteHandle } from '../src/components/WizardSprite';
 import PressableScale from '../src/components/PressableScale';
+import RankIcon from '../src/components/RankIcon';
 import * as Haptics from 'expo-haptics';
 import { useLanguage } from '../src/context/LanguageContext';
 import { RANK_TITLE_KEY } from '../src/i18n/strings';
+import { ensureAdminProfile, getUserProfile, UserProfile } from '../lib/firestore';
+import { playMusic, playSFX, stopMusic } from '../src/services/audio';
 
 const { width, height } = Dimensions.get('window');
 const HUD_HEIGHT = 90;
-const NAV_HEIGHT = 96;
+const NAV_HEIGHT = 112;
+// Wizard container anchor: left = width/2 - 48, so wizard right edge stays near center + 48.
+const CHARACTER_DISPLAY_W = 96;
+const CHARACTER_DISPLAY_H = 120;
+const WIZARD_RIGHT_OFFSET = CHARACTER_DISPLAY_W / 2;
+const FIREBALL_SIZE = 76;
+const NAV_ICON_SIZE = 30;
+const MAIN_BACKGROUND_PANEL_ASPECT = 859 / 1414;
+const HOME_NAV_ICONS = {
+  grimoire: require('../assets/icons/ui/book.png'),
+  inventory: require('../assets/icons/ui/bag.png'),
+  character: require('../assets/icons/ui/hat.png'),
+  magicOrb: require('../assets/candidates/openart/rpg-icons-selected/I_Crystal01.png'),
+};
+const MAIN_BACKGROUND_PANELS = [
+  { key: 'fireplace', source: require('../assets/ui/main_fireplace.png') },
+  { key: 'cauldron', source: require('../assets/ui/main_cauldron.png') },
+  { key: 'pantry', source: require('../assets/ui/main_pantry.png') },
+] as const;
+const FIREBALL_FRAMES = [
+  require('../assets/effects/fireball/Effects_Fire_0_01.png'),
+  require('../assets/effects/fireball/Effects_Fire_0_02.png'),
+  require('../assets/effects/fireball/Effects_Fire_0_03.png'),
+  require('../assets/effects/fireball/Effects_Fire_0_04.png'),
+  require('../assets/effects/fireball/Effects_Fire_0_05.png'),
+  require('../assets/effects/fireball/Effects_Fire_0_06.png'),
+  require('../assets/effects/fireball/Effects_Fire_0_07.png'),
+  require('../assets/effects/fireball/Effects_Fire_0_08.png'),
+  require('../assets/effects/fireball/Effects_Fire_0_09.png'),
+  require('../assets/effects/fireball/Effects_Fire_0_10.png'),
+  require('../assets/effects/fireball/Effects_Fire_0_11.png'),
+  require('../assets/effects/fireball/Effects_Fire_0_12.png'),
+  require('../assets/effects/fireball/Effects_Fire_0_13.png'),
+  require('../assets/effects/fireball/Effects_Fire_0_14.png'),
+  require('../assets/effects/fireball/Effects_Fire_0_15.png'),
+  require('../assets/effects/fireball/Effects_Fire_0_16.png'),
+  require('../assets/effects/fireball/Effects_Fire_0_17.png'),
+  require('../assets/effects/fireball/Effects_Fire_0_18.png'),
+  require('../assets/effects/fireball/Effects_Fire_0_19.png'),
+  require('../assets/effects/fireball/Effects_Fire_0_20.png'),
+  require('../assets/effects/fireball/Effects_Fire_0_21.png'),
+  require('../assets/effects/fireball/Effects_Fire_0_22.png'),
+  require('../assets/effects/fireball/Effects_Fire_0_23.png'),
+  require('../assets/effects/fireball/Effects_Fire_0_24.png'),
+  require('../assets/effects/fireball/Effects_Fire_0_25.png'),
+  require('../assets/effects/fireball/Effects_Fire_0_26.png'),
+  require('../assets/effects/fireball/Effects_Fire_0_27.png'),
+  require('../assets/effects/fireball/Effects_Fire_0_28.png'),
+];
+const FLOATING_PARTICLES = Array.from({ length: 8 }, (_, index) => ({
+  id: index,
+  left: Math.random() * width,
+  size: 3 + Math.random() * 3,
+  drift: 20 + Math.random() * 20,
+  opacity: 0.15 + Math.random() * 0.15,
+  delay: Math.random() * 1800,
+  tint: index % 3 === 0 ? '#c8a84b' : '#ffffff',
+}));
 
-type Profile = { nickname: string; character: string };
+type Profile = UserProfile;
+
+function FloatingParticle({
+  left,
+  size,
+  drift,
+  opacity,
+  delay,
+  tint,
+  roomHeight,
+}: {
+  left: number;
+  size: number;
+  drift: number;
+  opacity: number;
+  delay: number;
+  tint: string;
+  roomHeight: number;
+}) {
+  const translateY = useSharedValue(0);
+  const particleOpacity = useSharedValue(0);
+
+  useEffect(() => {
+    const travel = roomHeight * 0.86;
+    const duration = (travel / drift) * 1000;
+
+    translateY.value = withDelay(
+      delay,
+      withRepeat(
+        withSequence(
+          withTiming(0, { duration: 0 }),
+          withTiming(-travel, { duration, easing: Easing.linear })
+        ),
+        -1,
+        false
+      )
+    );
+    particleOpacity.value = withDelay(
+      delay,
+      withRepeat(
+        withSequence(
+          withTiming(opacity, { duration: duration * 0.2, easing: Easing.out(Easing.ease) }),
+          withTiming(opacity, { duration: duration * 0.45, easing: Easing.linear }),
+          withTiming(0, { duration: duration * 0.35, easing: Easing.in(Easing.ease) })
+        ),
+        -1,
+        false
+      )
+    );
+  }, [delay, drift, opacity, particleOpacity, roomHeight, translateY]);
+
+  const particleStyle = useAnimatedStyle(() => ({
+    opacity: particleOpacity.value,
+    transform: [{ translateY: translateY.value }],
+  }));
+
+  return (
+    <Reanimated.View
+      pointerEvents="none"
+      style={[
+        styles.particle,
+        {
+          left,
+          width: size,
+          height: size,
+          backgroundColor: tint,
+        },
+        particleStyle,
+      ]}
+    />
+  );
+}
 
 export default function Home() {
   const router = useRouter();
@@ -23,40 +164,103 @@ export default function Home() {
   const { t } = useLanguage();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [recipeCount, setRecipeCount] = useState(0);
+  const [backgroundPanelIndex, setBackgroundPanelIndex] = useState(1);
 
-  // ─── Nav button scale animations (native driver only) ────────────────────
+  // ─── Wizard ref (imperative control) ─────────────────────────────────────
+  const wizardRef = useRef<WizardSpriteHandle>(null);
+
+  // ─── Double-tap detection ─────────────────────────────────────────────────
+  const lastWizardTapRef = useRef(0);
+
+  // ─── Fireball animation ───────────────────────────────────────────────────
+  const fireballX = useRef(new Animated.Value(0)).current;
+  const [fireballVisible, setFireballVisible] = useState(false);
+  const [fireballFrame, setFireballFrame] = useState(0);
+  const fireballFrameRef = useRef(0);
+  const fireballIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (fireballIntervalRef.current) clearInterval(fireballIntervalRef.current);
+    };
+  }, []);
+
+  useEffect(() => {
+    playMusic('main_music', true);
+    return () => {
+      stopMusic();
+    };
+  }, []);
+
+  function shootFireball() {
+    if (fireballVisible) return;
+    const wizX = wizardRef.current?.getX() ?? 0;
+    const startX = width / 2 + WIZARD_RIGHT_OFFSET + wizX;
+
+    fireballX.setValue(startX);
+    fireballFrameRef.current = 0;
+    setFireballFrame(0);
+    setFireballVisible(true);
+    playSFX('fireball_shoot');
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+
+    fireballIntervalRef.current = setInterval(() => {
+      fireballFrameRef.current = (fireballFrameRef.current + 1) % FIREBALL_FRAMES.length;
+      setFireballFrame(fireballFrameRef.current);
+    }, 45);
+
+    Animated.timing(fireballX, {
+      toValue: width + 100,
+      duration: 520,
+      useNativeDriver: true,
+    }).start(() => {
+      if (fireballIntervalRef.current) clearInterval(fireballIntervalRef.current);
+      setFireballVisible(false);
+    });
+  }
+
+  function handleWizardPress() {
+    const now = Date.now();
+    if (now - lastWizardTapRef.current < 350) {
+      lastWizardTapRef.current = 0;
+      wizardRef.current?.castFireball();
+      shootFireball();
+    } else {
+      lastWizardTapRef.current = now;
+    }
+  }
+
+  function handleRoomPressIn(e: GestureResponderEvent) {
+    const tapX = e.nativeEvent.locationX;
+    const wizScreenX = width / 2 + (wizardRef.current?.getX() ?? 0);
+    const direction = tapX >= wizScreenX ? 'right' : 'left';
+    playSFX('footstep');
+    wizardRef.current?.startWalking(direction, tapX);
+  }
+
+  // ─── Nav button scale animations ──────────────────────────────────────────
   const grimoireScale = useRef(new Animated.Value(1)).current;
   const inventoryScale = useRef(new Animated.Value(1)).current;
+  const magicOrbScale = useRef(new Animated.Value(1)).current;
   const characterScale = useRef(new Animated.Value(1)).current;
 
   const pressIn = (scale: Animated.Value) => {
-    Animated.spring(scale, {
-      toValue: 1.25,
-      useNativeDriver: true,
-      speed: 50,
-      bounciness: 0,
-    }).start();
+    Animated.spring(scale, { toValue: 1.25, useNativeDriver: true, speed: 50, bounciness: 0 }).start();
   };
-
   const pressOut = (scale: Animated.Value) => {
-    Animated.spring(scale, {
-      toValue: 1,
-      useNativeDriver: true,
-      speed: 50,
-      bounciness: 0,
-    }).start();
+    Animated.spring(scale, { toValue: 1, useNativeDriver: true, speed: 50, bounciness: 0 }).start();
   };
 
   // ─── Profile + recipe count fetch ────────────────────────────────────────
   const loadData = useCallback(async () => {
     if (!user) return;
     try {
-      const profileSnap = await getDoc(doc(db, 'profiles', user.uid));
-      if (!profileSnap.exists()) {
+      const userProfile = await getUserProfile(user.uid) ?? await ensureAdminProfile(user.uid, user.email);
+      if (!userProfile) {
         router.replace('/character-setup');
         return;
       }
-      setProfile(profileSnap.data() as Profile);
+      setProfile(userProfile);
       const countSnap = await getCountFromServer(
         query(collection(db, 'recipes'), where('userId', '==', user.uid))
       );
@@ -73,39 +277,146 @@ export default function Home() {
 
   const nav = (route: string) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    playSFX(route === '/grimoire' ? 'grimor_click' : 'button_click');
     router.push(route as any);
   };
 
+  const insets = useSafeAreaInsets();
   const hudBottom = HUD_HEIGHT + 52;
   const roomHeight = height - hudBottom - NAV_HEIGHT;
-  const charTop = hudBottom + roomHeight * 0.68;
+  const backgroundHeight = width / MAIN_BACKGROUND_PANEL_ASPECT * 1.03;
+  const backgroundWidth = backgroundHeight * MAIN_BACKGROUND_PANEL_ASPECT;
+  const backgroundLeft = (width - backgroundWidth) / 2;
+  const characterBottom = NAV_HEIGHT + insets.bottom + 38;
+  const characterFeetY = height - characterBottom - hudBottom;
+  const backgroundTop = characterFeetY - backgroundHeight - 12;
+  const charTop = height - characterBottom - CHARACTER_DISPLAY_H;
+  const canMoveBackgroundLeft = backgroundPanelIndex > 0;
+  const canMoveBackgroundRight = backgroundPanelIndex < MAIN_BACKGROUND_PANELS.length - 1;
+
+  function moveBackgroundPanel(direction: -1 | 1) {
+    playSFX('button_click');
+    setBackgroundPanelIndex(current => Math.min(MAIN_BACKGROUND_PANELS.length - 1, Math.max(0, current + direction)));
+  }
 
   return (
-    <View style={{ flex: 1, backgroundColor: '#1a1a2e' }}>
+    <View style={{ flex: 1, backgroundColor: '#1a1a2e', overflow: 'visible' }}>
 
       {/* ── Room background image ── */}
       <ImageBackground
-        source={require('../assets/room-bg.jpg')}
-        style={{ position: 'absolute', top: hudBottom, left: 0, right: 0, height: roomHeight }}
-        resizeMode="cover"
+        source={MAIN_BACKGROUND_PANELS[backgroundPanelIndex].source}
+        style={{ position: 'absolute', top: hudBottom, left: 0, right: 0, height: roomHeight, backgroundColor: '#12101a' }}
+        imageStyle={{
+          width: backgroundWidth,
+          height: backgroundHeight,
+          left: backgroundLeft,
+          top: backgroundTop,
+        }}
+        resizeMode="stretch"
       >
-        <View style={{ ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(10, 12, 24, 0.35)' }} />
+        <View style={{ ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(10, 12, 24, 0.18)' }} />
+        {FLOATING_PARTICLES.map((particle) => (
+          <FloatingParticle
+            key={particle.id}
+            left={particle.left}
+            size={particle.size}
+            drift={particle.drift}
+            opacity={particle.opacity}
+            delay={particle.delay}
+            tint={particle.tint}
+            roomHeight={roomHeight}
+          />
+        ))}
       </ImageBackground>
 
-      {/* ── Wizard character ── */}
-      <View style={{ position: 'absolute', left: width / 2 - 45, top: charTop }}>
-        <WizardSprite />
+      {/* ── Room press area — hold to walk wizard in that direction ── */}
+      <View pointerEvents="box-none" style={[styles.backgroundSwitches, { top: hudBottom, height: roomHeight }]}>
+        {canMoveBackgroundLeft && (
+          <PressableScale onPress={() => moveBackgroundPanel(-1)} style={[styles.backgroundSwitch, styles.backgroundSwitchLeft]}>
+            <Text style={styles.backgroundSwitchText}>◀</Text>
+          </PressableScale>
+        )}
+        {canMoveBackgroundRight && (
+          <PressableScale onPress={() => moveBackgroundPanel(1)} style={[styles.backgroundSwitch, styles.backgroundSwitchRight]}>
+            <Text style={styles.backgroundSwitchText}>▶</Text>
+          </PressableScale>
+        )}
       </View>
+
+      <View
+        style={styles.roomTouchLayer}
+        onStartShouldSetResponder={() => true}
+        onResponderGrant={handleRoomPressIn}
+      />
+
+      {/* ── Wizard (on top of room tap area, receives its own touches) ── */}
+      <Pressable
+        style={{
+          position: 'absolute',
+          left: width / 2 - CHARACTER_DISPLAY_W / 2,
+          bottom: characterBottom,
+          width: CHARACTER_DISPLAY_W,
+          height: CHARACTER_DISPLAY_H,
+          overflow: 'visible',
+          zIndex: 2,
+        }}
+        onPress={handleWizardPress}
+      >
+        <WizardSprite ref={wizardRef} />
+      </Pressable>
+
+      {/* ── Fireball ── */}
+      {fireballVisible && (
+        <Animated.View
+          style={{
+            position: 'absolute',
+            top: charTop + 36,
+            left: 0,
+            width: FIREBALL_SIZE,
+            height: Math.round(FIREBALL_SIZE * 0.58),
+            overflow: 'hidden',
+            transform: [{ translateX: fireballX }],
+            zIndex: 10,
+          }}
+          pointerEvents="none"
+        >
+          <Image
+            source={FIREBALL_FRAMES[fireballFrame]}
+            style={{
+              width: FIREBALL_SIZE,
+              height: Math.round(FIREBALL_SIZE * 0.58),
+            }}
+            resizeMode="stretch"
+          />
+        </Animated.View>
+      )}
 
       {/* ── HUD — top overlay ── */}
       <View style={styles.hud}>
         <View style={styles.hudRow}>
-          <Text style={styles.hudName} numberOfLines={1}>
-            {profile?.nickname ?? '...'}
-          </Text>
-          <Text style={styles.hudRank}>
-            {rank.emoji}  {RANK_TITLE_KEY[rank.title] ? t(RANK_TITLE_KEY[rank.title] as any) : rank.title}  LV.{rank.level}
-          </Text>
+          <View style={styles.hudIdentity}>
+            <Pressable
+              style={styles.hudCharacterButton}
+              onPress={() => nav('/character')}
+              onPressIn={() => pressIn(characterScale)}
+              onPressOut={() => pressOut(characterScale)}
+            >
+              <Animated.Image
+                source={HOME_NAV_ICONS.character}
+                style={[styles.hudCharacterIcon, { transform: [{ scale: characterScale }] }]}
+                resizeMode="contain"
+              />
+            </Pressable>
+            <Text style={styles.hudName} numberOfLines={1}>
+              {profile?.nickname ?? '...'}
+            </Text>
+          </View>
+          <View style={styles.hudRankRow}>
+            <RankIcon rank={rank} size={18} />
+            <Text style={styles.hudRank}>
+              {RANK_TITLE_KEY[rank.title] ? t(RANK_TITLE_KEY[rank.title] as any) : rank.title}  LV.{rank.level}
+            </Text>
+          </View>
           <PressableScale onPress={() => router.push('/settings')} style={styles.gearButton}>
             <Text style={styles.gearIcon}>⚙</Text>
           </PressableScale>
@@ -122,7 +433,7 @@ export default function Home() {
       </View>
 
       {/* ── Navigation bar — bottom ── */}
-      <View style={styles.nav}>
+      <View style={[styles.nav, { height: NAV_HEIGHT + insets.bottom, paddingBottom: insets.bottom + 16 }]}>
 
         {/* GRIMOR */}
         <Pressable
@@ -131,9 +442,11 @@ export default function Home() {
           onPressIn={() => pressIn(grimoireScale)}
           onPressOut={() => pressOut(grimoireScale)}
         >
-          <Animated.Text style={[styles.navEmoji, { transform: [{ scale: grimoireScale }] }]}>
-            📖
-          </Animated.Text>
+          <Animated.Image
+            source={HOME_NAV_ICONS.grimoire}
+            style={[styles.navImageIcon, { transform: [{ scale: grimoireScale }] }]}
+            resizeMode="contain"
+          />
           <Text style={styles.navLabel}>{t('nav_grimor')}</Text>
         </Pressable>
 
@@ -144,32 +457,72 @@ export default function Home() {
           onPressIn={() => pressIn(inventoryScale)}
           onPressOut={() => pressOut(inventoryScale)}
         >
-          <Animated.Text style={[styles.navEmoji, { transform: [{ scale: inventoryScale }] }]}>
-            🎒
-          </Animated.Text>
+          <Animated.Image
+            source={HOME_NAV_ICONS.inventory}
+            style={[styles.navImageIcon, { transform: [{ scale: inventoryScale }] }]}
+            resizeMode="contain"
+          />
           <Text style={styles.navLabel}>{t('nav_inventory')}</Text>
         </Pressable>
 
-        {/* CHARACTER */}
+        {/* MAGIC ORB */}
         <Pressable
-          style={styles.navItem}
-          onPress={() => nav('/character')}
-          onPressIn={() => pressIn(characterScale)}
-          onPressOut={() => pressOut(characterScale)}
+          style={[styles.navItem, styles.navItemMagicOrb]}
+          onPress={() => nav('/magic-orb')}
+          onPressIn={() => pressIn(magicOrbScale)}
+          onPressOut={() => pressOut(magicOrbScale)}
         >
-          <Animated.Text style={[styles.navEmoji, { transform: [{ scale: characterScale }] }]}>
-            🧙
-          </Animated.Text>
-          <Text style={styles.navLabel}>{t('nav_character')}</Text>
+          <Animated.Image
+            source={HOME_NAV_ICONS.magicOrb}
+            style={[styles.navImageIcon, { transform: [{ scale: magicOrbScale }] }]}
+            resizeMode="contain"
+          />
+          <Text style={styles.navLabel}>{t('magic_orb_title')}</Text>
         </Pressable>
+
 
       </View>
     </View>
   );
 }
 
-// ─── Styles ──────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
+  roomTouchLayer: {
+    position: 'absolute',
+    top: HUD_HEIGHT + 52,
+    left: 0,
+    right: 0,
+    bottom: NAV_HEIGHT,
+    zIndex: 1,
+  },
+  backgroundSwitches: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    justifyContent: 'center',
+    zIndex: 6,
+  },
+  backgroundSwitch: {
+    position: 'absolute',
+    width: 42,
+    height: 64,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(16, 21, 38, 0.62)',
+    borderWidth: 1,
+    borderColor: 'rgba(226, 185, 111, 0.72)',
+  },
+  backgroundSwitchLeft: {
+    left: 12,
+  },
+  backgroundSwitchRight: {
+    right: 12,
+  },
+  backgroundSwitchText: {
+    fontFamily: 'PressStart2P_400Regular',
+    color: '#e2b96f',
+    fontSize: 16,
+  },
   hud: {
     position: 'absolute',
     top: 0, left: 0, right: 0,
@@ -180,6 +533,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#2d2d4e',
     height: HUD_HEIGHT + 52,
+    zIndex: 20,
   },
   hudRow: {
     flexDirection: 'row',
@@ -187,17 +541,42 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 8,
   },
+  hudIdentity: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginRight: 8,
+    minWidth: 0,
+  },
+  hudCharacterButton: {
+    width: 32,
+    height: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#e2b96f',
+    backgroundColor: '#16213e',
+    marginRight: 8,
+  },
+  hudCharacterIcon: {
+    width: 22,
+    height: 22,
+  },
   hudName: {
     fontFamily: 'PressStart2P_400Regular',
     color: '#e2b96f',
     fontSize: 12,
     flex: 1,
-    marginRight: 8,
   },
   hudRank: {
     fontFamily: 'PressStart2P_400Regular',
     color: '#c8c8e8',
     fontSize: 8,
+  },
+  hudRankRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
   },
   gearButton: {
     marginLeft: 12,
@@ -237,21 +616,40 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-around',
-    paddingBottom: 18,
+    zIndex: 20,
   },
   navItem: {
     alignItems: 'center',
+    justifyContent: 'center',
     flex: 1,
-    paddingVertical: 8,
+    height: '100%',
+    paddingTop: 12,
+    paddingBottom: 10,
   },
   navItemCenter: {
     borderLeftWidth: 1,
     borderRightWidth: 1,
     borderColor: '#2d2d4e',
   },
-  navEmoji: {
-    fontSize: 28,
+  navItemMagicOrb: {
+    borderRightWidth: 1,
+    borderColor: '#2d2d4e',
+  },
+  navImageIcon: {
+    width: NAV_ICON_SIZE,
+    height: NAV_ICON_SIZE,
     marginBottom: 4,
+  },
+  navIconWrap: {
+    width: 32,
+    height: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 4,
+  },
+  particle: {
+    position: 'absolute',
+    bottom: -8,
   },
   navLabel: {
     fontFamily: 'PressStart2P_400Regular',

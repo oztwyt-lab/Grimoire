@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Text, View, Pressable, Dimensions } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Haptics from 'expo-haptics';
 
@@ -41,6 +42,7 @@ const SLIDES = [
 
 export default function Onboarding() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const [slide, setSlide] = useState(0);
   const isLast = slide === SLIDES.length - 1;
   const current = SLIDES[slide];
@@ -58,7 +60,7 @@ export default function Onboarding() {
   };
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { paddingBottom: insets.bottom + 48 }]}>
 
       {/* ─── Skip button (top right) ──────────────────────────────────────── */}
       {!isLast && (

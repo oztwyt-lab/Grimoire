@@ -1,0 +1,795 @@
+[
+  {
+    "id": "curated_001",
+    "name": "Spaghetti Bolognese",
+    "icon": "🍝",
+    "category": "meat",
+    "mealType": "main",
+    "estimatedMinutes": 45,
+    "source": "grimor",
+    "recipeLanguage": "en",
+    "ingredients": [
+      { "id": "spaghetti", "name": "Spaghetti", "emoji": "🍝", "quantity": "400g" },
+      { "id": "ground_beef", "name": "Ground Beef", "emoji": "🥩", "quantity": "500g" },
+      { "id": "tomato", "name": "Tomato", "emoji": "🍅", "quantity": "4" },
+      { "id": "onion", "name": "Onion", "emoji": "🧅", "quantity": "1" },
+      { "id": "garlic", "name": "Garlic", "emoji": "🧄", "quantity": "3 cloves" },
+      { "id": "olive_oil", "name": "Olive Oil", "emoji": "🫒", "quantity": "2 tbsp" },
+      { "id": "salt", "name": "Salt", "emoji": "🧂", "quantity": "to taste" },
+      { "id": "black_pepper", "name": "Black Pepper", "emoji": "🌶️", "quantity": "to taste" }
+    ],
+    "steps": "1. Boil salted water and cook spaghetti until al dente.\n2. Dice onion and mince garlic. Sauté in olive oil over medium heat until soft.\n3. Add ground beef and cook until browned, breaking it apart as it cooks.\n4. Chop tomatoes and add to the pan. Season with salt and pepper.\n5. Simmer sauce on low heat for 20 minutes until thickened.\n6. Drain pasta, toss with sauce, and serve."
+  },
+  {
+    "id": "curated_002",
+    "name": "Chicken Stir Fry",
+    "icon": "🍳",
+    "category": "meat",
+    "mealType": "main",
+    "estimatedMinutes": 25,
+    "source": "grimor",
+    "recipeLanguage": "en",
+    "ingredients": [
+      { "id": "chicken_breast", "name": "Chicken Breast", "emoji": "🍗", "quantity": "400g" },
+      { "id": "bell_pepper", "name": "Bell Pepper", "emoji": "🫑", "quantity": "2" },
+      { "id": "broccoli", "name": "Broccoli", "emoji": "🥦", "quantity": "1 head" },
+      { "id": "soy_sauce", "name": "Soy Sauce", "emoji": "🍶", "quantity": "3 tbsp" },
+      { "id": "garlic", "name": "Garlic", "emoji": "🧄", "quantity": "2 cloves" },
+      { "id": "ginger", "name": "Ginger", "emoji": "🫚", "quantity": "1 tsp" },
+      { "id": "olive_oil", "name": "Olive Oil", "emoji": "🫒", "quantity": "2 tbsp" },
+      { "id": "rice", "name": "Rice", "emoji": "🍚", "quantity": "2 cups" }
+    ],
+    "steps": "1. Cook rice according to package instructions.\n2. Slice chicken breast into thin strips. Season lightly with salt.\n3. Heat oil in a wok or large pan over high heat.\n4. Add chicken and stir fry for 5–6 minutes until cooked through. Remove and set aside.\n5. Add garlic and ginger to pan, stir 30 seconds.\n6. Add broccoli and bell pepper, stir fry 4 minutes until tender-crisp.\n7. Return chicken to pan, add soy sauce, toss everything together.\n8. Serve over rice."
+  },
+  {
+    "id": "curated_003",
+    "name": "Lamb Kofta",
+    "icon": "🍢",
+    "category": "meat",
+    "mealType": "main",
+    "estimatedMinutes": 35,
+    "source": "grimor",
+    "recipeLanguage": "en",
+    "ingredients": [
+      { "id": "ground_lamb", "name": "Ground Lamb", "emoji": "🥩", "quantity": "500g" },
+      { "id": "onion", "name": "Onion", "emoji": "🧅", "quantity": "1" },
+      { "id": "garlic", "name": "Garlic", "emoji": "🧄", "quantity": "3 cloves" },
+      { "id": "cumin", "name": "Cumin", "emoji": "🌿", "quantity": "1 tsp" },
+      { "id": "paprika", "name": "Paprika", "emoji": "🌶️", "quantity": "1 tsp" },
+      { "id": "salt", "name": "Salt", "emoji": "🧂", "quantity": "1 tsp" },
+      { "id": "black_pepper", "name": "Black Pepper", "emoji": "🌶️", "quantity": "to taste" },
+      { "id": "olive_oil", "name": "Olive Oil", "emoji": "🫒", "quantity": "1 tbsp" }
+    ],
+    "steps": "1. Grate onion and mince garlic. Combine with ground lamb, cumin, paprika, salt and pepper.\n2. Mix well with hands until fully combined.\n3. Shape into oval patties or wrap around skewers.\n4. Brush with olive oil.\n5. Grill or pan fry over medium-high heat, 4 minutes per side.\n6. Serve with flatbread and yogurt sauce."
+  },
+  {
+    "id": "curated_004",
+    "name": "Chicken Soup",
+    "icon": "🍲",
+    "category": "meat",
+    "mealType": "light",
+    "estimatedMinutes": 50,
+    "source": "grimor",
+    "recipeLanguage": "en",
+    "ingredients": [
+      { "id": "chicken_thigh", "name": "Chicken Thigh", "emoji": "🍗", "quantity": "4 pieces" },
+      { "id": "carrot", "name": "Carrot", "emoji": "🥕", "quantity": "2" },
+      { "id": "celery", "name": "Celery", "emoji": "🥬", "quantity": "2 stalks" },
+      { "id": "onion", "name": "Onion", "emoji": "🧅", "quantity": "1" },
+      { "id": "garlic", "name": "Garlic", "emoji": "🧄", "quantity": "2 cloves" },
+      { "id": "salt", "name": "Salt", "emoji": "🧂", "quantity": "to taste" },
+      { "id": "black_pepper", "name": "Black Pepper", "emoji": "🌶️", "quantity": "to taste" },
+      { "id": "water", "name": "Water", "emoji": "💧", "quantity": "1.5L" }
+    ],
+    "steps": "1. Place chicken thighs in a large pot with water. Bring to a boil.\n2. Skim off any foam that rises to the surface.\n3. Dice carrot, celery, and onion. Add to pot with garlic.\n4. Reduce heat and simmer for 35 minutes.\n5. Remove chicken, shred the meat, discard bones and skin.\n6. Return shredded chicken to pot. Season with salt and pepper.\n7. Simmer 5 more minutes and serve hot."
+  },
+  {
+    "id": "curated_005",
+    "name": "Beef Tacos",
+    "icon": "🌮",
+    "category": "meat",
+    "mealType": "main",
+    "estimatedMinutes": 25,
+    "source": "grimor",
+    "recipeLanguage": "en",
+    "ingredients": [
+      { "id": "ground_beef", "name": "Ground Beef", "emoji": "🥩", "quantity": "400g" },
+      { "id": "taco_shell", "name": "Taco Shell", "emoji": "🌮", "quantity": "8" },
+      { "id": "onion", "name": "Onion", "emoji": "🧅", "quantity": "1" },
+      { "id": "garlic", "name": "Garlic", "emoji": "🧄", "quantity": "2 cloves" },
+      { "id": "cumin", "name": "Cumin", "emoji": "🌿", "quantity": "1 tsp" },
+      { "id": "paprika", "name": "Paprika", "emoji": "🌶️", "quantity": "1 tsp" },
+      { "id": "tomato", "name": "Tomato", "emoji": "🍅", "quantity": "2" },
+      { "id": "salt", "name": "Salt", "emoji": "🧂", "quantity": "to taste" }
+    ],
+    "steps": "1. Dice onion and mince garlic. Sauté in a pan over medium heat until softened.\n2. Add ground beef and cook until browned, breaking apart with a spoon.\n3. Add cumin, paprika, and salt. Stir well.\n4. Dice tomatoes and stir into the beef mixture. Cook 5 more minutes.\n5. Warm taco shells in oven or dry pan.\n6. Fill shells with beef mixture and your choice of toppings."
+  },
+  {
+    "id": "curated_006",
+    "name": "Pan Seared Salmon",
+    "icon": "🐟",
+    "category": "meat",
+    "mealType": "main",
+    "estimatedMinutes": 20,
+    "source": "grimor",
+    "recipeLanguage": "en",
+    "ingredients": [
+      { "id": "salmon_fillet", "name": "Salmon Fillet", "emoji": "🐟", "quantity": "2 pieces" },
+      { "id": "garlic", "name": "Garlic", "emoji": "🧄", "quantity": "2 cloves" },
+      { "id": "lemon", "name": "Lemon", "emoji": "🍋", "quantity": "1" },
+      { "id": "butter", "name": "Butter", "emoji": "🧈", "quantity": "2 tbsp" },
+      { "id": "olive_oil", "name": "Olive Oil", "emoji": "🫒", "quantity": "1 tbsp" },
+      { "id": "salt", "name": "Salt", "emoji": "🧂", "quantity": "to taste" },
+      { "id": "black_pepper", "name": "Black Pepper", "emoji": "🌶️", "quantity": "to taste" }
+    ],
+    "steps": "1. Pat salmon fillets dry with paper towel. Season both sides with salt and pepper.\n2. Heat olive oil in a pan over medium-high heat until shimmering.\n3. Place salmon skin-side up and cook 4 minutes without moving.\n4. Flip salmon. Add butter and minced garlic to pan.\n5. Spoon butter over salmon as it cooks for 3 more minutes.\n6. Squeeze lemon juice over fillets and serve immediately."
+  },
+  {
+    "id": "curated_007",
+    "name": "Classic Omelette",
+    "icon": "🍳",
+    "category": "vegetarian",
+    "mealType": "breakfast",
+    "estimatedMinutes": 10,
+    "source": "grimor",
+    "recipeLanguage": "en",
+    "ingredients": [
+      { "id": "egg", "name": "Egg", "emoji": "🥚", "quantity": "3" },
+      { "id": "butter", "name": "Butter", "emoji": "🧈", "quantity": "1 tbsp" },
+      { "id": "cheese", "name": "Cheese", "emoji": "🧀", "quantity": "50g" },
+      { "id": "salt", "name": "Salt", "emoji": "🧂", "quantity": "to taste" },
+      { "id": "black_pepper", "name": "Black Pepper", "emoji": "🌶️", "quantity": "to taste" }
+    ],
+    "steps": "1. Crack eggs into a bowl, add salt and pepper, beat well with a fork.\n2. Melt butter in a non-stick pan over medium heat.\n3. Pour in egg mixture. Let it set slightly at the edges.\n4. Using a spatula, gently pull cooked edges toward the center.\n5. When mostly set but still slightly runny on top, add grated cheese to one half.\n6. Fold omelette in half over the cheese. Slide onto a plate and serve."
+  },
+  {
+    "id": "curated_008",
+    "name": "Tomato Pasta",
+    "icon": "🍅",
+    "category": "vegetarian",
+    "mealType": "main",
+    "estimatedMinutes": 25,
+    "source": "grimor",
+    "recipeLanguage": "en",
+    "ingredients": [
+      { "id": "pasta", "name": "Pasta", "emoji": "🍝", "quantity": "400g" },
+      { "id": "tomato", "name": "Tomato", "emoji": "🍅", "quantity": "5" },
+      { "id": "garlic", "name": "Garlic", "emoji": "🧄", "quantity": "4 cloves" },
+      { "id": "olive_oil", "name": "Olive Oil", "emoji": "🫒", "quantity": "3 tbsp" },
+      { "id": "basil", "name": "Basil", "emoji": "🌿", "quantity": "handful" },
+      { "id": "salt", "name": "Salt", "emoji": "🧂", "quantity": "to taste" },
+      { "id": "black_pepper", "name": "Black Pepper", "emoji": "🌶️", "quantity": "to taste" }
+    ],
+    "steps": "1. Cook pasta in heavily salted boiling water until al dente. Reserve 1 cup pasta water.\n2. While pasta cooks, crush and slice garlic. Chop tomatoes roughly.\n3. Heat olive oil in a large pan over medium heat. Add garlic, cook 1 minute.\n4. Add tomatoes, salt and pepper. Cook 15 minutes until sauce thickens.\n5. Add drained pasta to sauce with a splash of pasta water. Toss well.\n6. Tear fresh basil over the top and serve."
+  },
+  {
+    "id": "curated_009",
+    "name": "Vegetable Curry",
+    "icon": "🍛",
+    "category": "vegetarian",
+    "mealType": "main",
+    "estimatedMinutes": 40,
+    "source": "grimor",
+    "recipeLanguage": "en",
+    "ingredients": [
+      { "id": "potato", "name": "Potato", "emoji": "🥔", "quantity": "3" },
+      { "id": "carrot", "name": "Carrot", "emoji": "🥕", "quantity": "2" },
+      { "id": "onion", "name": "Onion", "emoji": "🧅", "quantity": "1" },
+      { "id": "garlic", "name": "Garlic", "emoji": "🧄", "quantity": "3 cloves" },
+      { "id": "coconut_milk", "name": "Coconut Milk", "emoji": "🥛", "quantity": "400ml" },
+      { "id": "curry_powder", "name": "Curry Powder", "emoji": "🌿", "quantity": "2 tbsp" },
+      { "id": "olive_oil", "name": "Olive Oil", "emoji": "🫒", "quantity": "2 tbsp" },
+      { "id": "rice", "name": "Rice", "emoji": "🍚", "quantity": "2 cups" }
+    ],
+    "steps": "1. Cook rice according to package instructions.\n2. Dice potato, carrot, and onion into even chunks. Mince garlic.\n3. Heat oil in a deep pan over medium heat. Sauté onion and garlic until soft.\n4. Add curry powder and stir 1 minute to bloom the spices.\n5. Add potato and carrot. Stir to coat with spices.\n6. Pour in coconut milk. Bring to a boil then reduce to a simmer.\n7. Cook 20–25 minutes until vegetables are tender.\n8. Serve over rice."
+  },
+  {
+    "id": "curated_010",
+    "name": "Greek Salad",
+    "icon": "🥗",
+    "category": "vegetarian",
+    "mealType": "light",
+    "estimatedMinutes": 10,
+    "source": "grimor",
+    "recipeLanguage": "en",
+    "ingredients": [
+      { "id": "tomato", "name": "Tomato", "emoji": "🍅", "quantity": "3" },
+      { "id": "cucumber", "name": "Cucumber", "emoji": "🥒", "quantity": "1" },
+      { "id": "red_onion", "name": "Red Onion", "emoji": "🧅", "quantity": "0.5" },
+      { "id": "feta_cheese", "name": "Feta Cheese", "emoji": "🧀", "quantity": "150g" },
+      { "id": "olive_oil", "name": "Olive Oil", "emoji": "🫒", "quantity": "3 tbsp" },
+      { "id": "lemon", "name": "Lemon", "emoji": "🍋", "quantity": "0.5" },
+      { "id": "salt", "name": "Salt", "emoji": "🧂", "quantity": "to taste" },
+      { "id": "black_pepper", "name": "Black Pepper", "emoji": "🌶️", "quantity": "to taste" }
+    ],
+    "steps": "1. Chop tomatoes and cucumber into chunky pieces.\n2. Thinly slice red onion.\n3. Combine tomato, cucumber, and onion in a large bowl.\n4. Crumble feta cheese over the top.\n5. Drizzle with olive oil and squeeze lemon juice over everything.\n6. Season with salt and pepper. Toss gently and serve."
+  },
+  {
+    "id": "curated_011",
+    "name": "Mushroom Risotto",
+    "icon": "🍄",
+    "category": "vegetarian",
+    "mealType": "main",
+    "estimatedMinutes": 40,
+    "source": "grimor",
+    "recipeLanguage": "en",
+    "ingredients": [
+      { "id": "arborio_rice", "name": "Arborio Rice", "emoji": "🍚", "quantity": "300g" },
+      { "id": "mushroom", "name": "Mushroom", "emoji": "🍄", "quantity": "300g" },
+      { "id": "onion", "name": "Onion", "emoji": "🧅", "quantity": "1" },
+      { "id": "garlic", "name": "Garlic", "emoji": "🧄", "quantity": "2 cloves" },
+      { "id": "butter", "name": "Butter", "emoji": "🧈", "quantity": "3 tbsp" },
+      { "id": "parmesan", "name": "Parmesan", "emoji": "🧀", "quantity": "50g" },
+      { "id": "vegetable_stock", "name": "Vegetable Stock", "emoji": "🍵", "quantity": "1L" },
+      { "id": "salt", "name": "Salt", "emoji": "🧂", "quantity": "to taste" }
+    ],
+    "steps": "1. Heat stock in a saucepan and keep warm on low heat.\n2. Sauté diced onion and garlic in butter over medium heat until soft.\n3. Slice mushrooms and add to pan. Cook until golden, about 5 minutes.\n4. Add arborio rice and stir 2 minutes to toast lightly.\n5. Add stock one ladle at a time, stirring constantly and waiting until absorbed before adding more.\n6. Continue for 20–25 minutes until rice is creamy and al dente.\n7. Stir in remaining butter and grated parmesan. Season and serve."
+  },
+  {
+    "id": "curated_012",
+    "name": "Lentil Soup",
+    "icon": "🥣",
+    "category": "vegetarian",
+    "mealType": "light",
+    "estimatedMinutes": 40,
+    "source": "grimor",
+    "recipeLanguage": "en",
+    "ingredients": [
+      { "id": "red_lentil", "name": "Red Lentil", "emoji": "🫘", "quantity": "300g" },
+      { "id": "onion", "name": "Onion", "emoji": "🧅", "quantity": "1" },
+      { "id": "carrot", "name": "Carrot", "emoji": "🥕", "quantity": "2" },
+      { "id": "garlic", "name": "Garlic", "emoji": "🧄", "quantity": "3 cloves" },
+      { "id": "cumin", "name": "Cumin", "emoji": "🌿", "quantity": "1 tsp" },
+      { "id": "paprika", "name": "Paprika", "emoji": "🌶️", "quantity": "1 tsp" },
+      { "id": "olive_oil", "name": "Olive Oil", "emoji": "🫒", "quantity": "2 tbsp" },
+      { "id": "water", "name": "Water", "emoji": "💧", "quantity": "1.2L" }
+    ],
+    "steps": "1. Rinse lentils thoroughly under cold water.\n2. Dice onion and carrot. Mince garlic.\n3. Heat olive oil in a pot over medium heat. Sauté onion and garlic until soft.\n4. Add carrot, cumin, and paprika. Stir 1 minute.\n5. Add lentils and water. Bring to a boil.\n6. Reduce heat and simmer 25 minutes until lentils are completely soft.\n7. Blend partially or fully with an immersion blender to desired consistency.\n8. Season with salt and serve with crusty bread."
+  },
+  {
+    "id": "curated_013",
+    "name": "Avocado Toast",
+    "icon": "🥑",
+    "category": "quick",
+    "mealType": "breakfast",
+    "estimatedMinutes": 10,
+    "source": "grimor",
+    "recipeLanguage": "en",
+    "ingredients": [
+      { "id": "bread", "name": "Bread", "emoji": "🍞", "quantity": "2 slices" },
+      { "id": "avocado", "name": "Avocado", "emoji": "🥑", "quantity": "1" },
+      { "id": "egg", "name": "Egg", "emoji": "🥚", "quantity": "2" },
+      { "id": "lemon", "name": "Lemon", "emoji": "🍋", "quantity": "0.5" },
+      { "id": "salt", "name": "Salt", "emoji": "🧂", "quantity": "to taste" },
+      { "id": "black_pepper", "name": "Black Pepper", "emoji": "🌶️", "quantity": "to taste" },
+      { "id": "olive_oil", "name": "Olive Oil", "emoji": "🫒", "quantity": "1 tsp" }
+    ],
+    "steps": "1. Toast bread slices until golden and crispy.\n2. Halve avocado, remove pit, scoop flesh into a bowl.\n3. Mash avocado with lemon juice, salt and pepper.\n4. Fry or poach eggs to your liking.\n5. Spread mashed avocado generously over toast.\n6. Place egg on top, drizzle with olive oil, season and serve."
+  },
+  {
+    "id": "curated_014",
+    "name": "Garlic Butter Pasta",
+    "icon": "🧄",
+    "category": "quick",
+    "mealType": "main",
+    "estimatedMinutes": 15,
+    "source": "grimor",
+    "recipeLanguage": "en",
+    "ingredients": [
+      { "id": "pasta", "name": "Pasta", "emoji": "🍝", "quantity": "400g" },
+      { "id": "garlic", "name": "Garlic", "emoji": "🧄", "quantity": "6 cloves" },
+      { "id": "butter", "name": "Butter", "emoji": "🧈", "quantity": "4 tbsp" },
+      { "id": "parmesan", "name": "Parmesan", "emoji": "🧀", "quantity": "50g" },
+      { "id": "salt", "name": "Salt", "emoji": "🧂", "quantity": "to taste" },
+      { "id": "black_pepper", "name": "Black Pepper", "emoji": "🌶️", "quantity": "to taste" }
+    ],
+    "steps": "1. Cook pasta in heavily salted boiling water until al dente. Reserve 0.5 cup pasta water.\n2. While pasta cooks, thinly slice all garlic.\n3. Melt butter in a large pan over low heat. Add garlic and cook slowly until golden and fragrant, about 5 minutes. Do not burn.\n4. Add drained pasta to the pan with a splash of pasta water.\n5. Toss well until pasta is coated in garlic butter.\n6. Plate and top with grated parmesan and black pepper."
+  },
+  {
+    "id": "curated_015",
+    "name": "Fried Rice",
+    "icon": "🍚",
+    "category": "quick",
+    "mealType": "main",
+    "estimatedMinutes": 15,
+    "source": "grimor",
+    "recipeLanguage": "en",
+    "ingredients": [
+      { "id": "rice", "name": "Rice", "emoji": "🍚", "quantity": "3 cups cooked" },
+      { "id": "egg", "name": "Egg", "emoji": "🥚", "quantity": "2" },
+      { "id": "onion", "name": "Onion", "emoji": "🧅", "quantity": "1" },
+      { "id": "garlic", "name": "Garlic", "emoji": "🧄", "quantity": "2 cloves" },
+      { "id": "soy_sauce", "name": "Soy Sauce", "emoji": "🍶", "quantity": "3 tbsp" },
+      { "id": "olive_oil", "name": "Olive Oil", "emoji": "🫒", "quantity": "2 tbsp" },
+      { "id": "salt", "name": "Salt", "emoji": "🧂", "quantity": "to taste" }
+    ],
+    "steps": "1. Use day-old cooked rice if possible — it fries better.\n2. Dice onion and mince garlic.\n3. Heat oil in a wok or large pan over high heat.\n4. Sauté onion and garlic 2 minutes.\n5. Push to the side, crack eggs in and scramble until just set.\n6. Add rice and stir fry everything together over high heat for 3–4 minutes.\n7. Add soy sauce, toss well, taste and adjust seasoning. Serve immediately."
+  },
+  {
+    "id": "curated_016",
+    "name": "Caprese Salad",
+    "icon": "🍅",
+    "category": "quick",
+    "mealType": "light",
+    "estimatedMinutes": 10,
+    "source": "grimor",
+    "recipeLanguage": "en",
+    "ingredients": [
+      { "id": "tomato", "name": "Tomato", "emoji": "🍅", "quantity": "3 large" },
+      { "id": "mozzarella", "name": "Mozzarella", "emoji": "🧀", "quantity": "250g" },
+      { "id": "basil", "name": "Basil", "emoji": "🌿", "quantity": "handful" },
+      { "id": "olive_oil", "name": "Olive Oil", "emoji": "🫒", "quantity": "3 tbsp" },
+      { "id": "salt", "name": "Salt", "emoji": "🧂", "quantity": "to taste" },
+      { "id": "black_pepper", "name": "Black Pepper", "emoji": "🌶️", "quantity": "to taste" }
+    ],
+    "steps": "1. Slice tomatoes and mozzarella into even rounds, about 1cm thick.\n2. Arrange alternating slices of tomato and mozzarella on a plate.\n3. Tuck fresh basil leaves between the slices.\n4. Drizzle generously with olive oil.\n5. Season with salt and freshly cracked black pepper.\n6. Serve immediately at room temperature."
+  },
+  {
+    "id": "curated_017",
+    "name": "French Onion Soup",
+    "icon": "🧅",
+    "category": "general",
+    "mealType": "light",
+    "estimatedMinutes": 55,
+    "source": "grimor",
+    "recipeLanguage": "en",
+    "ingredients": [
+      { "id": "onion", "name": "Onion", "emoji": "🧅", "quantity": "5 large" },
+      { "id": "butter", "name": "Butter", "emoji": "🧈", "quantity": "3 tbsp" },
+      { "id": "beef_stock", "name": "Beef Stock", "emoji": "🍵", "quantity": "1L" },
+      { "id": "bread", "name": "Bread", "emoji": "🍞", "quantity": "4 slices" },
+      { "id": "cheese", "name": "Cheese", "emoji": "🧀", "quantity": "100g" },
+      { "id": "salt", "name": "Salt", "emoji": "🧂", "quantity": "to taste" },
+      { "id": "black_pepper", "name": "Black Pepper", "emoji": "🌶️", "quantity": "to taste" }
+    ],
+    "steps": "1. Thinly slice all onions.\n2. Melt butter in a heavy pot over low heat. Add onions and a pinch of salt.\n3. Cook onions slowly, stirring every 10 minutes, for 40–45 minutes until deep golden and caramelised.\n4. Add beef stock, bring to a boil, then simmer 10 minutes. Season.\n5. Ladle soup into oven-safe bowls. Top each with a bread slice and grated cheese.\n6. Place under grill/broiler until cheese is bubbling and golden. Serve immediately."
+  },
+  {
+    "id": "curated_018",
+    "name": "Pancakes",
+    "icon": "🥞",
+    "category": "general",
+    "mealType": "breakfast",
+    "estimatedMinutes": 20,
+    "source": "grimor",
+    "recipeLanguage": "en",
+    "ingredients": [
+      { "id": "flour", "name": "Flour", "emoji": "🌾", "quantity": "200g" },
+      { "id": "egg", "name": "Egg", "emoji": "🥚", "quantity": "2" },
+      { "id": "milk", "name": "Milk", "emoji": "🥛", "quantity": "300ml" },
+      { "id": "butter", "name": "Butter", "emoji": "🧈", "quantity": "2 tbsp" },
+      { "id": "salt", "name": "Salt", "emoji": "🧂", "quantity": "pinch" },
+      { "id": "sugar", "name": "Sugar", "emoji": "🍬", "quantity": "1 tbsp" }
+    ],
+    "steps": "1. Whisk flour, sugar, and salt together in a large bowl.\n2. Make a well in the center. Add eggs and half the milk.\n3. Whisk from the center outward until smooth, then add remaining milk.\n4. Melt 1 tbsp butter and stir into the batter. Rest 5 minutes.\n5. Heat a non-stick pan over medium heat with a little butter.\n6. Pour a ladleful of batter and swirl to coat the pan.\n7. Cook 2 minutes until edges lift, flip, cook 1 minute more.\n8. Repeat with remaining batter. Serve with your choice of toppings."
+  },
+  {
+    "id": "curated_019",
+    "name": "Baked Potato",
+    "icon": "🥔",
+    "category": "general",
+    "mealType": "main",
+    "estimatedMinutes": 60,
+    "source": "grimor",
+    "recipeLanguage": "en",
+    "ingredients": [
+      { "id": "potato", "name": "Potato", "emoji": "🥔", "quantity": "4 large" },
+      { "id": "butter", "name": "Butter", "emoji": "🧈", "quantity": "4 tbsp" },
+      { "id": "cheese", "name": "Cheese", "emoji": "🧀", "quantity": "100g" },
+      { "id": "olive_oil", "name": "Olive Oil", "emoji": "🫒", "quantity": "2 tbsp" },
+      { "id": "salt", "name": "Salt", "emoji": "🧂", "quantity": "to taste" },
+      { "id": "black_pepper", "name": "Black Pepper", "emoji": "🌶️", "quantity": "to taste" }
+    ],
+    "steps": "1. Preheat oven to 200°C (400°F).\n2. Scrub potatoes clean and pat dry.\n3. Rub each potato with olive oil and season generously with salt.\n4. Pierce each potato several times with a fork.\n5. Place directly on oven rack and bake 50–60 minutes until skin is crispy and inside is soft.\n6. Cut open, fluff inside with a fork, top with butter and grated cheese.\n7. Season with black pepper and serve."
+  },
+  {
+    "id": "curated_020",
+    "name": "Banana Smoothie",
+    "icon": "🍌",
+    "category": "general",
+    "mealType": "drink",
+    "estimatedMinutes": 5,
+    "source": "grimor",
+    "recipeLanguage": "en",
+    "ingredients": [
+      { "id": "banana", "name": "Banana", "emoji": "🍌", "quantity": "2" },
+      { "id": "milk", "name": "Milk", "emoji": "🥛", "quantity": "300ml" },
+      { "id": "honey", "name": "Honey", "emoji": "🍯", "quantity": "1 tbsp" },
+      { "id": "oat", "name": "Oat", "emoji": "🌾", "quantity": "3 tbsp" }
+    ],
+    "steps": "1. Peel and slice bananas. Freeze for 1 hour beforehand for a thicker smoothie (optional).\n2. Add bananas, milk, honey, and oats to a blender.\n3. Blend on high for 60 seconds until completely smooth.\n4. Taste and adjust sweetness with more honey if needed.\n5. Pour into glasses and serve immediately."
+  },
+  {
+    "id": "tr_001",
+    "name": "Mercimek Çorbası",
+    "icon": "🥣",
+    "category": "vegetarian",
+    "mealType": "light",
+    "estimatedMinutes": 35,
+    "source": "grimor",
+    "recipeLanguage": "tr",
+    "ingredients": [
+      { "id": "kirmizi_mercimek", "name": "Kırmızı Mercimek", "emoji": "🫘", "quantity": "300g" },
+      { "id": "sogan", "name": "Soğan", "emoji": "🧅", "quantity": "1" },
+      { "id": "havuc", "name": "Havuç", "emoji": "🥕", "quantity": "1" },
+      { "id": "sarimsak", "name": "Sarımsak", "emoji": "🧄", "quantity": "2 diş" },
+      { "id": "tereyagi", "name": "Tereyağı", "emoji": "🧈", "quantity": "2 yemek kaşığı" },
+      { "id": "kimyon", "name": "Kimyon", "emoji": "🌿", "quantity": "1 tatlı kaşığı" },
+      { "id": "kirmizi_pul_biber", "name": "Kırmızı Pul Biber", "emoji": "🌶️", "quantity": "1 tatlı kaşığı" },
+      { "id": "tuz", "name": "Tuz", "emoji": "🧂", "quantity": "tatmak için" }
+    ],
+    "steps": "1. Mercimeği yıkayın. Soğan, havuç ve sarımsağı doğrayın.\n2. Tencerede tereyağını eritin, soğan ve sarımsağı soteleyin.\n3. Havuç ve mercimeği ekleyin, karıştırın.\n4. Üzerini geçecek kadar su ekleyin. Kaynamaya bırakın.\n5. Kısık ateşte 25 dakika pişirin, mercimekler tamamen yumuşayana kadar.\n6. Blender ile pürüzsüz hale getirin.\n7. Ayrı bir tavada tereyağı eritin, pul biber ve kimyon ekleyin, kızdırın.\n8. Çorbanın üzerine dökerek servis yapın."
+  },
+  {
+    "id": "tr_002",
+    "name": "İzmir Köfte",
+    "icon": "🍢",
+    "category": "meat",
+    "mealType": "main",
+    "estimatedMinutes": 45,
+    "source": "grimor",
+    "recipeLanguage": "tr",
+    "ingredients": [
+      { "id": "kiyma", "name": "Kıyma", "emoji": "🥩", "quantity": "500g" },
+      { "id": "sogan", "name": "Soğan", "emoji": "🧅", "quantity": "1" },
+      { "id": "patates", "name": "Patates", "emoji": "🥔", "quantity": "3" },
+      { "id": "domates", "name": "Domates", "emoji": "🍅", "quantity": "3" },
+      { "id": "yesil_biber", "name": "Yeşil Biber", "emoji": "🫑", "quantity": "3" },
+      { "id": "kimyon", "name": "Kimyon", "emoji": "🌿", "quantity": "1 tatlı kaşığı" },
+      { "id": "tuz", "name": "Tuz", "emoji": "🧂", "quantity": "tatmak için" },
+      { "id": "zeytinyagi", "name": "Zeytinyağı", "emoji": "🫒", "quantity": "2 yemek kaşığı" }
+    ],
+    "steps": "1. Kıymayı rendelenmiş soğan, kimyon ve tuzla yoğurun.\n2. Köfteleri şekillendirin, yuvarlak ya da oval.\n3. Patatesleri halka halka kesin, tuzlayın.\n4. Fırın tepsisine köfteleri ve patatesleri sıralayın.\n5. Üzerine dilimlenmiş domates ve yeşil biberi yerleştirin.\n6. Zeytinyağı gezdirin, 180°C fırında 35-40 dakika pişirin.\n7. Fırından çıkarıp sıcak servis yapın."
+  },
+  {
+    "id": "tr_003",
+    "name": "Zeytinyağlı Enginar",
+    "icon": "🌿",
+    "category": "vegetarian",
+    "mealType": "light",
+    "estimatedMinutes": 50,
+    "source": "grimor",
+    "recipeLanguage": "tr",
+    "ingredients": [
+      { "id": "enginar", "name": "Enginar", "emoji": "🌿", "quantity": "4" },
+      { "id": "sogan", "name": "Soğan", "emoji": "🧅", "quantity": "2" },
+      { "id": "havuc", "name": "Havuç", "emoji": "🥕", "quantity": "2" },
+      { "id": "bezelye", "name": "Bezelye", "emoji": "🫛", "quantity": "1 su bardağı" },
+      { "id": "limon", "name": "Limon", "emoji": "🍋", "quantity": "1" },
+      { "id": "zeytinyagi", "name": "Zeytinyağı", "emoji": "🫒", "quantity": "5 yemek kaşığı" },
+      { "id": "seker", "name": "Şeker", "emoji": "🍬", "quantity": "1 tatlı kaşığı" },
+      { "id": "tuz", "name": "Tuz", "emoji": "🧂", "quantity": "tatmak için" }
+    ],
+    "steps": "1. Enginarları temizleyin, limon suyuna yatırın kararmaması için.\n2. Soğan ve havucu doğrayın. Zeytinyağında hafifçe soteleyin.\n3. Bezelye, şeker ve tuz ekleyin, karıştırın.\n4. Enginarları tencereye yerleştirin, iç kısmına iç harcı doldurun.\n5. Limon suyu ve az su ekleyin, kapağı kapatın.\n6. Kısık ateşte 35-40 dakika pişirin.\n7. Soğuduktan sonra zeytinyağı gezdirerek servis yapın."
+  },
+  {
+    "id": "tr_004",
+    "name": "Karadeniz Mısır Ekmeği",
+    "icon": "🌽",
+    "category": "quick",
+    "mealType": "breakfast",
+    "estimatedMinutes": 25,
+    "source": "grimor",
+    "recipeLanguage": "tr",
+    "ingredients": [
+      { "id": "misir_unu", "name": "Mısır Unu", "emoji": "🌽", "quantity": "300g" },
+      { "id": "yumurta", "name": "Yumurta", "emoji": "🥚", "quantity": "2" },
+      { "id": "sut", "name": "Süt", "emoji": "🥛", "quantity": "200ml" },
+      { "id": "tereyagi", "name": "Tereyağı", "emoji": "🧈", "quantity": "3 yemek kaşığı" },
+      { "id": "tuz", "name": "Tuz", "emoji": "🧂", "quantity": "1 tatlı kaşığı" },
+      { "id": "kabartma_tozu", "name": "Kabartma Tozu", "emoji": "🌾", "quantity": "1 tatlı kaşığı" }
+    ],
+    "steps": "1. Fırını 190°C'ye önceden ısıtın.\n2. Mısır unu, tuz ve kabartma tozunu karıştırın.\n3. Yumurta, süt ve eritilmiş tereyağını ekleyin.\n4. Pürüzsüz bir hamur elde edene kadar yoğurun.\n5. Yağlanmış fırın kabına dökün.\n6. 20-25 dakika, üzeri altın rengi olana kadar pişirin.\n7. Sıcak servis yapın, yanında ayran ya da çay ile harika gider."
+  },
+  {
+    "id": "tr_005",
+    "name": "Adana Kebabı",
+    "icon": "🍡",
+    "category": "meat",
+    "mealType": "main",
+    "estimatedMinutes": 30,
+    "source": "grimor",
+    "recipeLanguage": "tr",
+    "ingredients": [
+      { "id": "kuzu_kiyma", "name": "Kuzu Kıyma", "emoji": "🥩", "quantity": "500g" },
+      { "id": "kuyrukyagi", "name": "Kuyruk Yağı", "emoji": "🧈", "quantity": "100g" },
+      { "id": "sogan", "name": "Soğan", "emoji": "🧅", "quantity": "1" },
+      { "id": "kirmizi_pul_biber", "name": "Kırmızı Pul Biber", "emoji": "🌶️", "quantity": "2 tatlı kaşığı" },
+      { "id": "tuz", "name": "Tuz", "emoji": "🧂", "quantity": "1 tatlı kaşığı" },
+      { "id": "karabiber", "name": "Karabiber", "emoji": "🌶️", "quantity": "tatmak için" }
+    ],
+    "steps": "1. Kuyruk yağını çok ince kıyın ya da rendeleyin.\n2. Kuzu kıyma, kuyruk yağı, rendelenmiş soğan, pul biber ve tuzla yoğurun. En az 10 dakika yoğurun.\n3. Karışımı şişlere sarın, ince uzun şekil verin.\n4. Mangal ya da ızgarada yüksek ateşte her tarafı döndürerek pişirin, yaklaşık 10-12 dakika.\n5. Lavaş ekmek üzerinde, közlenmiş domates ve biber ile servis yapın."
+  },
+  {
+    "id": "tr_006",
+    "name": "Pilav Üstü Tavuk",
+    "icon": "🍗",
+    "category": "meat",
+    "mealType": "main",
+    "estimatedMinutes": 50,
+    "source": "grimor",
+    "recipeLanguage": "tr",
+    "ingredients": [
+      { "id": "tavuk_but", "name": "Tavuk But", "emoji": "🍗", "quantity": "4 parça" },
+      { "id": "pirinc", "name": "Pirinç", "emoji": "🍚", "quantity": "2 su bardağı" },
+      { "id": "sogan", "name": "Soğan", "emoji": "🧅", "quantity": "1" },
+      { "id": "tereyagi", "name": "Tereyağı", "emoji": "🧈", "quantity": "3 yemek kaşığı" },
+      { "id": "tavuk_suyu", "name": "Tavuk Suyu", "emoji": "🍵", "quantity": "4 su bardağı" },
+      { "id": "tuz", "name": "Tuz", "emoji": "🧂", "quantity": "tatmak için" },
+      { "id": "karabiber", "name": "Karabiber", "emoji": "🌶️", "quantity": "tatmak için" }
+    ],
+    "steps": "1. Tavukları tuzlayın ve karabiberleyin.\n2. Tencerede tereyağında tavukları her tarafı kızarana kadar mühürleyin, alın.\n3. Aynı tencerede doğranmış soğanı kavurun.\n4. Yıkanmış pirinci ekleyin, 2 dakika kavurun.\n5. Tavuk suyunu ekleyin, kaynatın. Tavukları geri koyun.\n6. Kısık ateşte kapağı kapalı 25 dakika pişirin.\n7. Demlenmeye bırakın, pilavın üzerinde tavukla servis yapın."
+  },
+  {
+    "id": "tr_007",
+    "name": "Hamsi Tava",
+    "icon": "🐟",
+    "category": "meat",
+    "mealType": "main",
+    "estimatedMinutes": 20,
+    "source": "grimor",
+    "recipeLanguage": "tr",
+    "ingredients": [
+      { "id": "hamsi", "name": "Hamsi", "emoji": "🐟", "quantity": "500g" },
+      { "id": "misir_unu", "name": "Mısır Unu", "emoji": "🌽", "quantity": "1 su bardağı" },
+      { "id": "tuz", "name": "Tuz", "emoji": "🧂", "quantity": "tatmak için" },
+      { "id": "sivi_yag", "name": "Sıvı Yağ", "emoji": "🫒", "quantity": "kızartma için" },
+      { "id": "limon", "name": "Limon", "emoji": "🍋", "quantity": "1" }
+    ],
+    "steps": "1. Hamsileri temizleyin, yıkayın ve süzün.\n2. Tuzla harmanlayın.\n3. Mısır ununa bulayın, fazlasını silkeleyin.\n4. Yağı kızdırın. Hamsileri yüksek ateşte iki taraflı kızartın, her taraf 2-3 dakika.\n5. Kağıt havlu üzerine alın.\n6. Limon dilimleriyle servis yapın. Yanında mısır ekmeği ile harika gider."
+  },
+  {
+    "id": "tr_008",
+    "name": "Menemen",
+    "icon": "🍳",
+    "category": "quick",
+    "mealType": "breakfast",
+    "estimatedMinutes": 15,
+    "source": "grimor",
+    "recipeLanguage": "tr",
+    "ingredients": [
+      { "id": "yumurta", "name": "Yumurta", "emoji": "🥚", "quantity": "4" },
+      { "id": "domates", "name": "Domates", "emoji": "🍅", "quantity": "3" },
+      { "id": "yesil_biber", "name": "Yeşil Biber", "emoji": "🫑", "quantity": "2" },
+      { "id": "zeytinyagi", "name": "Zeytinyağı", "emoji": "🫒", "quantity": "2 yemek kaşığı" },
+      { "id": "tuz", "name": "Tuz", "emoji": "🧂", "quantity": "tatmak için" },
+      { "id": "karabiber", "name": "Karabiber", "emoji": "🌶️", "quantity": "tatmak için" }
+    ],
+    "steps": "1. Biberleri ince halkalar halinde kesin, domatesleri küp küp doğrayın.\n2. Zeytinyağını tavada ısıtın, biberleri ekleyin, 3 dakika kavurun.\n3. Domatesleri ekleyin, suyu çekene kadar 5-7 dakika pişirin.\n4. Tuz ve karabiber ekleyin.\n5. Yumurtaları kırın, karıştırmadan ya da hafifçe karıştırarak istediğiniz kıvama getirin.\n6. Ocaktan alın, ekmekle sıcak servis yapın."
+  },
+  {
+    "id": "tr_009",
+    "name": "Kuru Fasulye",
+    "icon": "🫘",
+    "category": "general",
+    "mealType": "main",
+    "estimatedMinutes": 60,
+    "source": "grimor",
+    "recipeLanguage": "tr",
+    "ingredients": [
+      { "id": "kuru_fasulye", "name": "Kuru Fasulye", "emoji": "🫘", "quantity": "400g" },
+      { "id": "sogan", "name": "Soğan", "emoji": "🧅", "quantity": "1" },
+      { "id": "domates_salcasi", "name": "Domates Salçası", "emoji": "🍅", "quantity": "2 yemek kaşığı" },
+      { "id": "tereyagi", "name": "Tereyağı", "emoji": "🧈", "quantity": "3 yemek kaşığı" },
+      { "id": "tuz", "name": "Tuz", "emoji": "🧂", "quantity": "tatmak için" },
+      { "id": "karabiber", "name": "Karabiber", "emoji": "🌶️", "quantity": "tatmak için" }
+    ],
+    "steps": "1. Fasulyeleri bir gece önceden ıslatın, sonra süzün.\n2. Tencerede tereyağında doğranmış soğanı kavurun.\n3. Salçayı ekleyin, 2 dakika kavurun.\n4. Fasulyeleri ekleyin, üzerini geçecek kadar sıcak su dökün.\n5. Kaynayınca köpüğünü alın, tuz ve karabiber ekleyin.\n6. Kısık ateşte fasulyeler tamamen pişene kadar 40-45 dakika pişirin.\n7. Pilavın yanında servis yapın."
+  },
+  {
+    "id": "tr_010",
+    "name": "Çiğ Köfte",
+    "icon": "🌿",
+    "category": "quick",
+    "mealType": "light",
+    "estimatedMinutes": 20,
+    "source": "grimor",
+    "recipeLanguage": "tr",
+    "ingredients": [
+      { "id": "ince_bulgur", "name": "İnce Bulgur", "emoji": "🌾", "quantity": "300g" },
+      { "id": "domates_salcasi", "name": "Domates Salçası", "emoji": "🍅", "quantity": "3 yemek kaşığı" },
+      { "id": "biber_salcasi", "name": "Biber Salçası", "emoji": "🌶️", "quantity": "2 yemek kaşığı" },
+      { "id": "taze_sogan", "name": "Taze Soğan", "emoji": "🧅", "quantity": "4 dal" },
+      { "id": "maydanoz", "name": "Maydanoz", "emoji": "🌿", "quantity": "1 demet" },
+      { "id": "limon", "name": "Limon", "emoji": "🍋", "quantity": "2" },
+      { "id": "nar_eksisi", "name": "Nar Ekşisi", "emoji": "🍋", "quantity": "2 yemek kaşığı" },
+      { "id": "tuz", "name": "Tuz", "emoji": "🧂", "quantity": "tatmak için" }
+    ],
+    "steps": "1. Bulguru geniş bir kaba koyun, üzerine kaynar su dökün, örtün ve 10 dakika demlenmeye bırakın.\n2. Salçaları, limon suyunu, nar ekşisini ve tuzu ekleyin.\n3. Isınırken en az 10 dakika yoğurun, bulgur tamamen yumuşayana kadar.\n4. İnce kıyılmış taze soğan ve maydanozu ekleyin, karıştırın.\n5. Marul yaprağı üzerinde, limon dilimleriyle servis yapın."
+  },
+  {
+    "id": "tr_011",
+    "name": "Tarhana Çorbası",
+    "icon": "🥣",
+    "category": "quick",
+    "mealType": "light",
+    "estimatedMinutes": 20,
+    "source": "grimor",
+    "recipeLanguage": "tr",
+    "ingredients": [
+      { "id": "tarhana", "name": "Tarhana", "emoji": "🌾", "quantity": "5 yemek kaşığı" },
+      { "id": "tereyagi", "name": "Tereyağı", "emoji": "🧈", "quantity": "2 yemek kaşığı" },
+      { "id": "domates_salcasi", "name": "Domates Salçası", "emoji": "🍅", "quantity": "1 yemek kaşığı" },
+      { "id": "tuz", "name": "Tuz", "emoji": "🧂", "quantity": "tatmak için" },
+      { "id": "kirmizi_pul_biber", "name": "Kırmızı Pul Biber", "emoji": "🌶️", "quantity": "1 tatlı kaşığı" },
+      { "id": "su", "name": "Su", "emoji": "💧", "quantity": "1.2L" }
+    ],
+    "steps": "1. Tarhana tozunu az miktarda suyla açın, topak kalmaması için iyice karıştırın.\n2. Tencerede suyu kaynatın.\n3. Açılmış tarhanayı yavaşça ekleyin, sürekli karıştırın.\n4. Salçayı ekleyin, tuzlayın.\n5. Kısık ateşte 15 dakika pişirin.\n6. Ayrı bir tavada tereyağı eritin, pul biber ekleyin, kızdırın.\n7. Çorbanın üzerine dökerek servis yapın."
+  },
+  {
+    "id": "tr_012",
+    "name": "Kabak Mücveri",
+    "icon": "🥒",
+    "category": "vegetarian",
+    "mealType": "light",
+    "estimatedMinutes": 30,
+    "source": "grimor",
+    "recipeLanguage": "tr",
+    "ingredients": [
+      { "id": "kabak", "name": "Kabak", "emoji": "🥒", "quantity": "3" },
+      { "id": "yumurta", "name": "Yumurta", "emoji": "🥚", "quantity": "2" },
+      { "id": "beyaz_peynir", "name": "Beyaz Peynir", "emoji": "🧀", "quantity": "150g" },
+      { "id": "un", "name": "Un", "emoji": "🌾", "quantity": "4 yemek kaşığı" },
+      { "id": "dereotu", "name": "Dereotu", "emoji": "🌿", "quantity": "yarım demet" },
+      { "id": "tuz", "name": "Tuz", "emoji": "🧂", "quantity": "tatmak için" },
+      { "id": "zeytinyagi", "name": "Zeytinyağı", "emoji": "🫒", "quantity": "kızartma için" }
+    ],
+    "steps": "1. Kabakları rendeleyin, tuzlayın ve 10 dakika bekletin. Suyunu sıkarak süzün.\n2. Yumurta, ufalanmış peynir, un ve dereotunu ekleyin, karıştırın.\n3. Topak topak yoğurun, koyuca bir karışım olmalı.\n4. Tavada zeytinyağını kızdırın.\n5. Hamurdan kaşıkla alıp tavaya koyun, bastırarak yuvarlak şekil verin.\n6. Her tarafı 3-4 dakika kızartın.\n7. Sıcak ya da ılık servis yapın, yanında yoğurt ile güzel gider."
+  },
+  {
+    "id": "tr_013",
+    "name": "Lahmacun",
+    "icon": "🫓",
+    "category": "meat",
+    "mealType": "main",
+    "estimatedMinutes": 40,
+    "source": "grimor",
+    "recipeLanguage": "tr",
+    "ingredients": [
+      { "id": "kiyma", "name": "Kıyma", "emoji": "🥩", "quantity": "300g" },
+      { "id": "sogan", "name": "Soğan", "emoji": "🧅", "quantity": "1" },
+      { "id": "domates", "name": "Domates", "emoji": "🍅", "quantity": "2" },
+      { "id": "yesil_biber", "name": "Yeşil Biber", "emoji": "🫑", "quantity": "2" },
+      { "id": "maydanoz", "name": "Maydanoz", "emoji": "🌿", "quantity": "yarım demet" },
+      { "id": "biber_salcasi", "name": "Biber Salçası", "emoji": "🌶️", "quantity": "1 yemek kaşığı" },
+      { "id": "hazir_lahmacun_hamuru", "name": "Hazır Lahmacun Hamuru", "emoji": "🫓", "quantity": "4 adet" },
+      { "id": "tuz", "name": "Tuz", "emoji": "🧂", "quantity": "tatmak için" }
+    ],
+    "steps": "1. Fırını 220°C'ye önceden ısıtın.\n2. Soğan, domates, biber ve maydanozu çok ince kıyın ya da rondodan geçirin.\n3. Kıymayla karıştırın, salça ve tuzu ekleyin, yoğurun.\n4. Hamurlara ince ince yayın, kenarlara boşluk bırakın.\n5. Fırın tepsisine koyun, 8-10 dakika pişirin.\n6. Limon suyu sıkarak, ince kıyılmış maydanoz ve çiğ soğanla servis yapın. Rulo yaparak yenebilir."
+  },
+  {
+    "id": "tr_014",
+    "name": "Sütlaç",
+    "icon": "🍮",
+    "category": "general",
+    "mealType": "dessert",
+    "estimatedMinutes": 45,
+    "source": "grimor",
+    "recipeLanguage": "tr",
+    "ingredients": [
+      { "id": "pirinc", "name": "Pirinç", "emoji": "🍚", "quantity": "100g" },
+      { "id": "sut", "name": "Süt", "emoji": "🥛", "quantity": "1L" },
+      { "id": "seker", "name": "Şeker", "emoji": "🍬", "quantity": "150g" },
+      { "id": "nisasta", "name": "Nişasta", "emoji": "🌾", "quantity": "2 yemek kaşığı" },
+      { "id": "vanilya", "name": "Vanilya", "emoji": "🌿", "quantity": "1 paket" }
+    ],
+    "steps": "1. Pirinci haşlayın, süzün.\n2. Sütü tencereye dökün, pirinci ekleyin. Orta ateşte kaynatın.\n3. Şekeri ekleyin, sürekli karıştırın.\n4. Nişastayı az soğuk süttle açın, tencereye ekleyin.\n5. Kısık ateşte koyulaşana kadar 20 dakika karıştırarak pişirin.\n6. Vanilyayı ekleyin, kaselere dökün.\n7. Fırında üzeri hafifçe kızarana kadar ızgara yapın ya da sade soğutup servis yapın."
+  },
+  {
+    "id": "tr_015",
+    "name": "Patlıcan Musakka",
+    "icon": "🍆",
+    "category": "meat",
+    "mealType": "main",
+    "estimatedMinutes": 55,
+    "source": "grimor",
+    "recipeLanguage": "tr",
+    "ingredients": [
+      { "id": "patlican", "name": "Patlıcan", "emoji": "🍆", "quantity": "3" },
+      { "id": "kiyma", "name": "Kıyma", "emoji": "🥩", "quantity": "300g" },
+      { "id": "sogan", "name": "Soğan", "emoji": "🧅", "quantity": "1" },
+      { "id": "domates", "name": "Domates", "emoji": "🍅", "quantity": "2" },
+      { "id": "sarimsak", "name": "Sarımsak", "emoji": "🧄", "quantity": "2 diş" },
+      { "id": "zeytinyagi", "name": "Zeytinyağı", "emoji": "🫒", "quantity": "4 yemek kaşığı" },
+      { "id": "tuz", "name": "Tuz", "emoji": "🧂", "quantity": "tatmak için" },
+      { "id": "karabiber", "name": "Karabiber", "emoji": "🌶️", "quantity": "tatmak için" }
+    ],
+    "steps": "1. Patlıcanları dilimleyin, tuzlayın, 15 dakika bekletin. Yıkayın ve kurulayın.\n2. Zeytinyağında patlıcanları kızartın, kağıt havlu üzerine alın.\n3. Aynı tavada doğranmış soğan ve sarımsağı soteleyin.\n4. Kıymayı ekleyin, kavurun. Doğranmış domatesleri ve baharatları ekleyin.\n5. Fırın kabına patlıcan ve kıyma katları koyun, üste domates dilimleri.\n6. 180°C fırında 25-30 dakika pişirin.\n7. Sıcak servis yapın."
+  },
+  {
+    "id": "tr_016",
+    "name": "Mıhlama",
+    "icon": "🧀",
+    "category": "quick",
+    "mealType": "breakfast",
+    "estimatedMinutes": 15,
+    "source": "grimor",
+    "recipeLanguage": "tr",
+    "ingredients": [
+      { "id": "misir_unu", "name": "Mısır Unu", "emoji": "🌽", "quantity": "150g" },
+      { "id": "kasar_peyniri", "name": "Kaşar Peyniri", "emoji": "🧀", "quantity": "300g" },
+      { "id": "tereyagi", "name": "Tereyağı", "emoji": "🧈", "quantity": "3 yemek kaşığı" },
+      { "id": "tuz", "name": "Tuz", "emoji": "🧂", "quantity": "tatmak için" },
+      { "id": "su", "name": "Su", "emoji": "💧", "quantity": "300ml" }
+    ],
+    "steps": "1. Tencerede tereyağını eritin.\n2. Mısır ununu ekleyin, hafifçe kavurun.\n3. Sıcak suyu yavaşça ekleyin, sürekli karıştırın.\n4. Kısık ateşte koyulaşana kadar pişirin.\n5. Rendelenmiş kaşar peynirini ekleyin.\n6. Peynir eriyip iplik iplik çekene kadar karıştırın.\n7. Tuzunu ayarlayın. Tahta kaşıkla doğrudan tencereden sıcak servis yapın."
+  },
+  {
+    "id": "tr_017",
+    "name": "Tavuk Sote",
+    "icon": "🍗",
+    "category": "meat",
+    "mealType": "main",
+    "estimatedMinutes": 30,
+    "source": "grimor",
+    "recipeLanguage": "tr",
+    "ingredients": [
+      { "id": "tavuk_gogus", "name": "Tavuk Göğsü", "emoji": "🍗", "quantity": "400g" },
+      { "id": "sogan", "name": "Soğan", "emoji": "🧅", "quantity": "1" },
+      { "id": "yesil_biber", "name": "Yeşil Biber", "emoji": "🫑", "quantity": "2" },
+      { "id": "domates", "name": "Domates", "emoji": "🍅", "quantity": "2" },
+      { "id": "zeytinyagi", "name": "Zeytinyağı", "emoji": "🫒", "quantity": "2 yemek kaşığı" },
+      { "id": "tuz", "name": "Tuz", "emoji": "🧂", "quantity": "tatmak için" },
+      { "id": "kirmizi_pul_biber", "name": "Kırmızı Pul Biber", "emoji": "🌶️", "quantity": "1 tatlı kaşığı" }
+    ],
+    "steps": "1. Tavuk göğsünü küp küp doğrayın.\n2. Zeytinyağında tavukları mühürleyin, alın.\n3. Aynı tavada doğranmış soğanı kavurun.\n4. Biberi ekleyin, 2 dakika daha kavurun.\n5. Domatesleri ekleyin, suyunu salıp çekene kadar pişirin.\n6. Tavukları geri koyun, pul biber ve tuz ekleyin.\n7. Kısık ateşte 10 dakika daha pişirin. Pilav ya da makarna yanında servis yapın."
+  },
+  {
+    "id": "tr_018",
+    "name": "Zeytinyağlı Barbunya",
+    "icon": "🫘",
+    "category": "vegetarian",
+    "mealType": "light",
+    "estimatedMinutes": 55,
+    "source": "grimor",
+    "recipeLanguage": "tr",
+    "ingredients": [
+      { "id": "barbunya", "name": "Barbunya", "emoji": "🫘", "quantity": "400g" },
+      { "id": "sogan", "name": "Soğan", "emoji": "🧅", "quantity": "2" },
+      { "id": "domates", "name": "Domates", "emoji": "🍅", "quantity": "2" },
+      { "id": "havuc", "name": "Havuç", "emoji": "🥕", "quantity": "1" },
+      { "id": "zeytinyagi", "name": "Zeytinyağı", "emoji": "🫒", "quantity": "5 yemek kaşığı" },
+      { "id": "seker", "name": "Şeker", "emoji": "🍬", "quantity": "1 tatlı kaşığı" },
+      { "id": "tuz", "name": "Tuz", "emoji": "🧂", "quantity": "tatmak için" }
+    ],
+    "steps": "1. Barbunyaları bir gece önceden ıslatın, süzün.\n2. Soğanları halka halka kesin. Zeytinyağında kavurun.\n3. Havucu ekleyin, 2 dakika kavurun.\n4. Barbunyaları ekleyin, domatesleri, şekeri ve tuzu ekleyin.\n5. Üzerini geçecek kadar su ekleyin, kaynatın.\n6. Kısık ateşte 35-40 dakika pişirin.\n7. Soğutup üzerine zeytinyağı gezdirerek servis yapın."
+  },
+  {
+    "id": "tr_019",
+    "name": "Bulgur Pilavı",
+    "icon": "🌾",
+    "category": "vegetarian",
+    "mealType": "main",
+    "estimatedMinutes": 25,
+    "source": "grimor",
+    "recipeLanguage": "tr",
+    "ingredients": [
+      { "id": "bulgur", "name": "Bulgur", "emoji": "🌾", "quantity": "2 su bardağı" },
+      { "id": "sogan", "name": "Soğan", "emoji": "🧅", "quantity": "1" },
+      { "id": "domates_salcasi", "name": "Domates Salçası", "emoji": "🍅", "quantity": "1 yemek kaşığı" },
+      { "id": "tereyagi", "name": "Tereyağı", "emoji": "🧈", "quantity": "2 yemek kaşığı" },
+      { "id": "tuz", "name": "Tuz", "emoji": "🧂", "quantity": "tatmak için" },
+      { "id": "su", "name": "Su", "emoji": "💧", "quantity": "3 su bardağı" }
+    ],
+    "steps": "1. Tencerede tereyağını eritin, ince doğranmış soğanı kavurun.\n2. Salçayı ekleyin, 1 dakika kavurun.\n3. Bulguru ekleyin, karıştırın.\n4. Sıcak suyu ve tuzu ekleyin, kaynatın.\n5. Kapağı kapatın, kısık ateşte su çekilene kadar 15 dakika pişirin.\n6. Ocaktan alın, üzerine temiz bir bez koyun, kapağı kapatın.\n7. 10 dakika demlendirin. Çatalla karıştırarak servis yapın."
+  },
+  {
+    "id": "tr_020",
+    "name": "Kadayıf",
+    "icon": "🍯",
+    "category": "general",
+    "mealType": "dessert",
+    "estimatedMinutes": 50,
+    "source": "grimor",
+    "recipeLanguage": "tr",
+    "ingredients": [
+      { "id": "tel_kadayif", "name": "Tel Kadayıf", "emoji": "🌾", "quantity": "400g" },
+      { "id": "tereyagi", "name": "Tereyağı", "emoji": "🧈", "quantity": "150g" },
+      { "id": "ceviz", "name": "Ceviz", "emoji": "🌰", "quantity": "200g" },
+      { "id": "seker", "name": "Şeker", "emoji": "🍬", "quantity": "300g" },
+      { "id": "su", "name": "Su", "emoji": "💧", "quantity": "300ml" },
+      { "id": "limon", "name": "Limon", "emoji": "🍋", "quantity": "yarım" }
+    ],
+    "steps": "1. Şeker, su ve limon suyuyla şerbet hazırlayın, kaynatıp soğutun.\n2. Tel kadayıfı eritilmiş tereyağıyla iyice yoğurun.\n3. Fırın kabına yarısını serin, bastırın.\n4. Üzerine dövülmüş cevizi yayın.\n5. Kalan kadayıfı üzerine serin, bastırın.\n6. 180°C fırında 25-30 dakika, üzeri kızarana kadar pişirin.\n7. Fırından çıkar çıkmaz soğuk şerbeti üzerine dökün.\n8. 20 dakika bekleyin, servis yapın."
+  }
+]

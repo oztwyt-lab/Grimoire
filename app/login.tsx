@@ -1,17 +1,26 @@
 // ─── app/login.tsx ───────────────────────────────────────────────────────────
-import { useState } from 'react';
-import { Text, TextInput, View, Pressable, Alert } from 'react-native';
+import { useEffect, useState } from 'react';
+import { Text, TextInput, View, Pressable, Alert, Image, useWindowDimensions } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuth } from '../src/context/AuthContext';
 import { useLanguage } from '../src/context/LanguageContext';
+import { playMusic, stopMusic } from '../src/services/audio';
 
 export default function Login() {
   const router = useRouter();
-  const { login } = useAuth();
+  const { width, height } = useWindowDimensions();
+  const { login, resetPassword } = useAuth();
   const { language, setLanguage, t } = useLanguage();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    playMusic('login_music', true);
+    return () => {
+      stopMusic();
+    };
+  }, []);
 
   const handleSubmit = async () => {
     setSubmitting(true);
@@ -25,8 +34,35 @@ export default function Login() {
     }
   };
 
+  const handleResetPassword = async () => {
+    const trimmedEmail = email.trim();
+    if (!trimmedEmail) {
+      Alert.alert(t('login_reset_missing_title'), t('login_reset_missing_msg'));
+      return;
+    }
+
+    try {
+      await resetPassword(trimmedEmail);
+      Alert.alert(t('login_reset_sent_title'), t('login_reset_sent_msg'));
+    } catch (error) {
+      Alert.alert(t('login_reset_failed_title'), t('login_reset_failed_msg'));
+    }
+  };
+
+  const bgScale = Math.max(width / 1000, height / 700);
+  const bgWidth = 1000 * bgScale;
+  const bgHeight = 700 * bgScale;
+  const towerSourceX = 845;
+  const bgLeft = width / 2 - towerSourceX * bgScale;
+
   return (
     <View style={styles.container}>
+      <Image
+      source={require('../assets/backgrounds/wizardtower.png')}
+        style={[styles.backgroundImage, { width: bgWidth, height: bgHeight, left: bgLeft }]}
+        resizeMode="cover"
+      />
+      <View style={styles.scrim} />
 
       {/* ─── Language toggle — pinned to top ─────────────────────────────── */}
       <View style={styles.langRow}>
@@ -83,6 +119,12 @@ export default function Login() {
         >
           <Text style={styles.link}>{t('login_create_account')}</Text>
         </Pressable>
+        <Pressable
+          style={({ pressed }) => [pressed && { opacity: 0.5 }]}
+          onPress={handleResetPassword}
+        >
+          <Text style={styles.secondaryLink}>{t('login_forgot_password')}</Text>
+        </Pressable>
       </View>
 
     </View>
@@ -91,7 +133,9 @@ export default function Login() {
 
 // ─── Styles ──────────────────────────────────────────────────────────────────
 const styles = {
-  container: { flex: 1, backgroundColor: '#1a1a2e', padding: 24 } as const,
+  container: { flex: 1, backgroundColor: '#1a1a2e', padding: 24, overflow: 'hidden' as const },
+  backgroundImage: { position: 'absolute' as const, top: 0 },
+  scrim: { position: 'absolute' as const, top: 0, right: 0, bottom: 0, left: 0, backgroundColor: 'rgba(10, 12, 24, 0.58)' },
   langRow: { flexDirection: 'row' as const, justifyContent: 'flex-end' as const, paddingTop: 52, gap: 8 },
   langButton: { borderWidth: 1, borderColor: '#2d2d4e', paddingHorizontal: 12, paddingVertical: 8, backgroundColor: '#16213e' },
   langButtonActive: { borderColor: '#e2b96f' },
@@ -103,4 +147,5 @@ const styles = {
   button: { backgroundColor: '#16213e', borderWidth: 2, borderColor: '#e2b96f', padding: 16, alignItems: 'center' as const, marginBottom: 16 },
   buttonText: { fontFamily: 'PressStart2P_400Regular', color: '#e2b96f', fontSize: 10 } as const,
   link: { fontFamily: 'PressStart2P_400Regular', color: '#4a4a6a', textAlign: 'center' as const, fontSize: 8 },
+  secondaryLink: { fontFamily: 'PressStart2P_400Regular', color: '#c8a84b', textAlign: 'center' as const, fontSize: 8, marginTop: 16 },
 };

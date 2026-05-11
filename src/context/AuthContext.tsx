@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
-import { User, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, reauthenticateWithCredential, EmailAuthProvider, deleteUser } from '@firebase/auth';
+import { User, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, reauthenticateWithCredential, EmailAuthProvider, deleteUser, sendPasswordResetEmail } from '@firebase/auth';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { auth } from '../../firebase';
 
@@ -8,8 +8,9 @@ type AuthContextValue = {
   loading: boolean;
   register: (email: string, password: string) => Promise<void>;
   login: (email: string, password: string) => Promise<void>;
+  resetPassword: (email: string) => Promise<void>;
   logout: () => Promise<void>;
-  deleteAccount: (password: string) => Promise<void>;
+  deleteAccount: (password: string, beforeDelete?: (uid: string) => Promise<void>) => Promise<void>;
 };
 
 const AUTH_KEY = 'grimoire_user_email';
@@ -21,16 +22,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-      if (firebaseUser) {
-        await AsyncStorage.setItem(AUTH_KEY, firebaseUser.email ?? '');
-        setUser(firebaseUser);
-      } else {
-        const savedEmail = await AsyncStorage.getItem(AUTH_KEY);
-        if (!savedEmail) {
-          setUser(null);
-        }
-      }
+    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+      setUser(firebaseUser);
       setLoading(false);
     });
     return unsubscribe;
@@ -46,16 +39,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       login: async (email: string, password: string) => {
         await signInWithEmailAndPassword(auth, email, password);
       },
+      resetPassword: async (email: string) => {
+        await sendPasswordResetEmail(auth, email);
+      },
       logout: async () => {
         await AsyncStorage.removeItem(AUTH_KEY);
         await signOut(auth);
         setUser(null);
       },
-      deleteAccount: async (password: string) => {
+      deleteAccount: async (password: string, beforeDelete?: (uid: string) => Promise<void>) => {
         if (!auth.currentUser?.email) throw new Error('No user');
         // Re-authenticate before deletion (Firebase requirement)
         const credential = EmailAuthProvider.credential(auth.currentUser.email, password);
         await reauthenticateWithCredential(auth.currentUser, credential);
+        await beforeDelete?.(auth.currentUser.uid);
         await deleteUser(auth.currentUser);
         await AsyncStorage.removeItem(AUTH_KEY);
         setUser(null);

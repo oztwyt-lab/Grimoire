@@ -1,14 +1,15 @@
 import { useState } from 'react';
 import { Text, View, Pressable, TextInput, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../src/context/AuthContext';
 import { useLanguage } from '../src/context/LanguageContext';
-import { db } from '../firebase';
-import { collection, query, where, getDocs, deleteDoc, doc } from '@firebase/firestore';
 import * as Haptics from 'expo-haptics';
+import { deleteUserOwnedData } from '../lib/firestore';
  
 export default function Account() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { user, deleteAccount } = useAuth();
   const { t } = useLanguage();
   const [confirming, setConfirming] = useState(false);
@@ -19,10 +20,7 @@ export default function Account() {
     if (!password.trim()) return;
     setDeleting(true);
     try {
-      const q = query(collection(db, 'recipes'), where('userId', '==', user?.uid));
-      const snapshot = await getDocs(q);
-      await Promise.all(snapshot.docs.map(d => deleteDoc(doc(db, 'recipes', d.id))));
-      await deleteAccount(password);
+      await deleteAccount(password, deleteUserOwnedData);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       router.replace('/');
     } catch (err: any) {
@@ -35,7 +33,7 @@ export default function Account() {
   };
  
   return (
-    <View style={acStyles.container}>
+    <View style={[acStyles.container, { paddingBottom: insets.bottom + 24 }]}>
       <Text style={acStyles.title}>{t('account_title')}</Text>
       <View style={acStyles.section}>
         <Text style={acStyles.label}>{t('account_signed_in_as')}</Text>
@@ -59,7 +57,7 @@ export default function Account() {
           </Pressable>
         </View>
       )}
-      <Pressable style={({ pressed }) => [acStyles.back, pressed && { opacity: 0.5 }]} onPress={() => router.back()}>
+      <Pressable style={({ pressed }) => [acStyles.back, { bottom: insets.bottom + 48 }, pressed && { opacity: 0.5 }]} onPress={() => router.back()}>
         <Text style={acStyles.backText}>{t('account_back')}</Text>
       </Pressable>
     </View>
@@ -84,4 +82,3 @@ const acStyles = {
   back: { position: 'absolute' as const, bottom: 48, left: 24 },
   backText: { fontFamily: 'PressStart2P_400Regular', color: '#4a4a6a', fontSize: 8 } as const,
 };
- 

@@ -1,23 +1,23 @@
 import { useState } from 'react';
-import { Text, View, TextInput, ScrollView, Alert } from 'react-native';
+import { Text, View, TextInput, ScrollView, Alert, Image, ImageSourcePropType } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../src/context/AuthContext';
 import { useLanguage } from '../src/context/LanguageContext';
-import { db } from '../firebase';
-import { doc, setDoc, serverTimestamp } from '@firebase/firestore';
-import { DEFAULT_EQUIPMENT } from '../lib/firestore';
+import { createUserProfile } from '../lib/firestore';
 import * as Haptics from 'expo-haptics';
 import PressableScale from '../src/components/PressableScale';
 
-type CharacterOption = { id: 'male' | 'female'; emoji: string; labelKey: 'setup_wizard' | 'setup_witch' };
+type CharacterOption = { id: 'male' | 'female'; image: ImageSourcePropType; labelKey: 'setup_wizard' | 'setup_witch' };
 
 const CHARACTERS: CharacterOption[] = [
-  { id: 'male',   emoji: '🧙',    labelKey: 'setup_wizard' },
-  { id: 'female', emoji: '🧙‍♀️', labelKey: 'setup_witch'  },
+  { id: 'male', image: require('../assets/characters/wizardicon.png'), labelKey: 'setup_wizard' },
+  { id: 'female', image: require('../assets/characters/witchicon.png'), labelKey: 'setup_witch' },
 ];
 
 export default function CharacterSetup() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { user } = useAuth();
   const { t } = useLanguage();
   const [nickname, setNickname] = useState('');
@@ -26,45 +26,42 @@ export default function CharacterSetup() {
 
   const handleBegin = async () => {
     if (!nickname.trim()) {
-      Alert.alert('Missing name', 'Enter a name for your hero.');
+      Alert.alert(t('setup_error_missing_name'), t('setup_error_missing_name_msg'));
       return;
     }
     if (nickname.trim().length > 14) {
-      Alert.alert('Name too long', 'Keep it under 14 characters.');
+      Alert.alert(t('setup_error_name_long'), t('setup_error_name_long_msg'));
       return;
     }
     setSaving(true);
     try {
-      await setDoc(doc(db, 'profiles', user!.uid), {
+      await createUserProfile(user!.uid, {
         nickname: nickname.trim(),
         character: selectedChar,
-        createdAt: serverTimestamp(),
       });
-      await setDoc(doc(db, 'users', user!.uid), {
-        equipment: DEFAULT_EQUIPMENT,
-        ownedItems: ['starter_robe', 'starter_staff'],
-      }, { merge: true });
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      router.replace('/home');
+      setTimeout(() => {
+        router.replace('/home');
+      }, 50);
     } catch (err) {
-      Alert.alert('Error', String(err));
+      Alert.alert(t('create_error_title'), String(err));
     } finally {
       setSaving(false);
     }
   };
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+    <ScrollView style={styles.container} contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 56 }]}>
 
       {/* ─── Title ─────────────────────────────────────────────────────────── */}
-      <Text style={styles.title}>CREATE{'\n'}YOUR HERO</Text>
-      <Text style={styles.subtitle}>Your legend begins here.</Text>
+      <Text style={styles.title}>{t('setup_title')}</Text>
+      <Text style={styles.subtitle}>{t('setup_subtitle')}</Text>
 
       {/* ─── Nickname ──────────────────────────────────────────────────────── */}
-      <Text style={styles.label}>HERO NAME</Text>
+      <Text style={styles.label}>{t('setup_hero_name')}</Text>
       <TextInput
         style={styles.input}
-        placeholder="Enter a name..."
+        placeholder={t('setup_name_placeholder')}
         placeholderTextColor="#4a4a6a"
         value={nickname}
         onChangeText={setNickname}
@@ -88,7 +85,7 @@ export default function CharacterSetup() {
               styles.characterCard,
               selectedChar === ch.id && styles.characterCardSelected,
             ]}>
-              <Text style={styles.charEmoji}>{ch.emoji}</Text>
+              <Image source={ch.image} style={styles.characterImage} resizeMode="contain" />
               <Text style={[
                 styles.characterLabel,
                 selectedChar === ch.id && styles.characterLabelSelected,
@@ -107,7 +104,7 @@ export default function CharacterSetup() {
       <PressableScale onPress={handleBegin} disabled={saving}>
         <View style={[styles.button, saving && styles.buttonDisabled]}>
           <Text style={styles.buttonText}>
-            {saving ? 'SUMMONING...' : 'BEGIN QUEST  ▶'}
+            {saving ? t('setup_summoning') : t('setup_begin')}
           </Text>
         </View>
       </PressableScale>
@@ -141,7 +138,7 @@ const styles = {
     borderWidth: 2,
     backgroundColor: '#1c1c2e',
   },
-  charEmoji: { fontSize: 48, marginBottom: 12 } as const,
+  characterImage: { width: 80, height: 80, marginBottom: 12 } as const,
   characterLabel: { fontFamily: 'PressStart2P_400Regular', color: '#4a4a6a', fontSize: 7, textAlign: 'center' as const },
   characterLabelSelected: { color: '#c8a84b' } as const,
   selectedBadge: { fontFamily: 'PressStart2P_400Regular', color: '#c8a84b', fontSize: 10, marginTop: 8 } as const,
