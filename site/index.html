@@ -362,7 +362,7 @@
 
     .art-grid {
       display: grid;
-      grid-template-columns: 1fr 1fr;
+      grid-template-columns: repeat(3, 1fr);
       gap: 24px;
     }
 
@@ -482,7 +482,7 @@
       .hero { grid-template-columns: 1fr; padding-top: 120px; gap: 48px; }
       .hero-visual { order: -1; }
       .hero-art { max-width: 340px; }
-      .art-grid { grid-template-columns: 1fr; }
+      .art-grid { grid-template-columns: 1fr 1fr; }
       .apps-grid { grid-template-columns: 1fr; }
       .pillars-grid { grid-template-columns: 1fr; }
       .game-inner { flex-direction: column; align-items: flex-start; gap: 28px; }
@@ -530,7 +530,7 @@
       </div>
 
       <div class="hero-visual">
-        <img class="hero-art" src="/assets/Art1.png" alt="Grimor — wizard battles a demon boss in a ruined dungeon">
+        <img class="hero-art" src="/assets/Mainart.png" alt="Grimor — wizard chef cooking at a medieval workbench">
       </div>
     </section>
 
@@ -557,7 +557,7 @@
 
           <!-- Next App -->
           <div class="app-card dimmed">
-            <div class="app-icon-placeholder">🛠</div>
+            <img class="app-icon" src="/assets/b2bsaasappicon.png" alt="B2B SaaS app icon">
             <div class="game-info">
               <div class="badge-row">
                 <span class="badge-dev">Under Development</span>
@@ -581,6 +581,13 @@
         <p class="world-label">The World</p>
         <h2 class="world-heading">Cook. Cast. <em>Conquer.</em></h2>
         <div class="art-grid">
+          <figure class="art-card">
+            <img src="/assets/Art1.png" alt="A wizard battles a demon boss in a ruined dungeon">
+            <div class="art-caption">
+              <h3>The Battle</h3>
+              <p>Every meal is a fight. Face the boss, or become the feast.</p>
+            </div>
+          </figure>
           <figure class="art-card">
             <img src="/assets/Art2.png" alt="A wizard studies recipes in a potion-filled study">
             <div class="art-caption">
