@@ -205,6 +205,7 @@ export default function IngredientPicker() {
               })}
             </View>
             <Text style={ipStyles.sourceCredit}>{language === 'tr' ? 'Besin verisi: USDA FoodData Central' : 'Nutrition data: USDA FoodData Central'}</Text>
+            <Text style={ipStyles.disclaimer}>{language === 'tr' ? '* Değerler yaklaşık olup çeşide, markaya ve pişirme yöntemine göre farklılık gösterebilir. Tahıllar ve baklagiller kuru ağırlık üzerinden gösterilir.' : '* Values are approximate and may vary by variety, brand, and preparation. Grains and legumes are shown as dry/uncooked weight.'}</Text>
             <View style={ipStyles.buffPanel}>
               <Text style={ipStyles.buffText}>{language === 'tr' ? (INGREDIENT_BUFFS[selectedIngredient.id]?.textTr ?? BUFF_TEXT) : (INGREDIENT_BUFFS[selectedIngredient.id]?.text ?? BUFF_TEXT)}</Text>
             </View>
@@ -267,7 +268,8 @@ const ipStyles = {
   statTrack: { flex: 1, maxWidth: 250, height: 8, backgroundColor: '#1a1a2e', borderWidth: 1, borderColor: '#2d2d4e' },
   statFill: { height: '100%' as const },
   statValue: { width: 48, fontFamily: 'PressStart2P_400Regular', color: '#e2b96f', fontSize: 7, textAlign: 'left' as const },
-  sourceCredit: { fontFamily: 'PressStart2P_400Regular', color: '#4a4a6a', fontSize: 6, marginBottom: 8 } as const,
+  sourceCredit: { fontFamily: 'PressStart2P_400Regular', color: '#4a4a6a', fontSize: 6, marginBottom: 4 } as const,
+  disclaimer: { fontFamily: 'PressStart2P_400Regular', color: '#3a3a5a', fontSize: 5, lineHeight: 9, marginBottom: 8 } as const,
   buffPanel: { backgroundColor: '#1a1a2e', borderWidth: 1, borderColor: '#2d2d4e', padding: 10, marginBottom: 12 },
   buffText: { fontFamily: 'PressStart2P_400Regular', color: '#c8c8e8', fontSize: 7, lineHeight: 14 } as const,
   quantityControls: { marginTop: 'auto' as const },

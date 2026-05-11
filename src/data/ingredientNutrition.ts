@@ -136,7 +136,7 @@ const NUTRITION_PER_100G: Record<string, NutritionPer100g> = {
   tortilla: { calories: 237, protein: 7.3, fat: 3.3, carbs: 49.9 },
   pita: { calories: 275, protein: 9.1, fat: 1.2, carbs: 55.7 },
   barley: { calories: 354, protein: 12.5, fat: 2.3, carbs: 73.5 },
-  noodles: { calories: 138, protein: 4.5, fat: 2.1, carbs: 25 },
+  noodles: { calories: 384, protein: 13.6, fat: 4.6, carbs: 71.7 },
   bulgur: { calories: 342, protein: 12.3, fat: 1.3, carbs: 75.9 },
   breadcrumbs: { calories: 395, protein: 13.4, fat: 5.3, carbs: 72 },
   cornmeal: { calories: 370, protein: 7.1, fat: 1.8, carbs: 79.5 },

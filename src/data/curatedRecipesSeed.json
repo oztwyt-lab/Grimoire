@@ -23,7 +23,7 @@
   {
     "id": "curated_002",
     "name": "Chicken Stir Fry",
-    "icon": "🍳",
+    "icon": "🍗",
     "category": "meat",
     "mealType": "main",
     "estimatedMinutes": 25,
@@ -228,7 +228,7 @@
   {
     "id": "curated_012",
     "name": "Lentil Soup",
-    "icon": "🥣",
+    "icon": "🍵",
     "category": "vegetarian",
     "mealType": "light",
     "estimatedMinutes": 40,
@@ -308,7 +308,7 @@
   {
     "id": "curated_016",
     "name": "Caprese Salad",
-    "icon": "🍅",
+    "icon": "🫒",
     "category": "quick",
     "mealType": "light",
     "estimatedMinutes": 10,
@@ -423,7 +423,7 @@
   {
     "id": "tr_002",
     "name": "İzmir Köfte",
-    "icon": "🍢",
+    "icon": "🥩",
     "category": "meat",
     "mealType": "main",
     "estimatedMinutes": 45,
@@ -503,7 +503,7 @@
   {
     "id": "tr_006",
     "name": "Pilav Üstü Tavuk",
-    "icon": "🍗",
+    "icon": "🍖",
     "category": "meat",
     "mealType": "main",
     "estimatedMinutes": 50,
@@ -523,7 +523,7 @@
   {
     "id": "tr_007",
     "name": "Hamsi Tava",
-    "icon": "🐟",
+    "icon": "🐠",
     "category": "meat",
     "mealType": "main",
     "estimatedMinutes": 20,
@@ -541,7 +541,7 @@
   {
     "id": "tr_008",
     "name": "Menemen",
-    "icon": "🍳",
+    "icon": "🥚",
     "category": "quick",
     "mealType": "breakfast",
     "estimatedMinutes": 15,
@@ -579,7 +579,7 @@
   {
     "id": "tr_010",
     "name": "Çiğ Köfte",
-    "icon": "🌿",
+    "icon": "🌶️",
     "category": "quick",
     "mealType": "light",
     "estimatedMinutes": 20,
@@ -600,7 +600,7 @@
   {
     "id": "tr_011",
     "name": "Tarhana Çorbası",
-    "icon": "🥣",
+    "icon": "🫖",
     "category": "quick",
     "mealType": "light",
     "estimatedMinutes": 20,
@@ -717,7 +717,7 @@
   {
     "id": "tr_017",
     "name": "Tavuk Sote",
-    "icon": "🍗",
+    "icon": "🥘",
     "category": "meat",
     "mealType": "main",
     "estimatedMinutes": 30,
@@ -737,7 +737,7 @@
   {
     "id": "tr_018",
     "name": "Zeytinyağlı Barbunya",
-    "icon": "🫘",
+    "icon": "🫛",
     "category": "vegetarian",
     "mealType": "light",
     "estimatedMinutes": 55,

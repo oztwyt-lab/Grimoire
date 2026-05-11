@@ -83,7 +83,7 @@ function RecipeCard({
   return (
     <Pressable style={({ pressed }) => [styles.card, pressed && styles.cardPressed]} onPress={onPress}>
       <View style={styles.cardTop}>
-        <RecipeIconArt icon={recipe.icon} size={30} style={styles.cardIcon} />
+        <RecipeIconArt icon={recipe.icon} recipeId={recipe.id} size={30} style={styles.cardIcon} />
         <View style={styles.cardTitleWrap}>
           <Text style={styles.cardTitle} numberOfLines={2}>{recipe.name.toUpperCase()}</Text>
           <Text style={styles.cardMeta}>

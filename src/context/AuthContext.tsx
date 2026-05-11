@@ -2,6 +2,7 @@ import React, { createContext, useContext, useEffect, useMemo, useState } from '
 import { User, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, reauthenticateWithCredential, EmailAuthProvider, deleteUser, sendPasswordResetEmail } from '@firebase/auth';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { auth } from '../../firebase';
+import { loginUser as rcLoginUser } from '../services/revenueCat';
 
 type AuthContextValue = {
   user: User | null;
@@ -25,6 +26,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
       setUser(firebaseUser);
       setLoading(false);
+      if (firebaseUser) {
+        rcLoginUser(firebaseUser.uid).catch(console.warn);
+      }
     });
     return unsubscribe;
   }, []);
