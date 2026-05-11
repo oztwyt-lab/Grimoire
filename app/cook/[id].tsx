@@ -40,7 +40,6 @@ const WITCH_ATTACK = [
 const BATTLE_BACKGROUND = require('../../assets/battle/battleback1.png');
 const GHOST_BOSS_SHEETS = [
   require('../../assets/bosses/ghosts/ghost.png'),
-  require('../../assets/bosses/ghosts/ghost_green.png'),
   require('../../assets/bosses/ghosts/ghost_red.png'),
 ];
 const USE_OPENART_BOSS_POLISH = true;

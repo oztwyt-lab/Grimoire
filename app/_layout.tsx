@@ -8,6 +8,7 @@ import { useFonts, PressStart2P_400Regular } from '@expo-google-fonts/press-star
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect, useState, Component, ReactNode } from 'react';
 import { Stack } from 'expo-router';
+import { initializePurchases } from '../src/services/revenueCat';
 import Animated, {
   runOnJS,
   useAnimatedStyle,
@@ -41,6 +42,7 @@ class ErrorBoundary extends Component<{ children: ReactNode }, { error: string |
 }
 
 SplashScreen.preventAutoHideAsync();
+initializePurchases();
 
 export default function Layout() {
   const [fontsLoaded] = useFonts({

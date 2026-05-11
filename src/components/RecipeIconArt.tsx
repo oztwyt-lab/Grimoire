@@ -39,7 +39,7 @@ const RECIPE_ICON_SOURCES: Record<string, ImageSourcePropType> = {
   '🌿': require('../../assets/candidates/openart/food-icons-license-check/asparagus.png'),
   '🌶️': require('../../assets/candidates/openart/food-icons-license-check/chili_pepper_red.png'),
   '🍛': require('../../assets/candidates/openart/food-icons-license-check/cauliflower.png'),
-  '🍄': require('../../assets/candidates/openart/food-icons-license-check/mushroom.png'),
+  '🍄': require('../../assets/candidates/openart/discovered/food_icons/item_mushroom1.png'),
   '🧅': require('../../assets/candidates/openart/food-icons-license-check/onion_brown.png'),
   '🥔': require('../../assets/candidates/openart/food-icons-license-check/potato.png'),
   '🧄': require('../../assets/candidates/openart/food-icons-license-check/garlic.png'),
