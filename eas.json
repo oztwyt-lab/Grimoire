@@ -16,7 +16,14 @@
         "buildType": "apk"
       }
     },
+    "closedBeta": {
+      "distribution": "store",
+      "android": {
+        "buildType": "app-bundle"
+      }
+    },
     "production": {
+      "distribution": "store",
       "android": {
         "buildType": "app-bundle"
       }
