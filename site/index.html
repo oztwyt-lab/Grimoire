@@ -63,7 +63,6 @@
       letter-spacing: -0.01em;
     }
 
-    .brand svg { width: 32px; height: 32px; flex-shrink: 0; }
     .brand img { width: 32px; height: 32px; object-fit: contain; }
 
     .nav-links {
@@ -92,10 +91,10 @@
     .hero {
       max-width: 1200px;
       margin: 0 auto;
-      padding: 160px 32px 100px;
+      padding: 140px 32px 80px;
       display: grid;
-      grid-template-columns: 1fr 460px;
-      gap: 80px;
+      grid-template-columns: 1fr 420px;
+      gap: 72px;
       align-items: center;
     }
 
@@ -172,37 +171,51 @@
     }
     .btn-secondary:hover { border-color: var(--text); color: var(--text); }
 
-    /* PRODUCT CARD */
-    .product-card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 24px;
-      padding: 36px;
+    /* HERO KEY ART */
+    .hero-visual {
       position: relative;
-      overflow: hidden;
+      display: flex;
+      justify-content: center;
     }
 
-    .product-card::after {
-      content: '';
-      position: absolute;
-      top: -80px; right: -80px;
-      width: 240px; height: 240px;
-      background: radial-gradient(circle, rgba(255,77,0,0.07) 0%, transparent 70%);
-      pointer-events: none;
+    .hero-art {
+      width: 100%;
+      max-width: 420px;
+      border-radius: 24px;
+      display: block;
+      box-shadow:
+        0 0 0 1px rgba(255,77,0,0.12),
+        0 24px 80px rgba(120, 20, 120, 0.22),
+        0 8px 32px rgba(0,0,0,0.18);
     }
 
-    .card-icon {
-      width: 72px; height: 72px;
-      border-radius: 18px;
-      background: var(--text);
+    /* GAME CARD */
+    .game-section {
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      padding: 72px 0;
+    }
+
+    .game-inner {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 32px;
       display: flex;
       align-items: center;
-      justify-content: center;
-      margin-bottom: 24px;
-      overflow: hidden;
+      gap: 48px;
     }
 
-    .card-icon { display: none; }
+    .app-icon {
+      width: 120px;
+      height: 120px;
+      border-radius: 26px;
+      object-fit: cover;
+      flex-shrink: 0;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.14);
+    }
+
+    .game-info { flex: 1; }
 
     .card-badge {
       display: inline-flex;
@@ -216,7 +229,7 @@
       text-transform: uppercase;
       padding: 5px 12px;
       border-radius: 100px;
-      margin-bottom: 16px;
+      margin-bottom: 14px;
     }
 
     .card-badge::before {
@@ -228,7 +241,7 @@
 
     .card-title {
       font-family: 'Fraunces', serif;
-      font-size: 30px;
+      font-size: 36px;
       font-weight: 900;
       letter-spacing: -0.02em;
       margin-bottom: 10px;
@@ -237,8 +250,9 @@
     .card-desc {
       color: var(--muted);
       font-size: 15px;
-      line-height: 1.6;
-      margin-bottom: 28px;
+      line-height: 1.65;
+      max-width: 560px;
+      margin-bottom: 20px;
     }
 
     .card-pills { display: flex; gap: 8px; flex-wrap: wrap; }
@@ -251,6 +265,87 @@
       font-size: 12px;
       font-weight: 500;
       color: var(--muted);
+    }
+
+    /* WORLD SECTION — dark */
+    .world-section {
+      background: #0e0b14;
+      padding: 88px 0;
+    }
+
+    .world-inner {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 32px;
+    }
+
+    .world-label {
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.35);
+      margin-bottom: 16px;
+    }
+
+    .world-heading {
+      font-family: 'Fraunces', serif;
+      font-weight: 900;
+      font-size: clamp(32px, 4vw, 52px);
+      letter-spacing: -0.02em;
+      color: #fff;
+      margin-bottom: 52px;
+      line-height: 1.1;
+    }
+
+    .world-heading em {
+      font-style: italic;
+      color: var(--accent);
+    }
+
+    .art-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+    }
+
+    .art-card {
+      position: relative;
+      border-radius: 20px;
+      overflow: hidden;
+      background: #1a1424;
+      border: 1px solid rgba(255,255,255,0.06);
+    }
+
+    .art-card img {
+      width: 100%;
+      display: block;
+      object-fit: cover;
+      transition: transform 0.4s ease;
+    }
+
+    .art-card:hover img { transform: scale(1.03); }
+
+    .art-caption {
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      padding: 48px 24px 24px;
+      background: linear-gradient(to top, rgba(10,6,20,0.92) 0%, transparent 100%);
+    }
+
+    .art-caption h3 {
+      font-family: 'Fraunces', serif;
+      font-size: 20px;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 4px;
+      letter-spacing: -0.01em;
+    }
+
+    .art-caption p {
+      font-size: 13px;
+      color: rgba(255,255,255,0.5);
+      line-height: 1.5;
     }
 
     /* PILLARS */
@@ -328,7 +423,11 @@
     /* RESPONSIVE */
     @media (max-width: 900px) {
       .hero { grid-template-columns: 1fr; padding-top: 120px; gap: 48px; }
+      .hero-visual { order: -1; }
+      .hero-art { max-width: 340px; }
+      .art-grid { grid-template-columns: 1fr; }
       .pillars-grid { grid-template-columns: 1fr; }
+      .game-inner { flex-direction: column; align-items: flex-start; gap: 28px; }
       nav { padding: 0 20px; }
     }
 
@@ -337,6 +436,9 @@
       .section-wrap { padding: 0 20px 60px; }
       .foot-inner { flex-direction: column; align-items: flex-start; }
       .nav-links .hide { display: none; }
+      .world-inner { padding: 0 20px; }
+      .game-inner { padding: 0 20px; }
+      .game-section { padding: 48px 0; }
     }
   </style>
 </head>
@@ -368,17 +470,48 @@
         </div>
       </div>
 
-      <article class="product-card" id="grimor">
-        <!-- App icon placeholder: Grimor icon to be added -->
-        <div class="card-badge">Internal Testing</div>
-        <div class="card-title">Grimor</div>
-        <p class="card-desc">A recipe and pantry companion with an RPG skin. Cook a recipe, fight a boss. Android-first, launching on Google Play.</p>
-        <div class="card-pills">
-          <span class="pill">Android</span>
-          <span class="pill">Cooking RPG</span>
-          <span class="pill">Google Play</span>
+      <div class="hero-visual">
+        <img class="hero-art" src="/assets/Art1.png" alt="Grimor — wizard battles a demon boss in a ruined dungeon">
+      </div>
+    </section>
+
+    <section class="game-section" id="grimor">
+      <div class="game-inner">
+        <img class="app-icon" src="/assets/GrimorAppicon.png" alt="Grimor app icon">
+        <div class="game-info">
+          <div class="card-badge">Internal Testing</div>
+          <div class="card-title">Grimor</div>
+          <p class="card-desc">A recipe and pantry companion with an RPG skin. Cook a recipe, fight a boss. Android-first, launching on Google Play.</p>
+          <div class="card-pills">
+            <span class="pill">Android</span>
+            <span class="pill">Cooking RPG</span>
+            <span class="pill">Google Play</span>
+          </div>
         </div>
-      </article>
+      </div>
+    </section>
+
+    <section class="world-section">
+      <div class="world-inner">
+        <p class="world-label">The World</p>
+        <h2 class="world-heading">Cook. Cast. <em>Conquer.</em></h2>
+        <div class="art-grid">
+          <figure class="art-card">
+            <img src="/assets/Art2.png" alt="A wizard studies recipes in a potion-filled study">
+            <div class="art-caption">
+              <h3>The Grimoire</h3>
+              <p>Every recipe is a spell. Master the cookbook, unlock new powers.</p>
+            </div>
+          </figure>
+          <figure class="art-card">
+            <img src="/assets/Art3.png" alt="A wizard stirs a cauldron in an enchanted forest">
+            <div class="art-caption">
+              <h3>The Craft</h3>
+              <p>Gather ingredients, brew your meal, and face what comes next.</p>
+            </div>
+          </figure>
+        </div>
+      </div>
     </section>
 
     <div class="section-wrap">
