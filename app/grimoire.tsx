@@ -96,7 +96,7 @@ function RecipeCardComponent({ recipe, inventory, onPress }: RecipeCardProps) {
           </View>
         )}
         <View style={gStyles.recipeIconBox}>
-          <RecipeIconArt icon={recipe.icon || DEFAULT_RECIPE_ICON} size={34} />
+          <RecipeIconArt icon={recipe.icon || DEFAULT_RECIPE_ICON} recipeId={recipe.id} size={34} />
         </View>
         <View style={gStyles.cardBody}>
         <View style={gStyles.cardTop}>

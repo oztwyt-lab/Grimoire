@@ -105,7 +105,7 @@ export default function MagicOrbDetailScreen() {
         <View style={styles.headerSpacer} />
       </View>
 
-      <RecipeIconArt icon={detailRecipe.icon} size={54} style={styles.icon} />
+      <RecipeIconArt icon={detailRecipe.icon} recipeId={detailRecipe.id} size={54} style={styles.icon} />
       <Text style={styles.title}>{detailRecipe.name.toUpperCase()}</Text>
       <Text style={styles.meta}>{detailRecipe.estimatedMinutes} {t('magic_orb_min')}  ·  {categoryLabel(detailRecipe.category, t)}</Text>
       {(() => {

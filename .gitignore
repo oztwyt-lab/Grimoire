@@ -38,7 +38,11 @@ offline-builds/
 *.pem
 
 # local env files
+.env
 .env*.local
+
+# generated recipe icons (produced by scripts/generateRecipeIcons.ts)
+assets/recipe-icons/
 
 # typescript
 *.tsbuildinfo

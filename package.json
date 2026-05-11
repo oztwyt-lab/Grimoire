@@ -8,7 +8,8 @@
     "android": "expo start --android --port 8082",
     "ios": "expo start --ios --port 8082",
     "web": "expo start --web",
-    "nutrition:build": "tsx scripts/buildIngredientNutrition.ts"
+    "nutrition:build": "tsx scripts/buildIngredientNutrition.ts",
+    "icons:generate": "tsx scripts/generateRecipeIcons.ts"
   },
   "dependencies": {
     "@expo-google-fonts/press-start-2p": "^0.4.1",
@@ -38,6 +39,7 @@
   },
   "devDependencies": {
     "@babel/core": "^7.25.0",
+    "@google/generative-ai": "^0.24.1",
     "@types/node": "^25.6.0",
     "@types/react": "~19.1.10",
     "babel-preset-expo": "~54.0.10",
