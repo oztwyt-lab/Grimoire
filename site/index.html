@@ -7,7 +7,7 @@
   <meta name="description" content="Adio Co. builds imaginative software. Home of Grimor, the cooking RPG.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,700;0,9..144,900;1,9..144,700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,700;0,9..144,900;1,9..144,700&family=Inter:wght@400;500;600&family=Press+Start+2P&display=swap" rel="stylesheet">
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -63,7 +63,12 @@
       letter-spacing: -0.01em;
     }
 
-    .brand img { height: 30px; width: auto; object-fit: contain; }
+    .brand-pixel {
+      font-family: 'Press Start 2P', monospace;
+      font-size: 13px;
+      letter-spacing: 0;
+      line-height: 1;
+    }
 
     .nav-links {
       display: flex;
@@ -505,7 +510,7 @@
   <header>
     <nav>
       <a class="brand" href="/">
-        <img src="/assets/Adiocologo.png" alt="Adio Co.">
+        <span class="brand-pixel">Adio Co.</span>
       </a>
       <div class="nav-links">
         <a href="/">Home</a>
