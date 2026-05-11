@@ -2,4 +2,5 @@
 import { ImageSourcePropType } from 'react-native';
 
 export const RECIPE_ICON_MAP: Record<string, ImageSourcePropType> = {
+
 };
