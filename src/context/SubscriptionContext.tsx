@@ -4,10 +4,8 @@ import { db } from '../../firebase';
 import { useAuth } from './AuthContext';
 import { useInventory } from './InventoryContext';
 import {
-  MAX_INVENTORY_FREE,
   MAX_ORB_DAILY_FREE,
   MAX_ORB_MONTHLY_FREE,
-  MAX_RECIPES_FREE,
   SubscriptionTier,
   backfillSubscriptionFields,
   createDefaultSubscriptionFields,
@@ -93,12 +91,12 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
   }, [user]);
 
   const canAddRecipe = useCallback(() => {
-    return tier !== 'free' || recipeCount < MAX_RECIPES_FREE;
-  }, [tier, recipeCount]);
+    return true;
+  }, []);
 
   const canAddInventoryItem = useCallback(() => {
-    return tier !== 'free' || inventory.length < MAX_INVENTORY_FREE;
-  }, [tier, inventory.length]);
+    return true;
+  }, []);
 
   const canUseOrb = useCallback(() => {
     if (tier !== 'free') return true;

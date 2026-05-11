@@ -1,6 +1,6 @@
 // ─── app/grimoire.tsx ────────────────────────────────────────────────────────
 import React, { useEffect, useState, useCallback, useRef, useMemo } from 'react';
-import { Text, View, Pressable, FlatList, ScrollView, ActivityIndicator, TextInput, RefreshControl, Animated as RNAnimated } from 'react-native';
+import { Text, View, Pressable, FlatList, ScrollView, ActivityIndicator, TextInput, RefreshControl, Animated as RNAnimated, Alert } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuth } from '../src/context/AuthContext';
 import { useRouter, useFocusEffect } from 'expo-router';
@@ -11,11 +11,13 @@ import { collection, query, where, getDocs, orderBy } from '@firebase/firestore'
 import { getCharacterRank, getLevelProgress, CharacterRank } from '../src/data/character';
 import LevelUpModal from '../src/components/LevelUpModal';
 import IngredientIcon from '../src/components/IngredientIcon';
+import RankIcon from '../src/components/RankIcon';
+import RecipeIconArt from '../src/components/RecipeIconArt';
 import { DEFAULT_RECIPE_ICON } from '../src/components/RecipeIconPicker';
 import { StringKey } from '../src/i18n/strings';
 import { InventoryItem } from '../lib/firestore';
 import { playSFX } from '../src/services/audio';
-import { getRecentRecipeIds } from '../src/services/recentRecipes';
+import { getRecentRecipeIds, clearRecentRecipes, getCookTimes } from '../src/services/recentRecipes';
 import { RecipeLanguageTag, normalizeRecipeLanguage, recipeLanguageLabel } from '../src/data/recipeLanguage';
 import { MEAL_TYPES, MealType } from '../src/data/mealTypes';
 
@@ -94,7 +96,7 @@ function RecipeCardComponent({ recipe, inventory, onPress }: RecipeCardProps) {
           </View>
         )}
         <View style={gStyles.recipeIconBox}>
-          <Text style={gStyles.recipeIconText}>{recipe.icon || DEFAULT_RECIPE_ICON}</Text>
+          <RecipeIconArt icon={recipe.icon || DEFAULT_RECIPE_ICON} size={34} />
         </View>
         <View style={gStyles.cardBody}>
         <View style={gStyles.cardTop}>
@@ -106,7 +108,7 @@ function RecipeCardComponent({ recipe, inventory, onPress }: RecipeCardProps) {
             <Text style={gStyles.languageTag}>{recipeLanguageLabel(recipeLanguage, t)}</Text>
           )}
           {mealTypeMeta && (
-            <Text style={gStyles.mealTypeTag}>{mealTypeMeta.icon} {t(mealTypeMeta.labelKey as StringKey)}</Text>
+            <Text style={gStyles.mealTypeTag}>{t(mealTypeMeta.labelKey as StringKey)}</Text>
           )}
         </View>
         {recipe.ingredients.length > 0 && (
@@ -150,6 +152,7 @@ export default function Grimoire() {
   const [recipeListTab, setRecipeListTab] = useState<RecipeListTab>('recent');
   const [mealFilter, setMealFilter] = useState<MealType | null>(null);
   const [recentRecipeIds, setRecentRecipeIds] = useState<string[]>([]);
+  const [cookTimes, setCookTimes] = useState<Record<string, number>>({});
   const [showLevelUp, setShowLevelUp] = useState(false);
   const [levelUpRank, setLevelUpRank] = useState<CharacterRank | null>(null);
 
@@ -167,7 +170,12 @@ export default function Grimoire() {
       })) as Recipe[];
 
       setRecipes(data);
-      setRecentRecipeIds(await getRecentRecipeIds(user.uid));
+      const [recentIds, times] = await Promise.all([
+        getRecentRecipeIds(user.uid),
+        getCookTimes(user.uid),
+      ]);
+      setRecentRecipeIds(recentIds);
+      setCookTimes(times);
 
       const newRank = getCharacterRank(data.length);
       const storedLevel = await AsyncStorage.getItem(RANK_STORAGE_KEY);
@@ -220,6 +228,26 @@ export default function Grimoire() {
     .filter((recipe): recipe is Recipe => Boolean(recipe))
     .slice(0, 5);
 
+  function formatCookTime(secs: number): string {
+    const m = Math.floor(secs / 60);
+    const s = secs % 60;
+    return `${m}:${s.toString().padStart(2, '0')}`;
+  }
+
+  async function handleClearRecent() {
+    if (!user) return;
+    Alert.alert(t('grimoire_clear_recent'), t('grimoire_clear_recent_confirm'), [
+      { text: t('cook_exit_no'), style: 'cancel' },
+      {
+        text: t('cook_exit_yes'),
+        onPress: async () => {
+          await clearRecentRecipes(user.uid);
+          setRecentRecipeIds([]);
+        },
+      },
+    ]);
+  }
+
   return (
     <View style={gStyles.container}>
       {levelUpRank && (
@@ -239,7 +267,7 @@ export default function Grimoire() {
       <View style={gStyles.characterCard}>
         <Text style={gStyles.characterCardLabel}>{t('grimoire_tab_rank')}</Text>
         <View style={gStyles.characterTop}>
-          <Text style={gStyles.characterEmoji}>{rank.emoji}</Text>
+          <RankIcon rank={rank} size={34} style={gStyles.characterRankIcon} />
           <View style={gStyles.characterInfo}>
             <Text style={gStyles.characterTitle}>{t(RANK_TITLE_KEY[rank.title])}</Text>
             <Text style={gStyles.characterFlavor}>{t(RANK_FLAVOR_KEY[rank.title])}</Text>
@@ -278,18 +306,35 @@ export default function Grimoire() {
         recentRecipes.length === 0 ? (
           <Text style={gStyles.empty}>{t('grimoire_recent_empty')}</Text>
         ) : (
-          <FlatList
-            data={recentRecipes}
-            keyExtractor={item => item.id}
-            style={gStyles.list}
-            renderItem={({ item }) => (
-              <RecipeCard
-                recipe={item}
-                inventory={inventory}
-                onPress={() => { playSFX('recipe_click'); router.push(`/recipe/${item.id}`); }}
-              />
-            )}
-          />
+          <>
+            <View style={gStyles.recentHeader}>
+              <Pressable onPress={handleClearRecent} style={({ pressed }) => [pressed && { opacity: 0.5 }]}>
+                <Text style={gStyles.clearRecentText}>{t('grimoire_clear_recent')}</Text>
+              </Pressable>
+            </View>
+            <FlatList
+              data={recentRecipes}
+              keyExtractor={item => item.id}
+              style={gStyles.list}
+              renderItem={({ item }) => {
+                const timeSecs = cookTimes[item.id];
+                return (
+                  <View>
+                    <RecipeCard
+                      recipe={item}
+                      inventory={inventory}
+                      onPress={() => { playSFX('recipe_click'); router.push(`/recipe/${item.id}`); }}
+                    />
+                    {timeSecs !== undefined && (
+                      <View style={gStyles.cookTimeBadge}>
+                        <Text style={gStyles.cookTimeBadgeText}>⏱ {formatCookTime(timeSecs)}</Text>
+                      </View>
+                    )}
+                  </View>
+                );
+              }}
+            />
+          </>
         )
       ) : (
         /* ─── ALL RECIPES tab ────────────────────────────────────────────── */
@@ -363,7 +408,7 @@ const gStyles = {
   characterCard: { backgroundColor: '#16213e', borderWidth: 1, borderColor: '#2d2d4e', padding: 14, marginBottom: 16 } as const,
   characterCardLabel: { fontFamily: 'PressStart2P_400Regular', color: '#4a4a6a', fontSize: 7, marginBottom: 12 } as const,
   characterTop: { flexDirection: 'row' as const, alignItems: 'center' as const, marginBottom: 12 },
-  characterEmoji: { fontSize: 28, marginRight: 12 } as const,
+  characterRankIcon: { marginRight: 12 } as const,
   characterInfo: { flex: 1 } as const,
   characterTitle: { fontFamily: 'PressStart2P_400Regular', color: '#e2b96f', fontSize: 9, marginBottom: 5 } as const,
   characterFlavor: { fontFamily: 'PressStart2P_400Regular', color: '#4a4a6a', fontSize: 7, lineHeight: 13 } as const,
@@ -387,7 +432,6 @@ const gStyles = {
   readyBadge: { position: 'absolute' as const, top: 8, right: 8, backgroundColor: '#c8a84b', paddingHorizontal: 6, paddingVertical: 3, zIndex: 1 } as const,
   readyText: { fontFamily: 'PressStart2P_400Regular', color: '#1a1a2e', fontSize: 6 } as const,
   recipeIconBox: { width: 52, height: 52, backgroundColor: '#1a1a2e', borderWidth: 1, borderColor: '#2d2d4e', alignItems: 'center' as const, justifyContent: 'center' as const },
-  recipeIconText: { fontSize: 32 } as const,
   cardBody: { flex: 1 },
   cardTop: { flexDirection: 'row' as const, justifyContent: 'space-between' as const, alignItems: 'center' as const },
   cardTitle: { fontFamily: 'PressStart2P_400Regular', color: '#c8c8e8', fontSize: 10, flex: 1, marginRight: 8 } as const,
@@ -399,6 +443,10 @@ const gStyles = {
   emojiTile: { backgroundColor: '#1a1a2e', borderWidth: 1, borderColor: '#2d2d4e', width: 36, height: 36, alignItems: 'center' as const, justifyContent: 'center' as const },
   emojiText: { fontSize: 18 } as const,
   overflowText: { fontFamily: 'PressStart2P_400Regular', color: '#4a4a6a', fontSize: 7 } as const,
+  recentHeader: { flexDirection: 'row' as const, justifyContent: 'flex-end' as const, marginBottom: 8 },
+  clearRecentText: { fontFamily: 'PressStart2P_400Regular', color: '#c84b4b', fontSize: 7 } as const,
+  cookTimeBadge: { marginTop: -10, marginBottom: 12, paddingHorizontal: 16, paddingBottom: 8, backgroundColor: '#16213e', borderLeftWidth: 1, borderRightWidth: 1, borderBottomWidth: 1, borderColor: '#2d2d4e', alignSelf: 'flex-end' as const, paddingLeft: 10, paddingRight: 10 },
+  cookTimeBadgeText: { fontFamily: 'PressStart2P_400Regular', color: '#4a4a6a', fontSize: 7 } as const,
   recipeTabRow: { flexDirection: 'row' as const, borderBottomWidth: 1, borderBottomColor: '#2d2d4e', marginBottom: 14 },
   recipeTab: { flex: 1, alignItems: 'center' as const, paddingBottom: 10, position: 'relative' as const },
   recipeTabActive: {} as const,

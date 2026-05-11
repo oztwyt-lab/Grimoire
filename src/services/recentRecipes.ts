@@ -26,3 +26,37 @@ export async function markRecipeRecent(userId: string, recipeId: string): Promis
     console.warn('Unable to update recent recipes', error);
   }
 }
+
+export async function clearRecentRecipes(userId: string): Promise<void> {
+  try {
+    await AsyncStorage.removeItem(getRecentRecipesKey(userId));
+  } catch (error) {
+    console.warn('Unable to clear recent recipes', error);
+  }
+}
+
+// ─── Cook session times ───────────────────────────────────────────────────────
+
+function getCookTimesKey(userId: string) {
+  return `@grimor_cook_times:${userId}`;
+}
+
+export async function getCookTimes(userId: string): Promise<Record<string, number>> {
+  try {
+    const raw = await AsyncStorage.getItem(getCookTimesKey(userId));
+    const parsed = raw ? JSON.parse(raw) : {};
+    return typeof parsed === 'object' && parsed !== null ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+
+export async function setCookTime(userId: string, recipeId: string, seconds: number): Promise<void> {
+  try {
+    const times = await getCookTimes(userId);
+    times[recipeId] = seconds;
+    await AsyncStorage.setItem(getCookTimesKey(userId), JSON.stringify(times));
+  } catch (error) {
+    console.warn('Unable to save cook time', error);
+  }
+}

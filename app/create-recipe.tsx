@@ -183,15 +183,6 @@ export default function CreateRecipe() {
             <Text style={crStyles.limitTitle}>{t('sub_recipe_limit')}</Text>
             <Text style={crStyles.limitMessage}>{t('sub_limit_msg_recipe')}</Text>
             <Pressable
-              style={({ pressed }) => [crStyles.limitUpgradeButton, pressed && { opacity: 0.72 }]}
-              onPress={() => {
-                setLimitVisible(false);
-                router.push('/subscription');
-              }}
-            >
-              <Text style={crStyles.limitUpgradeText}>{t('sub_upgrade_cta')}</Text>
-            </Pressable>
-            <Pressable
               style={({ pressed }) => [crStyles.limitCloseButton, pressed && { opacity: 0.5 }]}
               onPress={() => setLimitVisible(false)}
             >

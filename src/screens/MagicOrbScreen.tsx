@@ -17,6 +17,8 @@ import {
 import { addItemsToShoppingList } from '../services/shoppingList';
 import { playSFX } from '../services/audio';
 import { normalizeRecipeLanguage, recipeLanguageLabel } from '../data/recipeLanguage';
+import IngredientIcon from '../components/IngredientIcon';
+import RecipeIconArt from '../components/RecipeIconArt';
 
 type Tab = 'canCook' | 'discover';
 type DiscoverFilter = 'all' | 'meat' | 'vegetarian' | 'quick';
@@ -81,7 +83,7 @@ function RecipeCard({
   return (
     <Pressable style={({ pressed }) => [styles.card, pressed && styles.cardPressed]} onPress={onPress}>
       <View style={styles.cardTop}>
-        <Text style={styles.cardIcon}>{recipe.icon || '🍲'}</Text>
+        <RecipeIconArt icon={recipe.icon} size={30} style={styles.cardIcon} />
         <View style={styles.cardTitleWrap}>
           <Text style={styles.cardTitle} numberOfLines={2}>{recipe.name.toUpperCase()}</Text>
           <Text style={styles.cardMeta}>
@@ -103,9 +105,10 @@ function RecipeCard({
       {mode === 'canCook' && missing.length > 0 && (
         <View style={styles.missingWrap}>
           {missingPreview.map(ingredient => (
-            <Text key={`${recipe.id}-${ingredient.id}`} style={styles.missingChip}>
-              {ingredient.emoji} {ingredientName(ingredient.id, ingredient.name, language)}
-            </Text>
+            <View key={`${recipe.id}-${ingredient.id}`} style={styles.missingChip}>
+              <IngredientIcon id={ingredient.id} emoji={ingredient.emoji} size={14} imageStyle={styles.missingIcon} textStyle={styles.missingIconText} />
+              <Text style={styles.missingChipText}>{ingredientName(ingredient.id, ingredient.name, language)}</Text>
+            </View>
           ))}
           {missingOverflow > 0 && <Text style={styles.missingChip}>+{missingOverflow} {t('magic_orb_more')}</Text>}
         </View>
@@ -319,7 +322,7 @@ const styles = StyleSheet.create({
   card: { backgroundColor: '#16213e', borderWidth: 1, borderColor: '#2d2d4e', padding: 14, marginBottom: 10 },
   cardPressed: { backgroundColor: '#202447' },
   cardTop: { flexDirection: 'row', alignItems: 'center', marginBottom: 10 },
-  cardIcon: { fontSize: 28, marginRight: 12 },
+  cardIcon: { marginRight: 12 },
   cardTitleWrap: { flex: 1 },
   cardTitle: { fontFamily: 'PressStart2P_400Regular', color: '#c8c8e8', fontSize: 9, lineHeight: 16, marginBottom: 5 },
   cardMeta: { fontFamily: 'PressStart2P_400Regular', color: '#4a4a6a', fontSize: 6 },
@@ -331,7 +334,10 @@ const styles = StyleSheet.create({
   sourceTag: { fontFamily: 'PressStart2P_400Regular', color: '#e2b96f', borderWidth: 1, borderColor: '#e2b96f', fontSize: 6, paddingHorizontal: 7, paddingVertical: 3 },
   importedTag: { fontFamily: 'PressStart2P_400Regular', color: '#4caf50', borderWidth: 1, borderColor: '#4caf50', fontSize: 6, paddingHorizontal: 7, paddingVertical: 3 },
   missingWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
-  missingChip: { fontFamily: 'PressStart2P_400Regular', color: '#c8c8e8', backgroundColor: '#1a1a2e', borderWidth: 1, borderColor: '#2d2d4e', fontSize: 6, paddingHorizontal: 7, paddingVertical: 5 },
+  missingChip: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#1a1a2e', borderWidth: 1, borderColor: '#2d2d4e', paddingHorizontal: 7, paddingVertical: 5 },
+  missingChipText: { fontFamily: 'PressStart2P_400Regular', color: '#c8c8e8', fontSize: 6 },
+  missingIcon: { width: 14, height: 14 },
+  missingIconText: { fontSize: 12 },
   addToListButton: { alignSelf: 'flex-start', marginTop: 10, borderWidth: 1, borderColor: '#e2b96f', paddingHorizontal: 10, paddingVertical: 8 },
   addToListText: { fontFamily: 'PressStart2P_400Regular', color: '#e2b96f', fontSize: 7 },
   empty: { fontFamily: 'PressStart2P_400Regular', color: '#4a4a6a', fontSize: 9, lineHeight: 22, textAlign: 'center', marginTop: 70 },

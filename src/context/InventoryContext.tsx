@@ -4,6 +4,7 @@ import { getUserInventory, saveUserInventory, InventoryItem } from '../../lib/fi
 
 type InventoryContextType = {
   inventory: InventoryItem[];
+  inventoryLoaded: boolean;
   addItem: (item: InventoryItem) => Promise<void>;
   removeItem: (id: string) => Promise<void>;
   updateItem: (id: string, quantity: number, metric: string, expiresAt?: InventoryItem['expiresAt']) => Promise<void>;
@@ -13,6 +14,7 @@ type InventoryContextType = {
 
 const InventoryContext = createContext<InventoryContextType>({
   inventory: [],
+  inventoryLoaded: false,
   addItem: async () => {},
   removeItem: async () => {},
   updateItem: async () => {},
@@ -23,19 +25,22 @@ const InventoryContext = createContext<InventoryContextType>({
 export function InventoryProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
   const [inventory, setInventory] = useState<InventoryItem[]>([]);
+  const [inventoryLoaded, setInventoryLoaded] = useState(false);
   const ref = useRef<InventoryItem[]>([]);
 
   useEffect(() => {
-    if (!user) { setInventory([]); ref.current = []; return; }
+    if (!user) { setInventory([]); ref.current = []; setInventoryLoaded(true); return; }
+    setInventoryLoaded(false);
     getUserInventory(user.uid).then(items => {
       ref.current = items;
       setInventory(items);
-    }).catch(console.error);
+    }).catch(console.error).finally(() => setInventoryLoaded(true));
   }, [user]);
 
   const persist = useCallback((next: InventoryItem[]) => {
     ref.current = next;
     setInventory(next);
+    setInventoryLoaded(true);
     if (user) saveUserInventory(user.uid, next).catch(console.error);
   }, [user]);
 
@@ -91,7 +96,7 @@ export function InventoryProvider({ children }: { children: ReactNode }) {
   }, [persist]);
 
   return (
-    <InventoryContext.Provider value={{ inventory, addItem, removeItem, updateItem, bulkSetItems, consumeItems }}>
+    <InventoryContext.Provider value={{ inventory, inventoryLoaded, addItem, removeItem, updateItem, bulkSetItems, consumeItems }}>
       {children}
     </InventoryContext.Provider>
   );

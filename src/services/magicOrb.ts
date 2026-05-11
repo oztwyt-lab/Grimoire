@@ -3,6 +3,7 @@ import { db } from '../../firebase';
 import { InventoryItem } from '../../lib/firestore';
 import curatedRecipesSeed from '../data/curatedRecipesSeed.json';
 import { RecipeLanguageTag, normalizeRecipeLanguage } from '../data/recipeLanguage';
+import { MealType, MEAL_TYPES } from '../data/mealTypes';
 
 export type MagicOrbIngredient = {
   id: string;
@@ -16,6 +17,7 @@ export type CuratedRecipe = {
   name: string;
   icon: string;
   category: 'meat' | 'vegetarian' | 'quick' | 'general';
+  mealType?: MealType;
   estimatedMinutes: number;
   recipeLanguage?: RecipeLanguageTag;
   ingredients: MagicOrbIngredient[];
@@ -35,6 +37,8 @@ export type MatchedRecipe = AnyMagicRecipe & {
   totalIngredients: number;
   missingIngredients: { id: string; name: string; emoji: string }[];
 };
+
+const VALID_MEAL_TYPES = MEAL_TYPES.map(mt => mt.value);
 
 let curatedCache: CuratedRecipe[] | null = null;
 const LOCAL_CURATED_RECIPES = (curatedRecipesSeed as Record<string, unknown>[]).map(recipe =>
@@ -68,6 +72,11 @@ function normalizeIngredients(raw: unknown): MagicOrbIngredient[] {
   });
 }
 
+function normalizeMealType(raw: unknown): MealType | undefined {
+  const s = String(raw ?? '');
+  return VALID_MEAL_TYPES.includes(s as MealType) ? (s as MealType) : undefined;
+}
+
 function asCuratedRecipe(id: string, data: Record<string, unknown>): CuratedRecipe {
   return {
     id,
@@ -76,6 +85,7 @@ function asCuratedRecipe(id: string, data: Record<string, unknown>): CuratedReci
     category: ['meat', 'vegetarian', 'quick', 'general'].includes(String(data.category))
       ? data.category as CuratedRecipe['category']
       : 'general',
+    mealType: normalizeMealType(data.mealType),
     estimatedMinutes: typeof data.estimatedMinutes === 'number' ? data.estimatedMinutes : 30,
     recipeLanguage: normalizeRecipeLanguage(data.recipeLanguage ?? data.language),
     ingredients: normalizeIngredients(data.ingredients),
@@ -147,6 +157,7 @@ export async function importCuratedRecipe(uid: string, recipe: CuratedRecipe): P
     name: recipe.name,
     icon: recipe.icon,
     category: recipe.category,
+    ...(recipe.mealType ? { mealType: recipe.mealType } : {}),
     estimatedMinutes: recipe.estimatedMinutes,
     ...(recipe.recipeLanguage ? { recipeLanguage: recipe.recipeLanguage } : {}),
     ingredients: recipe.ingredients,

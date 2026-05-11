@@ -17,6 +17,7 @@ import { collection, query, where, getCountFromServer } from '@firebase/firestor
 import { getCharacterRank, getLevelProgress } from '../src/data/character';
 import WizardSprite, { WizardSpriteHandle } from '../src/components/WizardSprite';
 import PressableScale from '../src/components/PressableScale';
+import RankIcon from '../src/components/RankIcon';
 import * as Haptics from 'expo-haptics';
 import { useLanguage } from '../src/context/LanguageContext';
 import { RANK_TITLE_KEY } from '../src/i18n/strings';
@@ -25,18 +26,19 @@ import { playMusic, playSFX, stopMusic } from '../src/services/audio';
 
 const { width, height } = Dimensions.get('window');
 const HUD_HEIGHT = 90;
-const NAV_HEIGHT = 96;
+const NAV_HEIGHT = 112;
 // Wizard container anchor: left = width/2 - 48, so wizard right edge stays near center + 48.
 const CHARACTER_DISPLAY_W = 96;
 const CHARACTER_DISPLAY_H = 120;
 const WIZARD_RIGHT_OFFSET = CHARACTER_DISPLAY_W / 2;
 const FIREBALL_SIZE = 76;
-const NAV_ICON_SIZE = 28;
+const NAV_ICON_SIZE = 30;
 const MAIN_BACKGROUND_PANEL_ASPECT = 859 / 1414;
 const HOME_NAV_ICONS = {
   grimoire: require('../assets/icons/ui/book.png'),
   inventory: require('../assets/icons/ui/bag.png'),
   character: require('../assets/icons/ui/hat.png'),
+  magicOrb: require('../assets/candidates/openart/rpg-icons-selected/I_Crystal01.png'),
 };
 const MAIN_BACKGROUND_PANELS = [
   { key: 'fireplace', source: require('../assets/ui/main_fireplace.png') },
@@ -281,7 +283,7 @@ export default function Home() {
 
   const insets = useSafeAreaInsets();
   const hudBottom = HUD_HEIGHT + 52;
-  const roomHeight = height - hudBottom - NAV_HEIGHT - insets.bottom;
+  const roomHeight = height - hudBottom - NAV_HEIGHT;
   const backgroundHeight = width / MAIN_BACKGROUND_PANEL_ASPECT * 1.03;
   const backgroundWidth = backgroundHeight * MAIN_BACKGROUND_PANEL_ASPECT;
   const backgroundLeft = (width - backgroundWidth) / 2;
@@ -409,9 +411,12 @@ export default function Home() {
               {profile?.nickname ?? '...'}
             </Text>
           </View>
-          <Text style={styles.hudRank}>
-            {rank.emoji}  {RANK_TITLE_KEY[rank.title] ? t(RANK_TITLE_KEY[rank.title] as any) : rank.title}  LV.{rank.level}
-          </Text>
+          <View style={styles.hudRankRow}>
+            <RankIcon rank={rank} size={18} />
+            <Text style={styles.hudRank}>
+              {RANK_TITLE_KEY[rank.title] ? t(RANK_TITLE_KEY[rank.title] as any) : rank.title}  LV.{rank.level}
+            </Text>
+          </View>
           <PressableScale onPress={() => router.push('/settings')} style={styles.gearButton}>
             <Text style={styles.gearIcon}>⚙</Text>
           </PressableScale>
@@ -467,9 +472,11 @@ export default function Home() {
           onPressIn={() => pressIn(magicOrbScale)}
           onPressOut={() => pressOut(magicOrbScale)}
         >
-          <Animated.Text style={[styles.navEmoji, { transform: [{ scale: magicOrbScale }] }]}>
-            {'\uD83D\uDD2E'}
-          </Animated.Text>
+          <Animated.Image
+            source={HOME_NAV_ICONS.magicOrb}
+            style={[styles.navImageIcon, { transform: [{ scale: magicOrbScale }] }]}
+            resizeMode="contain"
+          />
           <Text style={styles.navLabel}>{t('magic_orb_title')}</Text>
         </Pressable>
 
@@ -566,6 +573,11 @@ const styles = StyleSheet.create({
     color: '#c8c8e8',
     fontSize: 8,
   },
+  hudRankRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
   gearButton: {
     marginLeft: 12,
     padding: 6,
@@ -608,8 +620,11 @@ const styles = StyleSheet.create({
   },
   navItem: {
     alignItems: 'center',
+    justifyContent: 'center',
     flex: 1,
-    paddingVertical: 8,
+    height: '100%',
+    paddingTop: 12,
+    paddingBottom: 10,
   },
   navItemCenter: {
     borderLeftWidth: 1,
@@ -619,10 +634,6 @@ const styles = StyleSheet.create({
   navItemMagicOrb: {
     borderRightWidth: 1,
     borderColor: '#2d2d4e',
-  },
-  navEmoji: {
-    fontSize: 28,
-    marginBottom: 4,
   },
   navImageIcon: {
     width: NAV_ICON_SIZE,

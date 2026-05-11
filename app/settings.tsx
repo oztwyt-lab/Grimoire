@@ -197,15 +197,6 @@ export default function Settings() {
 
       <View style={sStyles.divider} />
 
-      {/* ─── Danger Zone ──────────────────────────────────────────────────── */}
-      <PressableScale onPress={() => router.push('/subscription')} style={sStyles.subscriptionButtonWrap}>
-        <View style={sStyles.subscriptionButton}>
-          <Text style={sStyles.subscriptionButtonText}>{t('settings_subscription')}</Text>
-        </View>
-      </PressableScale>
-
-      <View style={sStyles.divider} />
-
       <PressableScale onPress={() => setFeedbackOpen(true)} style={sStyles.feedbackButtonWrap}>
         <View style={sStyles.feedbackButton}>
           <Text style={sStyles.feedbackButtonText}>{t('settings_feedback')}</Text>

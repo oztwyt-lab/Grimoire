@@ -11,7 +11,7 @@ import { Timestamp } from '@firebase/firestore';
 import { useLanguage } from '../../src/context/LanguageContext';
 import { useInventory } from '../../src/context/InventoryContext';
 import { useSubscription } from '../../src/context/SubscriptionContext';
-import { INGREDIENTS, CATEGORIES, CATEGORY_ICONS, CATEGORY_TRANSLATIONS, Ingredient, getIngredientCategory } from '../../src/data/ingredients';
+import { INGREDIENTS, CATEGORIES, CATEGORY_TRANSLATIONS, Ingredient, getIngredientCategory } from '../../src/data/ingredients';
 import { INGREDIENT_BUFFS } from '../../src/data/ingredientBuffs';
 import { StringKey } from '../../src/i18n/strings';
 import PressableScale from '../../src/components/PressableScale';
@@ -205,7 +205,7 @@ export default function Inventory() {
   const catLabel = (cat: string) =>
     cat === 'All'
       ? t('picker_all')
-      : `${CATEGORY_ICONS[cat as keyof typeof CATEGORY_ICONS]} ${language === 'tr' ? (CATEGORY_TRANSLATIONS[cat] ?? cat) : cat}`;
+      : `${language === 'tr' ? (CATEGORY_TRANSLATIONS[cat] ?? cat) : cat}`;
 
   const ingName = (id: string) => {
     const ing = INGREDIENTS.find(i => i.id === id);
@@ -469,9 +469,10 @@ export default function Inventory() {
                 onPress={() => handleOpenInventoryDetail(item.id, item.quantity, item.metric)}
                 style={s.useSoonRow}
               >
-                <Text style={s.useSoonName} numberOfLines={1}>
-                  {ing?.emoji ?? item.emoji ?? '🥄'} {ingName(item.id).toUpperCase()}
-                </Text>
+                <View style={s.useSoonNameWrap}>
+                  <IngredientIcon id={item.id} emoji={ing?.emoji ?? item.emoji} size={18} imageStyle={s.useSoonIcon} textStyle={s.useSoonIconText} />
+                  <Text style={s.useSoonName} numberOfLines={1}>{ingName(item.id).toUpperCase()}</Text>
+                </View>
                 <Text style={[s.useSoonDate, expired && s.useSoonExpired]}>{label}</Text>
               </PressableScale>
             );
@@ -638,15 +639,6 @@ export default function Inventory() {
           <View style={s.limitCard}>
             <Text style={s.limitTitle}>{t('sub_inventory_limit')}</Text>
             <Text style={s.limitMessage}>{t('sub_limit_msg_inventory')}</Text>
-            <PressableScale
-              onPress={() => {
-                setLimitVisible(false);
-                router.push('/subscription');
-              }}
-              style={s.limitUpgradeButton}
-            >
-              <Text style={s.limitUpgradeText}>{t('sub_upgrade_cta')}</Text>
-            </PressableScale>
             <Pressable onPress={() => setLimitVisible(false)} style={s.limitCloseButton}>
               <Text style={s.limitCloseText}>{t('sub_close')}</Text>
             </Pressable>
@@ -673,6 +665,9 @@ const s = StyleSheet.create({
   useSoon:         { backgroundColor: '#1a1a2e', borderWidth: 1, borderColor: '#ff9800', padding: 10, marginBottom: 14 },
   useSoonTitle:    { fontFamily: 'PressStart2P_400Regular', color: '#ff9800', fontSize: 9, marginBottom: 8 },
   useSoonRow:      { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#16213e', borderWidth: 1, borderColor: '#2d2d4e', padding: 8, marginBottom: 6, gap: 8 },
+  useSoonNameWrap: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 6 },
+  useSoonIcon:     { width: 18, height: 18 },
+  useSoonIconText: { fontSize: 14 },
   useSoonName:     { flex: 1, fontFamily: 'PressStart2P_400Regular', color: '#c8c8e8', fontSize: 7 },
   useSoonDate:     { fontFamily: 'PressStart2P_400Regular', color: '#ff9800', fontSize: 6 },
   useSoonExpired:  { color: '#f44336' },

@@ -2,7 +2,7 @@ import { useMemo, useState, useEffect } from 'react';
 import { Text, View, TextInput, FlatList, Pressable, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { INGREDIENTS, CATEGORIES, CATEGORY_ICONS, CATEGORY_TRANSLATIONS, Ingredient, getIngredientCategory } from '../src/data/ingredients';
+import { INGREDIENTS, CATEGORIES, CATEGORY_TRANSLATIONS, Ingredient, getIngredientCategory } from '../src/data/ingredients';
 import { INGREDIENT_BUFFS } from '../src/data/ingredientBuffs';
 import { resolveIngredient } from '../src/store/ingredientSelection';
 import { useLanguage } from '../src/context/LanguageContext';
@@ -113,7 +113,7 @@ export default function IngredientPicker() {
         {CATEGORIES.map(cat => (
           <Pressable key={cat} style={[ipStyles.categoryChip, selectedCategory === cat && ipStyles.categoryChipActive]} onPress={() => { setSelectedCategory(cat); setSearch(''); setCustomMode(false); }}>
             <Text style={ipStyles.categoryChipText}>
-              {CATEGORY_ICONS[cat]} {language === 'tr' ? CATEGORY_TRANSLATIONS[cat] : cat}
+              {language === 'tr' ? CATEGORY_TRANSLATIONS[cat] : cat}
             </Text>
           </Pressable>
         ))}

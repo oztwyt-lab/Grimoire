@@ -17,6 +17,7 @@ import {
   subscribeShoppingList,
   toggleShoppingItem,
 } from '../services/shoppingList';
+import IngredientIcon from '../components/IngredientIcon';
 
 const METRICS = ['piece', 'g', 'kg', 'ml', 'lt', 'tbsp', 'tsp', 'cup'];
 
@@ -132,7 +133,7 @@ export default function ShoppingListScreen({ embedded = false }: { embedded?: bo
       <View style={[styles.checkbox, item.checked && styles.checkboxChecked]}>
         {item.checked && <Text style={styles.checkmark}>✓</Text>}
       </View>
-      <Text style={styles.emoji}>{item.emoji || '🛒'}</Text>
+      <IngredientIcon id={item.id} emoji={item.emoji} size={24} imageStyle={styles.itemIcon} textStyle={styles.emoji} />
       <View style={styles.rowTextWrap}>
         <Text style={styles.itemName} numberOfLines={1}>{item.name.toUpperCase()}</Text>
         <Text style={styles.recipeName} numberOfLines={1}>
@@ -189,7 +190,10 @@ export default function ShoppingListScreen({ embedded = false }: { embedded?: bo
         <View style={[styles.overlay, { paddingBottom: insets.bottom + 20 }]}>
           <View style={styles.modalCard}>
             <Text style={styles.modalTitle}>{t('list_quantity_title')}</Text>
-            <Text style={styles.modalItem}>{quantityItem?.emoji} {quantityItem?.name.toUpperCase()}</Text>
+            <View style={styles.modalItemRow}>
+              <IngredientIcon id={quantityItem?.id} emoji={quantityItem?.emoji} size={24} imageStyle={styles.modalItemIcon} textStyle={styles.emoji} />
+              <Text style={styles.modalItem}>{quantityItem?.name.toUpperCase()}</Text>
+            </View>
             <TextInput
               style={styles.input}
               keyboardType="numeric"
@@ -234,6 +238,7 @@ const styles = StyleSheet.create({
   checkboxChecked: { backgroundColor: '#e2b96f' },
   checkmark: { fontFamily: 'PressStart2P_400Regular', color: '#1a1a2e', fontSize: 10 },
   emoji: { fontSize: 22, marginRight: 10 },
+  itemIcon: { marginRight: 10 },
   rowTextWrap: { flex: 1 },
   itemName: { fontFamily: 'PressStart2P_400Regular', color: '#c8c8e8', fontSize: 8, marginBottom: 6 },
   recipeName: { fontFamily: 'PressStart2P_400Regular', color: '#4a4a6a', fontSize: 6 },
@@ -248,7 +253,9 @@ const styles = StyleSheet.create({
   overlay: { flex: 1, backgroundColor: 'rgba(10, 10, 20, 0.78)', alignItems: 'center', justifyContent: 'center', padding: 20 },
   modalCard: { width: '100%', maxWidth: 380, backgroundColor: '#16213e', borderWidth: 2, borderColor: '#2d2d4e', padding: 18 },
   modalTitle: { fontFamily: 'PressStart2P_400Regular', color: '#e2b96f', fontSize: 10, lineHeight: 18, textAlign: 'center', marginBottom: 14 },
-  modalItem: { fontFamily: 'PressStart2P_400Regular', color: '#c8c8e8', fontSize: 8, lineHeight: 16, textAlign: 'center', marginBottom: 12 },
+  modalItem: { fontFamily: 'PressStart2P_400Regular', color: '#c8c8e8', fontSize: 8, lineHeight: 16, textAlign: 'center' },
+  modalItemRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 12 },
+  modalItemIcon: { marginBottom: 0 },
   input: { backgroundColor: '#1a1a2e', borderWidth: 1, borderColor: '#2d2d4e', color: '#c8c8e8', fontFamily: 'PressStart2P_400Regular', fontSize: 10, padding: 12, marginBottom: 12, textAlign: 'center' },
   pickerCard: { maxHeight: '82%' },
   categoryRow: { gap: 8, paddingBottom: 12 },

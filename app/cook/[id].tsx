@@ -1,5 +1,5 @@
 import { useState, useReducer, useEffect, useRef, useCallback } from 'react';
-import { View, Text, Alert, useWindowDimensions, StyleSheet, Image, ImageBackground } from 'react-native';
+import { View, Text, Alert, useWindowDimensions, StyleSheet, Image, ImageBackground, ImageSourcePropType, ViewStyle } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { doc, getDoc } from '@firebase/firestore';
@@ -18,10 +18,11 @@ import Animated, {
   runOnJS,
 } from 'react-native-reanimated';
 import PressableScale from '../../src/components/PressableScale';
-import { getActionEmoji } from '../../src/utils/actionEmoji';
 import { getUserProfile } from '../../lib/firestore';
 import { playMusic, playSFX, stopMusic } from '../../src/services/audio';
-import { markRecipeRecent } from '../../src/services/recentRecipes';
+import { markRecipeRecent, setCookTime } from '../../src/services/recentRecipes';
+import { hasRecipeIngredients, parseRecipeQuantity } from '../../src/utils/recipeInventory';
+import CookingActionIcon from '../../src/components/CookingActionIcon';
 
 const WIZARD_IDLE_SHEET = require('../../assets/characters/wizard_character/mage_idle.png');
 const WIZARD_CAST_SHEET = require('../../assets/characters/wizard_character/attack_right.png');
@@ -42,6 +43,7 @@ const GHOST_BOSS_SHEETS = [
   require('../../assets/bosses/ghosts/ghost_green.png'),
   require('../../assets/bosses/ghosts/ghost_red.png'),
 ];
+const USE_OPENART_BOSS_POLISH = true;
 const FIREBALL_FRAMES = [
   require('../../assets/effects/fireball/Effects_Fire_0_01.png'),
   require('../../assets/effects/fireball/Effects_Fire_0_02.png'),
@@ -72,22 +74,187 @@ const FIREBALL_FRAMES = [
   require('../../assets/effects/fireball/Effects_Fire_0_27.png'),
   require('../../assets/effects/fireball/Effects_Fire_0_28.png'),
 ];
-const EXPLOSION_SHEET = require('../../assets/effects/explosion/explosion_1.png');
+const SMOKE_FRAMES = [
+  require('../../assets/effects/smoke/0001.png'),
+  require('../../assets/effects/smoke/0002.png'),
+  require('../../assets/effects/smoke/0003.png'),
+  require('../../assets/effects/smoke/0004.png'),
+  require('../../assets/effects/smoke/0005.png'),
+  require('../../assets/effects/smoke/0006.png'),
+  require('../../assets/effects/smoke/0007.png'),
+  require('../../assets/effects/smoke/0008.png'),
+  require('../../assets/effects/smoke/0009.png'),
+  require('../../assets/effects/smoke/0010.png'),
+  require('../../assets/effects/smoke/0011.png'),
+  require('../../assets/effects/smoke/0012.png'),
+  require('../../assets/effects/smoke/0013.png'),
+  require('../../assets/effects/smoke/0014.png'),
+  require('../../assets/effects/smoke/0015.png'),
+  require('../../assets/effects/smoke/0016.png'),
+  require('../../assets/effects/smoke/0017.png'),
+  require('../../assets/effects/smoke/0018.png'),
+  require('../../assets/effects/smoke/0019.png'),
+  require('../../assets/effects/smoke/0020.png'),
+];
+const HIT_IMPACT_FRAMES = [
+  require('../../assets/effects/hit_fire_smoke/0001.png'),
+  require('../../assets/effects/hit_fire_smoke/0002.png'),
+  require('../../assets/effects/hit_fire_smoke/0003.png'),
+  require('../../assets/effects/hit_fire_smoke/0004.png'),
+  require('../../assets/effects/hit_fire_smoke/0005.png'),
+  require('../../assets/effects/hit_fire_smoke/0006.png'),
+  require('../../assets/effects/hit_fire_smoke/0007.png'),
+  require('../../assets/effects/hit_fire_smoke/0008.png'),
+  require('../../assets/effects/hit_fire_smoke/0009.png'),
+  require('../../assets/effects/hit_fire_smoke/0010.png'),
+  require('../../assets/effects/hit_fire_smoke/0011.png'),
+  require('../../assets/effects/hit_fire_smoke/0012.png'),
+  require('../../assets/effects/hit_fire_smoke/0013.png'),
+  require('../../assets/effects/hit_fire_smoke/0014.png'),
+  require('../../assets/effects/hit_fire_smoke/0015.png'),
+  require('../../assets/effects/hit_fire_smoke/0016.png'),
+  require('../../assets/effects/hit_fire_smoke/0017.png'),
+  require('../../assets/effects/hit_fire_smoke/0018.png'),
+  require('../../assets/effects/hit_fire_smoke/0019.png'),
+  require('../../assets/effects/hit_fire_smoke/0020.png'),
+  require('../../assets/effects/hit_fire_smoke/0021.png'),
+  require('../../assets/effects/hit_fire_smoke/0022.png'),
+  require('../../assets/effects/hit_fire_smoke/0023.png'),
+  require('../../assets/effects/hit_fire_smoke/0024.png'),
+  require('../../assets/effects/hit_fire_smoke/0025.png'),
+  require('../../assets/effects/hit_fire_smoke/0026.png'),
+  require('../../assets/effects/hit_fire_smoke/0027.png'),
+  require('../../assets/effects/hit_fire_smoke/0028.png'),
+  require('../../assets/effects/hit_fire_smoke/0029.png'),
+  require('../../assets/effects/hit_fire_smoke/0030.png'),
+];
+const DEFEAT_RING_FRAMES = [
+  require('../../assets/effects/defeat_magic_ring/0001.png'),
+  require('../../assets/effects/defeat_magic_ring/0002.png'),
+  require('../../assets/effects/defeat_magic_ring/0003.png'),
+  require('../../assets/effects/defeat_magic_ring/0004.png'),
+  require('../../assets/effects/defeat_magic_ring/0005.png'),
+  require('../../assets/effects/defeat_magic_ring/0006.png'),
+  require('../../assets/effects/defeat_magic_ring/0007.png'),
+  require('../../assets/effects/defeat_magic_ring/0008.png'),
+  require('../../assets/effects/defeat_magic_ring/0009.png'),
+  require('../../assets/effects/defeat_magic_ring/0010.png'),
+  require('../../assets/effects/defeat_magic_ring/0011.png'),
+  require('../../assets/effects/defeat_magic_ring/0012.png'),
+  require('../../assets/effects/defeat_magic_ring/0013.png'),
+  require('../../assets/effects/defeat_magic_ring/0014.png'),
+  require('../../assets/effects/defeat_magic_ring/0015.png'),
+  require('../../assets/effects/defeat_magic_ring/0016.png'),
+  require('../../assets/effects/defeat_magic_ring/0017.png'),
+  require('../../assets/effects/defeat_magic_ring/0018.png'),
+  require('../../assets/effects/defeat_magic_ring/0019.png'),
+  require('../../assets/effects/defeat_magic_ring/0020.png'),
+  require('../../assets/effects/defeat_magic_ring/0021.png'),
+  require('../../assets/effects/defeat_magic_ring/0022.png'),
+  require('../../assets/effects/defeat_magic_ring/0023.png'),
+  require('../../assets/effects/defeat_magic_ring/0024.png'),
+  require('../../assets/effects/defeat_magic_ring/0025.png'),
+  require('../../assets/effects/defeat_magic_ring/0026.png'),
+  require('../../assets/effects/defeat_magic_ring/0027.png'),
+  require('../../assets/effects/defeat_magic_ring/0028.png'),
+  require('../../assets/effects/defeat_magic_ring/0029.png'),
+  require('../../assets/effects/defeat_magic_ring/0030.png'),
+  require('../../assets/effects/defeat_magic_ring/0031.png'),
+  require('../../assets/effects/defeat_magic_ring/0032.png'),
+  require('../../assets/effects/defeat_magic_ring/0033.png'),
+  require('../../assets/effects/defeat_magic_ring/0034.png'),
+  require('../../assets/effects/defeat_magic_ring/0035.png'),
+  require('../../assets/effects/defeat_magic_ring/0036.png'),
+  require('../../assets/effects/defeat_magic_ring/0037.png'),
+  require('../../assets/effects/defeat_magic_ring/0038.png'),
+  require('../../assets/effects/defeat_magic_ring/0039.png'),
+  require('../../assets/effects/defeat_magic_ring/0040.png'),
+];
 const HERO_IDLE_FRAME_COUNT = 7;
 const HERO_ATTACK_FRAME_COUNT = 7;
 const HERO_MAX_FRAME_COUNT = 7;
 const HERO_FRAME_W = 88;
 const HERO_FRAME_H = 88;
-const BOSS_SHEET_COLS = 5;
-const BOSS_SHEET_ROWS = 2;
-const BOSS_FRAME_COUNT = BOSS_SHEET_COLS * BOSS_SHEET_ROWS;
-const BOSS_FRAME_W = 86;
-const BOSS_FRAME_H = 120;
-const BOSS_VIEW_W = 76;
-const BOSS_VIEW_H = 112;
-const EXPLOSION_FRAMES = 8;
-const EXPLOSION_FRAME_W = 96;
-const EXPLOSION_FRAME_H = 96;
+type BossProfile = {
+  id: string;
+  source: ImageSourcePropType;
+  cols: number;
+  rows: number;
+  frameCount: number;
+  frameW: number;
+  frameH: number;
+  viewW: number;
+  viewH: number;
+  yOffset?: number;
+  hitStyle?: ViewStyle;
+  defeatStyle?: ViewStyle;
+  auraStyle?: ViewStyle;
+};
+
+const LEGACY_GHOST_BOSSES: BossProfile[] = GHOST_BOSS_SHEETS.map((source, index) => ({
+  id: `ghost-${index}`,
+  source,
+  cols: 5,
+  rows: 2,
+  frameCount: 10,
+  frameW: 86,
+  frameH: 120,
+  viewW: 76,
+  viewH: 112,
+  defeatStyle: { opacity: 0.88 },
+}));
+
+const OPENART_BOSSES: BossProfile[] = [
+  {
+    id: 'arcane-watcher',
+    source: require('../../assets/bosses/openart/arcane_watcher.png'),
+    cols: 6,
+    rows: 5,
+    frameCount: 6,
+    frameW: 112,
+    frameH: 93,
+    viewW: 102,
+    viewH: 92,
+    yOffset: 8,
+    auraStyle: { opacity: 0.28, transform: [{ scale: 0.86 }] },
+    hitStyle: { transform: [{ scale: 0.86 }], opacity: 0.9 },
+    defeatStyle: { transform: [{ scale: 0.92 }], opacity: 0.92 },
+  },
+  {
+    id: 'void-watcher',
+    source: require('../../assets/bosses/openart/void_watcher.png'),
+    cols: 6,
+    rows: 5,
+    frameCount: 6,
+    frameW: 112,
+    frameH: 93,
+    viewW: 102,
+    viewH: 92,
+    yOffset: 8,
+    auraStyle: { opacity: 0.34, transform: [{ scale: 0.92 }] },
+    hitStyle: { transform: [{ scale: 0.82 }], opacity: 0.98 },
+    defeatStyle: { transform: [{ scale: 0.96 }], opacity: 0.95 },
+  },
+  {
+    id: 'iron-champion',
+    source: require('../../assets/bosses/openart/iron_champion.png'),
+    cols: 8,
+    rows: 4,
+    frameCount: 8,
+    frameW: 385,
+    frameH: 318,
+    viewW: 138,
+    viewH: 114,
+    yOffset: -2,
+    auraStyle: { opacity: 0.18, transform: [{ scale: 1.2 }] },
+    hitStyle: { transform: [{ scale: 1.28 }], opacity: 0.96 },
+    defeatStyle: { transform: [{ scale: 1.16 }], opacity: 0.88 },
+  },
+];
+
+const BOSS_PROFILES = USE_OPENART_BOSS_POLISH
+  ? [...LEGACY_GHOST_BOSSES, ...OPENART_BOSSES]
+  : LEGACY_GHOST_BOSSES;
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -192,6 +359,12 @@ function battleReducer(state: BattleState, action: BattleAction): BattleState {
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
+function formatCookTime(secs: number): string {
+  const m = Math.floor(secs / 60);
+  const s = secs % 60;
+  return `${m}:${s.toString().padStart(2, '0')}`;
+}
+
 function splitTextToSteps(raw: string): CookStep[] {
   const trimmed = raw.trim();
   if (!trimmed) return [];
@@ -228,14 +401,6 @@ function parseDuration(text: string): string | null {
   return m ? `⏱ ${m[1]} min` : null;
 }
 
-function parseRecipeQty(qty: string | undefined): number {
-  if (!qty) return 1;
-  const frac = qty.match(/^(\d+)\/(\d+)/);
-  if (frac) return parseInt(frac[1], 10) / parseInt(frac[2], 10);
-  const num = qty.match(/[\d.]+/);
-  return num ? parseFloat(num[0]) : 1;
-}
-
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export default function CookMode() {
@@ -243,28 +408,35 @@ export default function CookMode() {
   const router = useRouter();
   const { user } = useAuth();
   const { t } = useLanguage();
-  const { consumeItems } = useInventory();
+  const { inventory, inventoryLoaded, consumeItems } = useInventory();
   const { width: screenWidth, height: screenHeight } = useWindowDimensions();
   const isLandscape = screenWidth > screenHeight;
   const arenaWidth = isLandscape ? screenWidth * 0.4 : screenWidth;
   const insets = useSafeAreaInsets();
-  const bossSheet = useRef(GHOST_BOSS_SHEETS[Math.floor(Math.random() * GHOST_BOSS_SHEETS.length)]).current;
+  const bossProfile = useRef(BOSS_PROFILES[Math.floor(Math.random() * BOSS_PROFILES.length)]).current;
 
   const [recipe, setRecipe] = useState<RawRecipe | null>(null);
   const [steps, setSteps] = useState<CookStep[]>([]);
   const [loading, setLoading] = useState(true);
   const [isFemale, setIsFemale] = useState(false);
   const ingredientsConsumedRef = useRef(false);
+  const blockedMissingIngredientsRef = useRef(false);
+  const cookStartRef = useRef<number | null>(null);
+  const [finalTimeSecs, setFinalTimeSecs] = useState<number | null>(null);
 
   // Sprite frame cycling
   const [fireballFrame, setFireballFrame] = useState(0);
-  const [explosionVisible, setExplosionVisible] = useState(false);
-  const [explosionFrame, setExplosionFrame] = useState(0);
+  const [hitImpactVisible, setHitImpactVisible] = useState(false);
+  const [hitImpactFrame, setHitImpactFrame] = useState(0);
+  const [defeatRingVisible, setDefeatRingVisible] = useState(false);
+  const [defeatRingFrame, setDefeatRingFrame] = useState(0);
   const [orbFrame, setOrbFrame] = useState(0);
   const [wizardFrame, setWizardFrame] = useState(0);
   const [bossFrame, setBossFrame] = useState(0);
+  const [smokeFrame, setSmokeFrame] = useState(0);
   const fireballIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const explosionIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const hitImpactIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const defeatRingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const orbIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const [battle, dispatch] = useReducer(battleReducer, makeInitial(0));
@@ -379,12 +551,16 @@ export default function CookMode() {
 
   useEffect(() => {
     const bossTimer = setInterval(() => {
-      setBossFrame(frame => (frame + 1) % BOSS_FRAME_COUNT);
+      setBossFrame(frame => (frame + 1) % bossProfile.frameCount);
     }, 180);
+    const smokeTimer = setInterval(() => {
+      setSmokeFrame(frame => (frame + 1) % SMOKE_FRAMES.length);
+    }, 90);
     return () => {
       clearInterval(bossTimer);
+      clearInterval(smokeTimer);
     };
-  }, []);
+  }, [bossProfile.frameCount]);
 
   useEffect(() => {
     let alive = true;
@@ -518,6 +694,7 @@ export default function CookMode() {
           if (user) markRecipeRecent(user.uid, snap.id).catch(console.warn);
           setSteps(normalized);
           dispatch({ type: 'INIT', totalSteps: normalized.length });
+          cookStartRef.current = Date.now();
           bossHpWidth.value = 1;
           playerHpWidth.value = 1;
           bossOpacity.value = 1;
@@ -534,6 +711,16 @@ export default function CookMode() {
     fetchRecipe();
   }, [id, user]);
 
+  useEffect(() => {
+    if (!recipe || !inventoryLoaded || blockedMissingIngredientsRef.current) return;
+    if (hasRecipeIngredients(recipe.ingredients, inventory)) return;
+
+    blockedMissingIngredientsRef.current = true;
+    Alert.alert(t('recipe_missing_ingredients_title'), t('recipe_missing_ingredients_msg'), [
+      { text: 'OK', onPress: () => router.replace(`/recipe/${recipe.id}`) },
+    ]);
+  }, [inventory, inventoryLoaded, recipe, router, t]);
+
   // ─── Completion modal ───────────────────────────────────────────────────────
 
   useEffect(() => {
@@ -543,6 +730,15 @@ export default function CookMode() {
     }
   }, [battle.showCompletion]);
 
+  // ─── Capture and persist cook session time ───────────────────────────────────
+
+  useEffect(() => {
+    if (!battle.showCompletion || finalTimeSecs !== null || !cookStartRef.current || !user || !recipe) return;
+    const secs = Math.round((Date.now() - cookStartRef.current) / 1000);
+    setFinalTimeSecs(secs);
+    setCookTime(user.uid, recipe.id, secs).catch(console.warn);
+  }, [battle.showCompletion, user, recipe, finalTimeSecs]);
+
   // ─── Consume ingredients on completion ──────────────────────────────────────
 
   useEffect(() => {
@@ -550,7 +746,7 @@ export default function CookMode() {
     ingredientsConsumedRef.current = true;
     const items = (recipe.ingredients ?? []).map(ing => ({
       id: ing.id,
-      quantity: parseRecipeQty(ing.quantity),
+      quantity: parseRecipeQuantity(ing.quantity),
       metric: 'adet',
     }));
     if (items.length > 0) consumeItems(items);
@@ -569,22 +765,40 @@ export default function CookMode() {
     setFireballFrame(0);
   }, []);
 
-  const triggerExplosion = useCallback(() => {
-    if (explosionIntervalRef.current) clearInterval(explosionIntervalRef.current);
-    setExplosionFrame(0);
-    setExplosionVisible(true);
+  const triggerHitImpact = useCallback(() => {
+    if (hitImpactIntervalRef.current) clearInterval(hitImpactIntervalRef.current);
+    setHitImpactFrame(0);
+    setHitImpactVisible(true);
 
     let nextFrame = 0;
-    explosionIntervalRef.current = setInterval(() => {
+    hitImpactIntervalRef.current = setInterval(() => {
       nextFrame += 1;
-      if (nextFrame >= EXPLOSION_FRAMES) {
-        if (explosionIntervalRef.current) clearInterval(explosionIntervalRef.current);
-        explosionIntervalRef.current = null;
-        setExplosionVisible(false);
+      if (nextFrame >= HIT_IMPACT_FRAMES.length) {
+        if (hitImpactIntervalRef.current) clearInterval(hitImpactIntervalRef.current);
+        hitImpactIntervalRef.current = null;
+        setHitImpactVisible(false);
         return;
       }
-      setExplosionFrame(nextFrame);
-    }, 55);
+      setHitImpactFrame(nextFrame);
+    }, 42);
+  }, []);
+
+  const triggerDefeatRing = useCallback(() => {
+    if (defeatRingIntervalRef.current) clearInterval(defeatRingIntervalRef.current);
+    setDefeatRingFrame(0);
+    setDefeatRingVisible(true);
+
+    let nextFrame = 0;
+    defeatRingIntervalRef.current = setInterval(() => {
+      nextFrame += 1;
+      if (nextFrame >= DEFEAT_RING_FRAMES.length) {
+        if (defeatRingIntervalRef.current) clearInterval(defeatRingIntervalRef.current);
+        defeatRingIntervalRef.current = null;
+        setDefeatRingVisible(false);
+        return;
+      }
+      setDefeatRingFrame(nextFrame);
+    }, 38);
   }, []);
 
   const startOrbAnim = useCallback(() => {
@@ -601,7 +815,8 @@ export default function CookMode() {
     startOrbAnim();
     return () => {
       if (fireballIntervalRef.current) clearInterval(fireballIntervalRef.current);
-      if (explosionIntervalRef.current) clearInterval(explosionIntervalRef.current);
+      if (hitImpactIntervalRef.current) clearInterval(hitImpactIntervalRef.current);
+      if (defeatRingIntervalRef.current) clearInterval(defeatRingIntervalRef.current);
       if (orbIntervalRef.current) clearInterval(orbIntervalRef.current);
     };
   }, [startOrbAnim]);
@@ -649,10 +864,10 @@ export default function CookMode() {
       damageOpacity.value = withDelay(200, withTiming(0, { duration: 300 }));
       fireballOpacity.value = withTiming(0, { duration: 100 });
       runOnJS(playSFX)('fireball_hit');
-      runOnJS(triggerExplosion)();
+      runOnJS(triggerHitImpact)();
       runOnJS(onAttackDone)();
     });
-  }, [arenaWidth, onAttackDone, triggerExplosion]);
+  }, [arenaWidth, onAttackDone, triggerHitImpact]);
 
   const runCounterattack = useCallback((dodgeSuccess: boolean) => {
     runOnJS(startOrbAnim)();
@@ -692,6 +907,7 @@ export default function CookMode() {
   }, [arenaWidth, screenWidth, onCounterattackDone]);
 
   const runBossDefeat = useCallback(() => {
+    runOnJS(triggerDefeatRing)();
     bossHpWidth.value = withTiming(0, { duration: 300 });
     bossX.value = withSequence(
       withTiming(-15, { duration: 60 }),
@@ -706,7 +922,7 @@ export default function CookMode() {
       if (!finished) return;
       runOnJS(onDefeatDone)();
     }));
-  }, [onDefeatDone]);
+  }, [onDefeatDone, triggerDefeatRing]);
 
   // ─── Phase → animation trigger ───────────────────────────────────────────────
 
@@ -779,7 +995,7 @@ export default function CookMode() {
   const clampedStep = Math.min(battle.currentStep, totalSteps - 1);
   const activeStep  = steps[clampedStep];
   const stepText    = activeStep?.text ?? '';
-  const emoji       = activeStep?.emoji || getActionEmoji(stepText);
+  const actionIconText = activeStep?.emoji || stepText;
   const durationStr = activeStep?.duration
     ? `⏱ ${activeStep.duration} min`
     : parseDuration(stepText);
@@ -792,8 +1008,10 @@ export default function CookMode() {
     ? (isFemale ? WITCH_ATTACK.length : HERO_ATTACK_FRAME_COUNT)
     : (isFemale ? WITCH_IDLE.length : HERO_IDLE_FRAME_COUNT);
   const heroFrame = wizardFrame % heroFrameCount;
-  const bossCol = bossFrame % BOSS_SHEET_COLS;
-  const bossRow = Math.floor(bossFrame / BOSS_SHEET_COLS);
+  const bossCol = bossFrame % bossProfile.cols;
+  const bossRow = Math.floor(bossFrame / bossProfile.cols);
+  const bossFrameScale = bossProfile.viewH / bossProfile.frameH;
+  const bossScaledFrameW = bossProfile.frameW * bossFrameScale;
 
   const canGoBack = battle.currentStep > 0;
 
@@ -823,6 +1041,11 @@ export default function CookMode() {
 
       <ImageBackground source={BATTLE_BACKGROUND} style={[s.battleStage, isLandscape && { height: undefined, flex: 1 }]} imageStyle={s.battleStageImage} resizeMode="cover">
         <View style={s.battleTint} />
+        <View style={s.smokeLayer} pointerEvents="none">
+          <Image source={SMOKE_FRAMES[smokeFrame]} style={[s.smokePuff, s.smokePuffLeft]} resizeMode="contain" />
+          <Image source={SMOKE_FRAMES[(smokeFrame + 8) % SMOKE_FRAMES.length]} style={[s.smokePuff, s.smokePuffRight]} resizeMode="contain" />
+          <Image source={SMOKE_FRAMES[(smokeFrame + 14) % SMOKE_FRAMES.length]} style={[s.smokePuff, s.smokePuffCenter]} resizeMode="contain" />
+        </View>
         <PressableScale onPress={handleNextStep} sound={false} style={[s.heroSlot, isFemale && s.heroWitchSlot]}>
           <Animated.View style={charAnimStyle}>
             <View
@@ -864,12 +1087,12 @@ export default function CookMode() {
           />
         </Animated.View>
 
-        {explosionVisible && (
-          <View style={s.explosionWrapper} pointerEvents="none">
+        {hitImpactVisible && (
+          <View style={[s.hitImpactWrapper, bossProfile.hitStyle]} pointerEvents="none">
             <Image
-              source={EXPLOSION_SHEET}
-              style={[s.explosionSheet, { marginLeft: -explosionFrame * EXPLOSION_FRAME_W }]}
-              resizeMode="stretch"
+              source={HIT_IMPACT_FRAMES[hitImpactFrame]}
+              style={s.hitImpactImage}
+              resizeMode="contain"
             />
           </View>
         )}
@@ -904,17 +1127,37 @@ export default function CookMode() {
           </Animated.Text>
         )}
 
-        <View style={s.bossSlot}>
-          <Animated.View style={[s.bossBox, bossAnimStyle]}>
+        {defeatRingVisible && (
+          <View style={[s.defeatRingWrapper, bossProfile.defeatStyle]} pointerEvents="none">
             <Image
-              source={bossSheet}
+              source={DEFEAT_RING_FRAMES[defeatRingFrame]}
+              style={s.defeatRingImage}
+              resizeMode="contain"
+            />
+          </View>
+        )}
+
+        {bossProfile.auraStyle && (
+          <View style={[s.bossAuraWrapper, bossProfile.auraStyle]} pointerEvents="none">
+            <Image
+              source={DEFEAT_RING_FRAMES[(smokeFrame * 2) % DEFEAT_RING_FRAMES.length]}
+              style={s.bossAuraImage}
+              resizeMode="contain"
+            />
+          </View>
+        )}
+
+        <View style={[s.bossSlot, { width: Math.max(120, bossProfile.viewW), height: Math.max(120, bossProfile.viewH) }]}>
+          <Animated.View style={[s.bossBox, { width: bossProfile.viewW, height: bossProfile.viewH, marginBottom: bossProfile.yOffset ?? 0 }, bossAnimStyle]}>
+            <Image
+              source={bossProfile.source}
               style={[
                 s.bossFrameSheet,
                 {
-                  width: BOSS_FRAME_W * BOSS_SHEET_COLS,
-                  height: BOSS_FRAME_H * BOSS_SHEET_ROWS,
-                  marginLeft: -bossCol * BOSS_FRAME_W - (BOSS_FRAME_W - BOSS_VIEW_W) / 2,
-                  marginTop: -bossRow * BOSS_FRAME_H - (BOSS_FRAME_H - BOSS_VIEW_H) / 2,
+                  width: bossScaledFrameW * bossProfile.cols,
+                  height: bossProfile.viewH * bossProfile.rows,
+                  marginLeft: -bossCol * bossScaledFrameW - (bossScaledFrameW - bossProfile.viewW) / 2,
+                  marginTop: -bossRow * bossProfile.viewH,
                 },
               ]}
               resizeMode="stretch"
@@ -939,7 +1182,7 @@ export default function CookMode() {
         <Text style={s.stepLabel}>
           {t('cook_step')} {Math.min(battle.currentStep + 1, totalSteps)} / {totalSteps}
         </Text>
-        <Text style={s.actionEmoji}>{emoji}</Text>
+        <CookingActionIcon text={actionIconText} size={44} style={s.actionIcon} />
         <Animated.Text style={[s.stepText, stepSlideStyle, isLandscape && s.stepTextLandscape]}>
           {stepText}
         </Animated.Text>
@@ -1004,9 +1247,19 @@ export default function CookMode() {
       {battle.showCompletion && (
         <View style={s.completionOverlay}>
           <Animated.View style={[s.completionCard, modalCardStyle]}>
-            <Text style={s.completionEmoji}>🎉</Text>
+            <Image
+              source={require('../../assets/candidates/openart/rpg-icons-selected/I_Crystal01.png')}
+              style={s.completionIcon}
+              resizeMode="contain"
+            />
             <Text style={s.completionTitle}>{t('cook_complete_title')}</Text>
             <Text style={s.completionRecipeName}>{recipe.name}</Text>
+            {finalTimeSecs !== null && (
+              <View style={s.completionTimeRow}>
+                <Text style={s.completionTimeLabel}>{t('cook_session_time')}</Text>
+                <Text style={s.completionTimeValue}>{formatCookTime(finalTimeSecs)}</Text>
+              </View>
+            )}
             <PressableScale onPress={() => router.back()} style={s.completionButtonWrap}>
               <View style={s.completionButtonMuted}>
                 <Text style={s.completionButtonMutedText}>{t('cook_back_to_recipe')}</Text>
@@ -1050,6 +1303,11 @@ const s = StyleSheet.create({
   battleStage:  { height: 240, flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', paddingHorizontal: 16, marginBottom: 8, position: 'relative', overflow: 'hidden' },
   battleStageImage: { opacity: 0.9 },
   battleTint: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(10, 12, 24, 0.28)' },
+  smokeLayer: { ...StyleSheet.absoluteFillObject, zIndex: 1 },
+  smokePuff: { position: 'absolute', width: 170, height: 170, opacity: 0.72 },
+  smokePuffLeft: { left: 8, bottom: 10 },
+  smokePuffRight: { right: 10, bottom: 32, transform: [{ scaleX: -1 }, { scale: 1.2 }] },
+  smokePuffCenter: { left: '36%', bottom: 4, opacity: 0.58, transform: [{ scale: 1.28 }] },
   heroSlot:     { width: 92, height: 100 },
   heroWitchSlot: { width: 96, height: 120 },
   heroImage:    { width: 92, height: 92 },
@@ -1058,15 +1316,19 @@ const s = StyleSheet.create({
   heroFrameImage: { width: 92, height: 92 },
   heroWitchImage: { width: 96, height: 120 },
   heroFrameSheet: { position: 'absolute', top: 0, left: 0 },
-  bossSlot:     { width: 120, height: 120, alignItems: 'center', justifyContent: 'center' },
-  bossBox:      { width: BOSS_VIEW_W, height: BOSS_VIEW_H, overflow: 'hidden' },
+  bossSlot:     { width: 120, height: 120, alignItems: 'center', justifyContent: 'center', zIndex: 6 },
+  bossBox:      { overflow: 'hidden' },
   bossFrameSheet: { position: 'absolute', top: 0, left: 0 },
 
   // Projectiles & FX
   fireballWrapper: { position: 'absolute', bottom: 28, left: 76, width: 96, height: 70, overflow: 'hidden' },
   fireballImage:   { width: 112, height: 64 },
-  explosionWrapper: { position: 'absolute', bottom: 72, right: 86, width: EXPLOSION_FRAME_W, height: EXPLOSION_FRAME_H, overflow: 'hidden', zIndex: 12 },
-  explosionSheet: { width: EXPLOSION_FRAME_W * EXPLOSION_FRAMES, height: EXPLOSION_FRAME_H },
+  hitImpactWrapper: { position: 'absolute', bottom: 62, right: 54, width: 138, height: 138, zIndex: 12 },
+  hitImpactImage: { width: 138, height: 138, opacity: 0.94 },
+  defeatRingWrapper: { position: 'absolute', bottom: 40, right: 42, width: 168, height: 168, zIndex: 4 },
+  defeatRingImage: { width: 168, height: 168, opacity: 0.9 },
+  bossAuraWrapper: { position: 'absolute', bottom: 28, right: 26, width: 188, height: 188, zIndex: 3 },
+  bossAuraImage: { width: 188, height: 188 },
   ambientOrbWrapper: { position: 'absolute', bottom: 46, right: 104, width: 96, height: 96, overflow: 'hidden', zIndex: 2 },
   ambientOrbTwoWrapper: { position: 'absolute', bottom: 10, right: 118, width: 96, height: 96, overflow: 'hidden', zIndex: 2 },
   orbWrapper:      { position: 'absolute', bottom: 24, right: 112, width: 96, height: 96, overflow: 'hidden' },
@@ -1082,7 +1344,7 @@ const s = StyleSheet.create({
   // Section 5 — Step card
   stepCard:     { flex: 1, minHeight: 160, maxHeight: 250, marginHorizontal: 16, marginBottom: 12, backgroundColor: '#1a1a2e', borderWidth: 1, borderColor: '#2a2a4a', borderRadius: 4, padding: 18, justifyContent: 'center', alignItems: 'center' },
   stepLabel:    { fontFamily: 'PressStart2P_400Regular', color: '#4a4a6a', fontSize: 7, marginBottom: 16 },
-  actionEmoji:  { fontSize: 40, marginBottom: 16 },
+  actionIcon:  { marginBottom: 16 },
   stepText:     { fontFamily: 'PressStart2P_400Regular', color: '#c8c8e8', fontSize: 13, textAlign: 'center', lineHeight: 30 },
   stepTextLandscape: { fontSize: 10, lineHeight: 22 },
   durationBadge: { marginTop: 20, borderWidth: 1, borderColor: '#c8a84b', paddingHorizontal: 16, paddingVertical: 8 },
@@ -1105,9 +1367,12 @@ const s = StyleSheet.create({
   // Completion modal
   completionOverlay:         { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 20, elevation: 20, backgroundColor: 'rgba(0,0,0,0.85)', alignItems: 'center', justifyContent: 'center', padding: 24 },
   completionCard:            { backgroundColor: '#1a1a2e', borderWidth: 1, borderColor: '#2d2d4e', padding: 32, alignItems: 'center', width: '100%', gap: 16 },
-  completionEmoji:           { fontSize: 64 },
+  completionIcon:            { width: 64, height: 64 },
   completionTitle:           { fontFamily: 'PressStart2P_400Regular', color: '#e2b96f', fontSize: 12, textAlign: 'center', lineHeight: 26 },
   completionRecipeName:      { fontFamily: 'PressStart2P_400Regular', color: '#4a4a6a', fontSize: 8, textAlign: 'center', marginBottom: 8 },
+  completionTimeRow:         { flexDirection: 'row', alignItems: 'center', gap: 12, borderWidth: 1, borderColor: '#2d2d4e', paddingHorizontal: 20, paddingVertical: 10, marginBottom: 4 },
+  completionTimeLabel:       { fontFamily: 'PressStart2P_400Regular', color: '#4a4a6a', fontSize: 7 },
+  completionTimeValue:       { fontFamily: 'PressStart2P_400Regular', color: '#e2b96f', fontSize: 11 },
   completionButtonWrap:      { width: '100%' },
   completionButtonMuted:     { borderWidth: 1, borderColor: '#4a4a6a', padding: 16, minHeight: 52, alignItems: 'center', justifyContent: 'center' },
   completionButtonMutedText: { fontFamily: 'PressStart2P_400Regular', color: '#4a4a6a', fontSize: 8 },

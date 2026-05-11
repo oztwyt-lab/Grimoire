@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { Text, View, ScrollView, Pressable, ActivityIndicator, Alert } from 'react-native';
+import { Text, View, ScrollView, Pressable, ActivityIndicator, Alert, Image } from 'react-native';
 import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { db } from '../../firebase';
@@ -11,6 +11,7 @@ import IngredientIcon from '../../src/components/IngredientIcon';
 import { useAuth } from '../../src/context/AuthContext';
 import { markRecipeRecent } from '../../src/services/recentRecipes';
 import { RecipeLanguageTag, normalizeRecipeLanguage, recipeLanguageLabel } from '../../src/data/recipeLanguage';
+import { hasRecipeIngredients, parseRecipeQuantity } from '../../src/utils/recipeInventory';
 
 type Ingredient = { id: string; name: string; emoji: string; quantity: string; metric?: string };
 type RecipeStep = { id: string; text: string; duration: number | null };
@@ -24,14 +25,6 @@ type Recipe = {
   recipeLanguage?: RecipeLanguageTag;
   createdAt: unknown;
 };
-
-function parseRecipeQty(qty: string | undefined): number {
-  if (!qty) return 1;
-  const frac = qty.match(/^(\d+)\/(\d+)/);
-  if (frac) return parseInt(frac[1]) / parseInt(frac[2]);
-  const num = qty.match(/[\d.]+/);
-  return num ? parseFloat(num[0]) : 1;
-}
 
 function fmtQty(n: number): string {
   return Number.isInteger(n) ? String(n) : n.toFixed(1);
@@ -92,7 +85,7 @@ export default function RecipeDetail() {
   const insets = useSafeAreaInsets();
   const { t } = useLanguage();
   const { user } = useAuth();
-  const { inventory, bulkSetItems } = useInventory();
+  const { inventory, inventoryLoaded, bulkSetItems } = useInventory();
   const [recipe, setRecipe] = useState<Recipe | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -128,7 +121,7 @@ export default function RecipeDetail() {
     if (!recipe || !recipe.ingredients?.length) return;
     const items = recipe.ingredients.map(ing => ({
       id: ing.id,
-      quantity: parseRecipeQty(ing.quantity),
+      quantity: parseRecipeQuantity(ing.quantity),
       metric: 'adet',
     }));
     await bulkSetItems(items);
@@ -171,6 +164,18 @@ export default function RecipeDetail() {
   const hasSteps = Array.isArray(recipe.steps)
     ? recipe.steps.length > 0
     : Boolean((recipe.steps as string)?.trim() || recipe.preparation?.trim());
+  const ingredientsReady = inventoryLoaded && hasRecipeIngredients(recipe.ingredients, inventory);
+  const canStartCooking = hasSteps && ingredientsReady;
+  const recipeId = recipe.id;
+
+  function handleStartCooking() {
+    if (!hasSteps) return;
+    if (!ingredientsReady) {
+      Alert.alert(t('recipe_missing_ingredients_title'), t('recipe_missing_ingredients_msg'));
+      return;
+    }
+    router.push(`/cook/${recipeId}`);
+  }
 
   return (
     <ScrollView style={rdStyles.container} contentContainerStyle={[rdStyles.content, { paddingBottom: insets.bottom + 64 }]}>
@@ -201,7 +206,7 @@ export default function RecipeDetail() {
             {recipe.ingredients.map(ing => {
               const invItem = showMatch ? inventory.find(i => i.id === ing.id) : undefined;
               const have = invItem?.quantity ?? 0;
-              const need = parseRecipeQty(ing.quantity);
+              const need = parseRecipeQuantity(ing.quantity);
               const isSufficient = have >= need;
 
               return (
@@ -245,26 +250,30 @@ export default function RecipeDetail() {
           style={rdStyles.cookButtonWrapper}
         >
           <View style={[rdStyles.ingButton, !recipe.ingredients?.length && rdStyles.cookButtonDisabled]}>
+            <Image source={require('../../assets/icons/ui/bag.png')} style={rdStyles.ingButtonIcon} resizeMode="contain" />
             <Text style={[rdStyles.ingButtonText, !recipe.ingredients?.length && rdStyles.cookButtonTextDisabled]}>
-              🎒 {t('recipe_ingredients_ready')}
+              {t('recipe_ingredients_ready')}
             </Text>
           </View>
         </PressableScale>
 
         {/* Start Cooking */}
         <PressableScale
-          onPress={hasSteps ? () => router.push(`/cook/${recipe.id}`) : undefined}
-          disabled={!hasSteps}
+          onPress={hasSteps ? handleStartCooking : undefined}
+          disabled={!canStartCooking}
           style={rdStyles.cookButtonWrapper}
         >
-          <View style={[rdStyles.cookButton, !hasSteps && rdStyles.cookButtonDisabled]}>
-            <Text style={[rdStyles.cookButtonText, !hasSteps && rdStyles.cookButtonTextDisabled]}>
+          <View style={[rdStyles.cookButton, !canStartCooking && rdStyles.cookButtonDisabled]}>
+            <Text style={[rdStyles.cookButtonText, !canStartCooking && rdStyles.cookButtonTextDisabled]}>
               {t('detail_start_cooking')}
             </Text>
           </View>
         </PressableScale>
         {!hasSteps && (
           <Text style={rdStyles.cookNoSteps}>{t('cook_no_steps')}</Text>
+        )}
+        {hasSteps && inventoryLoaded && !ingredientsReady && (
+          <Text style={rdStyles.cookNoSteps}>{t('recipe_missing_ingredients_msg')}</Text>
         )}
       </View>
     </ScrollView>
@@ -297,7 +306,8 @@ const rdStyles = {
   steps: { fontFamily: 'PressStart2P_400Regular', color: '#c8c8e8', fontSize: 8, lineHeight: 20 } as const,
   cookSection: { marginTop: 32, gap: 12 } as const,
   cookButtonWrapper: { width: '100%' } as const,
-  ingButton: { borderWidth: 1, borderColor: '#c8a84b', padding: 20, alignItems: 'center' as const },
+  ingButton: { borderWidth: 1, borderColor: '#c8a84b', padding: 20, alignItems: 'center' as const, justifyContent: 'center' as const, flexDirection: 'row' as const, gap: 10 },
+  ingButtonIcon: { width: 22, height: 22 },
   ingButtonText: { fontFamily: 'PressStart2P_400Regular', color: '#c8a84b', fontSize: 9 } as const,
   cookButton: { borderWidth: 1, borderColor: '#e2b96f', padding: 20, alignItems: 'center' as const },
   cookButtonDisabled: { borderColor: '#4a4a6a' } as const,

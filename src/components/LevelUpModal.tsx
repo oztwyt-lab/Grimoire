@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import { View, Text, Pressable, Animated, Modal } from 'react-native';
 import { CharacterRank } from '../data/character';
 import * as Haptics from 'expo-haptics';
+import RankIcon from './RankIcon';
 
 type Props = {
   visible: boolean;
@@ -16,7 +17,7 @@ export default function LevelUpModal({ visible, rank, onDismiss }: Props) {
   useEffect(() => {
     if (visible) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      // Fade in overlay, then spring-pop the emoji
+      // Fade in overlay, then spring-pop the rank mark.
       Animated.sequence([
         Animated.timing(opacity, { toValue: 1, duration: 200, useNativeDriver: true }),
         Animated.spring(scale, {
@@ -40,9 +41,9 @@ export default function LevelUpModal({ visible, rank, onDismiss }: Props) {
           <Text style={styles.flashLabel}>✦ LEVEL UP ✦</Text>
 
           {/* ── Rank emoji (spring animated) ─────────────────── */}
-          <Animated.Text style={[styles.emoji, { transform: [{ scale }] }]}>
-            {rank.emoji}
-          </Animated.Text>
+          <Animated.View style={[styles.rankMark, { transform: [{ scale }] }]}>
+            <RankIcon rank={rank} size={76} />
+          </Animated.View>
 
           {/* ── Rank info ────────────────────────────────────── */}
           <Text style={styles.levelLabel}>LEVEL {rank.level}</Text>
@@ -88,8 +89,7 @@ const styles = {
     marginBottom: 24,
     textAlign: 'center' as const,
   },
-  emoji: {
-    fontSize: 72,
+  rankMark: {
     marginBottom: 24,
   },
   levelLabel: {
