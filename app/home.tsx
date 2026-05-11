@@ -38,7 +38,7 @@ const HOME_NAV_ICONS = {
   grimoire: require('../assets/icons/ui/book.png'),
   inventory: require('../assets/icons/ui/bag.png'),
   character: require('../assets/icons/ui/hat.png'),
-  magicOrb: require('../assets/candidates/openart/rpg-icons-selected/I_Crystal01.png'),
+  magicOrb: require('../assets/candidates/openart/rpg-icons-selected/S_Magic06.png'),
 };
 const MAIN_BACKGROUND_PANELS = [
   { key: 'fireplace', source: require('../assets/ui/main_fireplace.png') },
