@@ -68,13 +68,19 @@
     .nav-links {
       display: flex;
       align-items: center;
-      gap: 32px;
+      gap: 8px;
       font-size: 14px;
       font-weight: 500;
-      color: var(--muted);
     }
 
-    .nav-links a:hover { color: var(--text); }
+    .nav-links a {
+      color: var(--muted);
+      padding: 7px 14px;
+      border-radius: 100px;
+      transition: color 0.15s, background 0.15s;
+    }
+
+    .nav-links a:hover { color: var(--text); background: var(--surface); }
 
     .nav-cta {
       background: var(--text);
@@ -83,9 +89,10 @@
       border-radius: 100px;
       font-weight: 600;
       font-size: 13px;
+      margin-left: 8px;
       transition: opacity 0.15s;
     }
-    .nav-cta:hover { opacity: 0.8; }
+    .nav-cta:hover { opacity: 0.8; background: var(--text) !important; }
 
     /* HERO */
     .hero {
@@ -502,8 +509,9 @@
         Adio Co.
       </a>
       <div class="nav-links">
-        <a href="#grimor" class="hide">Games</a>
-        <a href="/privacy/" class="hide">Privacy</a>
+        <a href="/">Home</a>
+        <a href="#about">About Us</a>
+        <a href="#apps">Apps</a>
         <a href="mailto:app.grimoire@gmail.com" class="nav-cta">Contact</a>
       </div>
     </nav>
