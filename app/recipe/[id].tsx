@@ -122,6 +122,8 @@ export default function RecipeDetail() {
     if (!recipe || !recipe.ingredients?.length) return;
     const items = recipe.ingredients.map(ing => ({
       id: ing.id,
+      name: ing.name,
+      emoji: ing.emoji,
       quantity: parseRecipeQuantity(ing.quantity),
       metric: 'adet',
     }));

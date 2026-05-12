@@ -190,8 +190,11 @@ export default function MagicOrbScreen() {
 
   const importedIds = useMemo(() => new Set(userRecipes.map(recipe => recipe.curatedRecipeId).filter(Boolean)), [userRecipes]);
   const matchedRecipes = useMemo(
-    () => matchRecipesAgainstInventory([...curatedRecipes, ...userRecipes], inventory),
-    [curatedRecipes, inventory, userRecipes]
+    () => matchRecipesAgainstInventory(
+      [...curatedRecipes.filter(r => !importedIds.has(r.id)), ...userRecipes],
+      inventory
+    ),
+    [curatedRecipes, inventory, userRecipes, importedIds]
   );
   const ready = matchedRecipes.filter(recipe => recipe.matchScore === 1);
   const almost = matchedRecipes.filter(recipe => recipe.matchScore >= 0.6 && recipe.matchScore < 1);
