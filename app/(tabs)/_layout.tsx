@@ -9,6 +9,7 @@ const TAB_ICONS = {
   grimoire: require('../../assets/icons/ui/book.png'),
   inventory: require('../../assets/icons/ui/bag.png'),
   character: require('../../assets/icons/ui/hat.png'),
+  nutrition: require('../../assets/candidates/openart/discovered/food_icons/food_apple.png'),
 };
 
 function TabIcon({ source, color }: { source: number; color: string }) {
@@ -43,6 +44,14 @@ export default function TabsLayout() {
         options={{
           tabBarIcon: ({ focused }) => (
             <TabIcon source={TAB_ICONS.character} color={focused ? TAB_ACTIVE_COLOR : TAB_INACTIVE_COLOR} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="nutrition"
+        options={{
+          tabBarIcon: ({ focused }) => (
+            <TabIcon source={TAB_ICONS.nutrition} color={focused ? TAB_ACTIVE_COLOR : TAB_INACTIVE_COLOR} />
           ),
         }}
       />
