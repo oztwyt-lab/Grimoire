@@ -165,26 +165,110 @@ export function calculateNutrition(
   };
 }
 
-const EMBEDDED_UNITS = ['g', 'kg', 'ml', 'l', 'tsp', 'tbsp', 'cup', 'pcs', 'pinch', 'piece', 'adet'];
+// Phrases that mean "negligible / to taste" — contribute 0 calories
+const NEGLIGIBLE_PHRASES = [
+  'tatmak için', 'to taste', 'kızartma için', 'for frying', 'handful',
+  'as needed', 'gerektiği kadar',
+];
+
+// Turkish multi-word unit aliases → canonical unit
+const TR_UNIT_ALIASES: Record<string, string> = {
+  'yemek kaşığı': 'tbsp',
+  'tatlı kaşığı': 'tsp',
+  'çay kaşığı': 'tsp',
+  'su bardağı': 'cup',
+  'çay bardağı': 'cup',
+  'diş': 'piece',
+  'demet': 'piece',
+  'dal': 'piece',
+  'parça': 'piece',
+  'paket': 'piece',
+  'adet': 'piece',
+};
+
+// Single-word unit aliases (last word of quantity string)
+const UNIT_WORD_ALIASES: Record<string, string> = {
+  cloves: 'piece', clove: 'piece',
+  pieces: 'piece', slices: 'slice', slice: 'slice',
+  stalks: 'piece', stalk: 'piece',
+  head: 'piece', heads: 'piece',
+  large: 'piece', small: 'piece', medium: 'piece',
+  bunch: 'piece', bunches: 'piece',
+  handful: 'piece',
+};
+
+const EMBEDDED_UNITS = ['g', 'kg', 'ml', 'l', 'tsp', 'tbsp', 'cup', 'pcs', 'pinch', 'piece', 'adet', 'slice'];
+
+function parseRecipeQuantity(raw: string): { amount: string; unit: string } | null {
+  const q = raw.trim().toLowerCase();
+
+  // Negligible / to-taste phrases → skip
+  if (NEGLIGIBLE_PHRASES.some(p => q.includes(p))) return null;
+
+  // "yarım" (Turkish half) substitution
+  const normalized = q.replace(/\byarım\b/g, '0.5').replace(/\byarim\b/g, '0.5');
+
+  // No-space unit attached to number: "300g", "200ml", "1.5L", "1L"
+  const noSpace = normalized.match(/^(\d+(?:\.\d+)?)(g|kg|ml|l)$/i);
+  if (noSpace) return { amount: noSpace[1], unit: noSpace[2].toLowerCase() };
+
+  // Turkish multi-word units: "2 yemek kaşığı", "1 su bardağı"
+  for (const [tr, en] of Object.entries(TR_UNIT_ALIASES)) {
+    const idx = normalized.indexOf(tr);
+    if (idx !== -1) {
+      const amt = normalized.slice(0, idx).trim();
+      return { amount: amt || '1', unit: en };
+    }
+  }
+
+  const parts = normalized.split(' ').filter(Boolean);
+
+  // Strip trailing noise words like "cooked", "fresh", "chopped"
+  const noiseWords = ['cooked', 'fresh', 'chopped', 'diced', 'minced', 'sliced', 'dried', 'ground'];
+  while (parts.length > 1 && noiseWords.includes(parts[parts.length - 1])) parts.pop();
+
+  if (parts.length === 0) return null;
+
+  // Single token: "1", "2", "0.5"
+  if (parts.length === 1) {
+    const num = parseQuantity(parts[0]);
+    if (num === null) return null;
+    return { amount: String(num), unit: '' };
+  }
+
+  // Last word is a known embedded unit
+  const lastWord = parts[parts.length - 1];
+  if (EMBEDDED_UNITS.includes(lastWord)) {
+    return { amount: parts.slice(0, -1).join(' '), unit: lastWord };
+  }
+
+  // Last word is an alias
+  const aliasUnit = UNIT_WORD_ALIASES[lastWord];
+  if (aliasUnit) {
+    return { amount: parts.slice(0, -1).join(' '), unit: aliasUnit };
+  }
+
+  // Fallback: first token as amount, no unit
+  return { amount: parts[0], unit: '' };
+}
 
 export function calculateRecipeNutrition(
   ingredients: { id: string; quantity: string; metric?: string }[]
 ): CalculatedNutrition {
   return ingredients.reduce(
     (acc, ing) => {
-      let amount = ing.quantity;
-      let unit = ing.metric ?? '';
+      let amount: string;
+      let unit: string;
 
-      // Extract unit from combined quantity string like "2 cups"
-      if (!unit) {
-        const parts = ing.quantity.trim().split(' ');
-        if (parts.length >= 2 && EMBEDDED_UNITS.includes(parts[parts.length - 1].toLowerCase())) {
-          amount = parts.slice(0, -1).join(' ');
-          unit = parts[parts.length - 1];
-        }
+      if (ing.metric) {
+        amount = ing.quantity;
+        unit = ing.metric;
+      } else {
+        const parsed = parseRecipeQuantity(ing.quantity);
+        if (!parsed) return acc; // negligible ingredient
+        amount = parsed.amount;
+        unit = parsed.unit || getDefaultUnit(ing.id);
       }
-
-      if (!unit) unit = getDefaultUnit(ing.id);
 
       const n = calculateNutrition(ing.id, amount, unit);
       return {
