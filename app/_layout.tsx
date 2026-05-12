@@ -2,6 +2,7 @@ import { AuthProvider } from '../src/context/AuthContext';
 import { LanguageProvider } from '../src/context/LanguageContext';
 import { InventoryProvider } from '../src/context/InventoryContext';
 import { SubscriptionProvider } from '../src/context/SubscriptionContext';
+import { NutritionLogProvider } from '../src/context/NutritionLogContext';
 import { StatusBar } from 'expo-status-bar';
 import { ImageBackground, StyleSheet, View, Text } from 'react-native';
 import { useFonts, PressStart2P_400Regular } from '@expo-google-fonts/press-start-2p';
@@ -80,6 +81,7 @@ export default function Layout() {
         <AuthProvider>
           <InventoryProvider>
             <SubscriptionProvider>
+            <NutritionLogProvider>
               <View style={{ flex: 1, backgroundColor: '#1a1a2e' }}>
                 <Stack
                   screenOptions={{
@@ -135,6 +137,7 @@ export default function Layout() {
                   </Animated.View>
                 )}
               </View>
+            </NutritionLogProvider>
             </SubscriptionProvider>
           </InventoryProvider>
         </AuthProvider>

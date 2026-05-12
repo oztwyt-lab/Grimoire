@@ -22,6 +22,8 @@ import { getUserProfile } from '../../lib/firestore';
 import { playMusic, playSFX, stopMusic } from '../../src/services/audio';
 import { markRecipeRecent, setCookTime } from '../../src/services/recentRecipes';
 import { hasRecipeIngredients, parseRecipeQuantity } from '../../src/utils/recipeInventory';
+import { useNutritionLog } from '../../src/context/NutritionLogContext';
+import { calculateRecipeNutrition } from '../../src/utils/nutrition';
 import CookingActionIcon from '../../src/components/CookingActionIcon';
 
 const WIZARD_IDLE_SHEET = require('../../assets/characters/wizard_character/mage_idle.png');
@@ -262,6 +264,7 @@ type Ingredient = { id: string; quantity: string };
 type RawRecipe = {
   id: string;
   name: string;
+  icon?: string;
   steps: CookStep[] | string;
   preparation?: string;
   ingredients?: Ingredient[];
@@ -408,6 +411,7 @@ export default function CookMode() {
   const { user } = useAuth();
   const { t } = useLanguage();
   const { inventory, inventoryLoaded, consumeItems } = useInventory();
+  const { logRecipe } = useNutritionLog();
   const { width: screenWidth, height: screenHeight } = useWindowDimensions();
   const isLandscape = screenWidth > screenHeight;
   const arenaWidth = isLandscape ? screenWidth * 0.4 : screenWidth;
@@ -419,6 +423,7 @@ export default function CookMode() {
   const [loading, setLoading] = useState(true);
   const [isFemale, setIsFemale] = useState(false);
   const ingredientsConsumedRef = useRef(false);
+  const nutritionLoggedRef = useRef(false);
   const blockedMissingIngredientsRef = useRef(false);
   const cookStartRef = useRef<number | null>(null);
   const [finalTimeSecs, setFinalTimeSecs] = useState<number | null>(null);
@@ -700,6 +705,7 @@ export default function CookMode() {
           bossScale.value = 1;
           bossX.value = 0;
           ingredientsConsumedRef.current = false;
+          nutritionLoggedRef.current = false;
         }
       } catch (e) {
         console.error(e);
@@ -712,13 +718,14 @@ export default function CookMode() {
 
   useEffect(() => {
     if (!recipe || !inventoryLoaded || blockedMissingIngredientsRef.current) return;
+    if (battle.showCompletion) return;
     if (hasRecipeIngredients(recipe.ingredients, inventory)) return;
 
     blockedMissingIngredientsRef.current = true;
     Alert.alert(t('recipe_missing_ingredients_title'), t('recipe_missing_ingredients_msg'), [
       { text: 'OK', onPress: () => router.replace(`/recipe/${recipe.id}`) },
     ]);
-  }, [inventory, inventoryLoaded, recipe, router, t]);
+  }, [inventory, inventoryLoaded, recipe, router, t, battle.showCompletion]);
 
   // ─── Completion modal ───────────────────────────────────────────────────────
 
@@ -750,6 +757,15 @@ export default function CookMode() {
     }));
     if (items.length > 0) consumeItems(items);
   }, [battle.showCompletion, recipe]);
+
+  // ─── Log recipe nutrition on completion ─────────────────────────────────────
+
+  useEffect(() => {
+    if (!battle.showCompletion || nutritionLoggedRef.current || !recipe) return;
+    nutritionLoggedRef.current = true;
+    const totals = calculateRecipeNutrition(recipe.ingredients ?? []);
+    logRecipe(recipe.name, recipe.icon ?? '🍽️', totals).catch(console.warn);
+  }, [battle.showCompletion, recipe, logRecipe]);
 
   // ─── Sprite frame cycling ────────────────────────────────────────────────────
 

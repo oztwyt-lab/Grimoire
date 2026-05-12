@@ -39,6 +39,7 @@ const HOME_NAV_ICONS = {
   inventory: require('../assets/icons/ui/bag.png'),
   character: require('../assets/icons/ui/hat.png'),
   magicOrb: require('../assets/candidates/openart/rpg-icons-selected/S_Magic06.png'),
+  nutrition: require('../assets/candidates/openart/discovered/food_icons/food_apple.png'),
 };
 const MAIN_BACKGROUND_PANELS = [
   { key: 'fireplace', source: require('../assets/ui/main_fireplace.png') },
@@ -243,6 +244,7 @@ export default function Home() {
   const inventoryScale = useRef(new Animated.Value(1)).current;
   const magicOrbScale = useRef(new Animated.Value(1)).current;
   const characterScale = useRef(new Animated.Value(1)).current;
+  const nutritionScale = useRef(new Animated.Value(1)).current;
 
   const pressIn = (scale: Animated.Value) => {
     Animated.spring(scale, { toValue: 1.25, useNativeDriver: true, speed: 50, bounciness: 0 }).start();
@@ -480,6 +482,20 @@ export default function Home() {
           <Text style={styles.navLabel}>{t('magic_orb_title')}</Text>
         </Pressable>
 
+        {/* NUTRITION */}
+        <Pressable
+          style={styles.navItem}
+          onPress={() => nav('/nutrition')}
+          onPressIn={() => pressIn(nutritionScale)}
+          onPressOut={() => pressOut(nutritionScale)}
+        >
+          <Animated.Image
+            source={HOME_NAV_ICONS.nutrition}
+            style={[styles.navImageIcon, { transform: [{ scale: nutritionScale }] }]}
+            resizeMode="contain"
+          />
+          <Text style={styles.navLabel}>{t('nav_nutrition')}</Text>
+        </Pressable>
 
       </View>
     </View>

@@ -12,6 +12,7 @@ import { useAuth } from '../../src/context/AuthContext';
 import { markRecipeRecent } from '../../src/services/recentRecipes';
 import { RecipeLanguageTag, normalizeRecipeLanguage, recipeLanguageLabel } from '../../src/data/recipeLanguage';
 import { hasRecipeIngredients, parseRecipeQuantity } from '../../src/utils/recipeInventory';
+import { calculateRecipeNutrition } from '../../src/utils/nutrition';
 
 type Ingredient = { id: string; name: string; emoji: string; quantity: string; metric?: string };
 type RecipeStep = { id: string; text: string; duration: number | null };
@@ -238,6 +239,30 @@ export default function RecipeDetail() {
           </View>
         </>
       )}
+      {recipe.ingredients?.length > 0 && (() => {
+        const nutrition = calculateRecipeNutrition(recipe.ingredients);
+        const hasData = nutrition.calories > 0 || nutrition.protein > 0 || nutrition.carbs > 0;
+        if (!hasData) return null;
+        const macros = [
+          { label: 'CAL', value: Math.round(nutrition.calories), unit: '', color: '#e2b96f' },
+          { label: 'PRO', value: Math.round(nutrition.protein * 10) / 10, unit: 'g', color: '#6fcf97' },
+          { label: 'FAT', value: Math.round(nutrition.fat * 10) / 10, unit: 'g', color: '#bb86fc' },
+          { label: 'CARB', value: Math.round(nutrition.carbs * 10) / 10, unit: 'g', color: '#56ccf2' },
+        ];
+        return (
+          <>
+            <Text style={rdStyles.sectionLabel}>NUTRITION</Text>
+            <View style={rdStyles.nutritionRow}>
+              {macros.map(m => (
+                <View key={m.label} style={rdStyles.nutritionCell}>
+                  <Text style={[rdStyles.nutritionValue, { color: m.color }]}>{m.value}{m.unit}</Text>
+                  <Text style={rdStyles.nutritionLabel}>{m.label}</Text>
+                </View>
+              ))}
+            </View>
+          </>
+        );
+      })()}
       <Text style={rdStyles.sectionLabel}>{t('detail_preparation')}</Text>
       <Text style={rdStyles.steps}>{prepDisplay}</Text>
 
@@ -292,6 +317,10 @@ const rdStyles = {
   title: { fontFamily: 'PressStart2P_400Regular', color: '#c8c8e8', fontSize: 14, marginBottom: 24, lineHeight: 26 } as const,
   languageTag: { alignSelf: 'flex-start' as const, borderWidth: 1, borderColor: '#e2b96f', color: '#e2b96f', fontFamily: 'PressStart2P_400Regular', fontSize: 7, paddingHorizontal: 8, paddingVertical: 5, marginBottom: 18 },
   sectionLabel: { fontFamily: 'PressStart2P_400Regular', color: '#4a4a6a', fontSize: 8, marginBottom: 12, marginTop: 8 } as const,
+  nutritionRow: { flexDirection: 'row' as const, gap: 6, marginBottom: 24 },
+  nutritionCell: { flex: 1, backgroundColor: '#16213e', borderWidth: 1, borderColor: '#2d2d4e', alignItems: 'center' as const, paddingVertical: 10 },
+  nutritionValue: { fontFamily: 'PressStart2P_400Regular', fontSize: 9, marginBottom: 4 },
+  nutritionLabel: { fontFamily: 'PressStart2P_400Regular', color: '#4a4a6a', fontSize: 6 } as const,
   ingredientRow: { flexDirection: 'row' as const, flexWrap: 'wrap' as const, marginBottom: 24 },
   ingredientTile: { backgroundColor: '#16213e', borderWidth: 1, borderColor: '#2d2d4e', padding: 10, alignItems: 'center' as const, margin: 4, minWidth: 70 },
   tileSufficient: { borderColor: '#4a9e6b' } as const,
