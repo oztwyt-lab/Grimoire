@@ -5,16 +5,7 @@ const RC_API_KEY = 'test_fRupYNbZPjhmobrnEKKWceSZJwf';
 let configured = false;
 
 export function initializePurchases(): void {
-  try {
-    if (!Purchases) return;
-    if (__DEV__) {
-      Purchases.setLogLevel(LOG_LEVEL.DEBUG);
-    }
-    Purchases.configure({ apiKey: RC_API_KEY });
-    configured = true;
-  } catch {
-    // Native module not linked (Expo Go / simulator without dev client)
-  }
+  // RevenueCat disabled until Play Store launch — re-enable with production key
 }
 
 export async function loginUser(uid: string): Promise<void> {
